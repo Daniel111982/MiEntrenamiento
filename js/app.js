@@ -10,21 +10,64 @@ import { volumenSesion, mejorSerie, recordAntes, recordsDeSesion, racha, volumen
 // =====================================================================
 // Estado
 // =====================================================================
-const CLAVE = 'mientrenamiento:v2';
+// Cada usuario guarda sus datos por separado: 'mientrenamiento:u:<id>'.
+// La lista de usuarios y cuál está activo van en 'mientrenamiento:usuarios'.
+const CLAVE = 'mientrenamiento:v2'; // formato anterior, de un solo usuario
+const CLAVE_USUARIOS = 'mientrenamiento:usuarios';
+const claveDe = id => `mientrenamiento:u:${id}`;
 const vacio = () => ({ perfil: null, plan: null, historial: [], enCurso: null, misSesiones: [], videos: {}, fotos: {}, ajustes: { recordatorio: false, hora: '18:00', avisado: '', ayudas: true, consejoVisto: false } });
+const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const AVATARES = ['🙂', '💪', '🏃', '🧘', '🏋️', '🚴', '🤸', '⚽', '🦁', '🐯', '🌟', '🔥', '🎯', '🦊', '🐻', '👑'];
+const COLORES = [
+  'linear-gradient(135deg,#2563eb,#16a34a)', 'linear-gradient(135deg,#7c3aed,#db2777)', 'linear-gradient(135deg,#ea580c,#facc15)',
+  'linear-gradient(135deg,#0891b2,#22d3ee)', 'linear-gradient(135deg,#dc2626,#f97316)', 'linear-gradient(135deg,#334155,#64748b)',
+];
 
+let usuarios = cargarUsuarios();
 let estado = cargar();
-function cargar() {
+
+function cargarUsuarios() {
   try {
-    const v2 = JSON.parse(localStorage.getItem(CLAVE));
-    if (v2) return { ...vacio(), ...v2, ajustes: { ...vacio().ajustes, ...v2.ajustes } };
-    // Migración desde la primera versión: se conserva el historial y se pide de nuevo el perfil.
-    const v1 = JSON.parse(localStorage.getItem('mientrenamiento:v1'));
-    if (v1) return { ...vacio(), historial: v1.historial || [] };
+    const u = JSON.parse(localStorage.getItem(CLAVE_USUARIOS));
+    if (u?.lista?.length) return u;
+  } catch { /* lista corrupta: se reconstruye */ }
+  // Primera vez con usuarios: los datos que hubiera pasan a un primer usuario.
+  const id = nuevoId();
+  const v2 = localStorage.getItem(CLAVE);
+  const v1 = localStorage.getItem('mientrenamiento:v1');
+  if (v2) localStorage.setItem(claveDe(id), v2);
+  else if (v1) { try { localStorage.setItem(claveDe(id), JSON.stringify({ ...vacio(), historial: JSON.parse(v1).historial || [] })); } catch { /* sin datos útiles */ } }
+  const u = { activo: id, lista: [{ id, nombre: v2 || v1 ? 'Yo' : 'Usuario 1', avatar: '🙂', color: 0, creado: new Date().toISOString() }] };
+  localStorage.setItem(CLAVE_USUARIOS, JSON.stringify(u));
+  if (v2) localStorage.removeItem(CLAVE);
+  return u;
+}
+function guardarUsuarios() { localStorage.setItem(CLAVE_USUARIOS, JSON.stringify(usuarios)); }
+
+function cargar(id = usuarios.activo) {
+  try {
+    const d = JSON.parse(localStorage.getItem(claveDe(id)));
+    if (d) return { ...vacio(), ...d, ajustes: { ...vacio().ajustes, ...d.ajustes } };
   } catch { /* datos corruptos */ }
   return vacio();
 }
-function guardar() { localStorage.setItem(CLAVE, JSON.stringify(estado)); }
+function guardar() { localStorage.setItem(claveDe(usuarios.activo), JSON.stringify(estado)); }
+
+const usuarioActual = () => usuarios.lista.find(u => u.id === usuarios.activo) || usuarios.lista[0];
+const avatarHTML = (u, clase = '') => `<span class="avatar-u ${clase}" style="background:${COLORES[u.color % COLORES.length]}">${u.avatar}</span>`;
+
+function cambiarUsuario(id) {
+  if (id === usuarios.activo) return;
+  guardar();
+  pararDescanso();
+  usuarios.activo = id;
+  guardarUsuarios();
+  estado = cargar(id);
+  Object.assign(ui, { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null });
+  cerrarModal();
+  ir(estado.plan ? 'hoy' : 'bienvenida');
+  toast(`Usuario activo: ${usuarioActual().nombre}`);
+}
 
 // =====================================================================
 // Utilidades
@@ -148,6 +191,9 @@ const RUTAS = [
   [/^ajustes\/datos$/, ajDatos, 'ajustes'],
   [/^ajustes\/acerca$/, ajAcerca, 'ajustes'],
   [/^bienvenida$/, bienvenida, 'bienvenida'],
+  [/^usuarios$/, gestorUsuarios, 'ajustes'],
+  [/^usuarios\/nuevo$/, usuarioNuevo, 'ajustes'],
+  [/^usuario\/([\w-]+)$/, usuarioEditar, 'ajustes'],
 ];
 
 const ruta = () => decodeURIComponent(location.hash.slice(1)).replace(/^\/+|\/+$/g, '');
@@ -156,7 +202,7 @@ window.addEventListener('hashchange', render);
 
 function render() {
   let r = ruta();
-  if (!estado.plan) r = 'bienvenida';
+  if (!estado.plan && !/^usuario/.test(r)) r = 'bienvenida';
   else if (r === 'bienvenida') r = 'hoy';
   if (r === 'sesion' && !estado.enCurso) r = 'hoy';
   let entrada = RUTAS.find(([re]) => re.test(r));
@@ -280,8 +326,9 @@ function saludo() {
 }
 
 function inicio() {
-  const cabecera = extra => pagina({ titulo: saludo(), sub: fmtFecha(hoy()), extra, cuerpo: '' });
-  const rachaBtn = `<a class="racha" href="#seguimiento" title="Semanas seguidas entrenando">🔥 ${racha(estado.historial)}</a>`;
+  const cabecera = extra => pagina({ titulo: `${saludo()}, ${esc(usuarioActual().nombre)}`, sub: fmtFecha(hoy()), extra, cuerpo: '' });
+  const rachaBtn = `<a class="racha" href="#seguimiento" title="Semanas seguidas entrenando">🔥 ${racha(estado.historial)}</a>
+    <button class="avatar-btn" data-a="menuUsuarios" title="Cambiar de usuario">${avatarHTML(usuarioActual())}</button>`;
   if (estado.enCurso) {
     return `${cabecera(rachaBtn)}
       <div class="hero"><p class="eyebrow">Sesión en curso</p><h2>${esc(estado.enCurso.nombre)}</h2>
@@ -989,10 +1036,11 @@ function ajustes() {
     titulo: 'Ajustes',
     cuerpo: `
       <a class="tarjeta enlace-tarjeta perfil-card" href="#ajustes/perfil">
-        <span class="avatar">${o.icono}</span>
-        <span class="celda-t"><b>${o.nombre}</b><small>${p.nivel[0].toUpperCase() + p.nivel.slice(1)} · ${p.diasSemana.map(d => DIAS[d].slice(0, 3)).join(', ')} · ${frecTxt(p)} · ${p.duracion} min · ${p.lugar === 'gimnasio' ? 'Gimnasio' : 'Casa'}</small></span>
+        ${avatarHTML(usuarioActual(), 'grande')}
+        <span class="celda-t"><b>${esc(usuarioActual().nombre)} · ${o.icono} ${o.nombre}</b><small>${p.nivel[0].toUpperCase() + p.nivel.slice(1)} · ${p.diasSemana.map(d => DIAS[d].slice(0, 3)).join(', ')} · ${frecTxt(p)} · ${p.duracion} min · ${p.lugar === 'gimnasio' ? 'Gimnasio' : 'Casa'}</small></span>
         <span class="chev">›</span>
       </a>
+      ${grupo('Usuarios', celda('usuarios', '👥', 'Gestor de usuarios', `Activo: ${esc(usuarioActual().nombre)}`, 'azul', usuarios.lista.length))}
       ${grupo('Programa', celda('ajustes/perfil', '🎯', 'Perfil y programa', 'Objetivo, días, frecuencia, duración, material y enfoque', 'verde'))}
       ${grupo('Aplicación',
         celda('ajustes/recordatorios', '🔔', 'Recordatorios', 'Aviso los días de entrenamiento', 'naranja', estado.ajustes.recordatorio ? estado.ajustes.hora : 'No') +
@@ -1028,7 +1076,7 @@ function ajDatos() {
         <button class="celda" data-a="exportar"><span class="ic azul">⬇️</span><span class="celda-t"><b>Exportar copia</b><small>Archivo JSON con todo: perfil, programa e historial</small></span></button>
         <label class="celda"><span class="ic verde">⬆️</span><span class="celda-t"><b>Importar copia</b><small>Recupera los datos desde un archivo exportado</small></span><input type="file" accept="application/json" data-a="importar" hidden></label>
         <button class="celda" data-a="csv"><span class="ic violeta">📊</span><span class="celda-t"><b>Exportar historial (CSV)</b><small>Para abrirlo en Excel o Google Sheets</small></span></button>`)}
-      ${grupo('Zona peligrosa', `<button class="celda peligro-c" data-a="borrarTodo"><span class="ic rojo">🗑️</span><span class="celda-t"><b>Borrar todos los datos</b><small>No se puede deshacer</small></span></button>`)}
+      ${grupo('Zona peligrosa', `<button class="celda peligro-c" data-a="borrarTodo"><span class="ic rojo">🗑️</span><span class="celda-t"><b>Borrar los datos de ${esc(usuarioActual().nombre)}</b><small>Perfil, programa e historial. No se puede deshacer</small></span></button>`)}
       <p class="tenue">${estado.historial.length} sesiones · ${estado.misSesiones.length} sesiones propias · ${(JSON.stringify(estado).length / 1024).toFixed(1)} KB</p>
     `,
   });
@@ -1049,6 +1097,123 @@ function ajAcerca() {
       <p class="tenue centro">MiEntrenamiento · funciona sin conexión · tus datos no salen de tu dispositivo</p>
     `,
   });
+}
+
+// =====================================================================
+// Páginas: Gestor de usuarios
+// =====================================================================
+// Resumen de un usuario leyendo sus datos guardados (o los actuales si es el activo).
+function resumenUsuario(u) {
+  const d = u.id === usuarios.activo ? estado : cargar(u.id);
+  const h = d.historial;
+  const ult = h[h.length - 1];
+  const estaSemana = h.filter(x => lunes(iso(new Date(x.fecha))) === lunes(hoy())).length;
+  const objetivo = d.perfil ? OBJETIVOS[d.perfil.objetivo] : null;
+  return {
+    sesiones: h.length, estaSemana, racha: racha(h), objetivo,
+    ultima: ult ? fmtCorta(ult.fecha) : null, plan: !!d.plan, enCurso: !!d.enCurso,
+    porSemana: d.perfil?.diasSemana?.length || 0,
+  };
+}
+
+function gestorUsuarios() {
+  const lista = usuarios.lista;
+  return pagina({
+    titulo: 'Usuarios', padre: estado.plan ? 'ajustes' : 'bienvenida', sub: `${lista.length} ${lista.length === 1 ? 'usuario' : 'usuarios'} en este dispositivo`,
+    extra: '<a class="icono" href="#usuarios/nuevo" title="Nuevo usuario">＋</a>',
+    cuerpo: `
+      ${lista.map(u => {
+        const r = resumenUsuario(u);
+        const activo = u.id === usuarios.activo;
+        return `<div class="tarjeta usuario-card ${activo ? 'activo' : ''}">
+          <div class="usuario-cab">
+            ${avatarHTML(u, 'grande')}
+            <div class="celda-t"><b>${esc(u.nombre)} ${activo ? '<span class="chip-mini">activo</span>' : ''}${r.enCurso ? '<span class="chip-mini alt">entrenando</span>' : ''}</b>
+              <small>${r.objetivo ? `${r.objetivo.icono} ${r.objetivo.nombre} · ${r.porSemana} días/sem` : 'Sin programa todavía'}</small></div>
+            <a class="icono" href="#usuario/${u.id}" title="Editar usuario">✎</a>
+          </div>
+          <div class="mini-stats">
+            <div><b>${r.sesiones}</b><small>sesiones</small></div>
+            <div><b>${r.estaSemana}${r.porSemana ? `/${r.porSemana}` : ''}</b><small>esta semana</small></div>
+            <div><b>🔥 ${r.racha}</b><small>racha</small></div>
+            <div><b>${r.ultima || '—'}</b><small>última sesión</small></div>
+          </div>
+          ${activo ? '' : `<button class="btn" data-a="usarUsuario" data-id="${u.id}">Cambiar a ${esc(u.nombre)}</button>`}
+        </div>`;
+      }).join('')}
+      <a class="btn sec" href="#usuarios/nuevo">＋ Nuevo usuario</a>
+      ${grupo('Copia de seguridad de todos', `
+        <button class="celda" data-a="exportarTodos"><span class="ic azul">⬇️</span><span class="celda-t"><b>Exportar todos los usuarios</b><small>Un archivo con los datos de cada uno</small></span></button>
+        <label class="celda"><span class="ic verde">⬆️</span><span class="celda-t"><b>Importar copia</b><small>De todos los usuarios o de uno solo</small></span><input type="file" accept="application/json" data-a="importarTodos" hidden></label>`)}
+      <p class="tenue">Los usuarios y sus datos se guardan solo en este dispositivo. Para pasarlos a otro, exporta la copia e impórtala allí.</p>
+    `,
+  });
+}
+
+function formUsuario(u, nuevo) {
+  return `<form id="formUsuario" class="tarjeta" data-id="${nuevo ? '' : u.id}">
+    <div class="usuario-prev">${avatarHTML(u, 'enorme')}</div>
+    <label class="campo">Nombre<input type="search" name="nombre" value="${esc(nuevo ? '' : u.nombre)}" maxlength="24" placeholder="Por ejemplo: Ana" required autocomplete="off"></label>
+    <fieldset><legend>Avatar</legend><div class="chips avatares">${AVATARES.map(a => `<label class="chip"><input type="radio" name="avatar" value="${a}" ${a === u.avatar ? 'checked' : ''}>${a}</label>`).join('')}</div></fieldset>
+    <fieldset><legend>Color</legend><div class="chips colores">${COLORES.map((c, i) => `<label class="chip color" style="background:${c}"><input type="radio" name="color" value="${i}" ${i === u.color ? 'checked' : ''} aria-label="Color ${i + 1}"></label>`).join('')}</div></fieldset>
+    <button class="btn" type="submit">${nuevo ? 'Crear y configurar su programa' : 'Guardar cambios'}</button>
+  </form>`;
+}
+
+function usuarioNuevo() {
+  const u = { avatar: AVATARES[usuarios.lista.length % AVATARES.length], color: usuarios.lista.length % COLORES.length };
+  return pagina({ titulo: 'Nuevo usuario', padre: 'usuarios', sub: 'Tendrá su propio programa y seguimiento', cuerpo: formUsuario(u, true) });
+}
+
+function usuarioEditar(id) {
+  const u = usuarios.lista.find(x => x.id === id);
+  if (!u) return null;
+  const r = resumenUsuario(u);
+  return pagina({
+    titulo: esc(u.nombre), padre: 'usuarios', sub: `Creado el ${fmtCorta(u.creado)} · ${r.sesiones} sesiones`,
+    cuerpo: `${formUsuario(u, false)}
+      ${grupo('Datos', `
+        <button class="celda" data-a="exportarUsuario" data-id="${u.id}"><span class="ic azul">⬇️</span><span class="celda-t"><b>Exportar sus datos</b><small>Archivo JSON solo de ${esc(u.nombre)}</small></span></button>
+        <button class="celda peligro-c" data-a="borrarUsuario" data-id="${u.id}" ${usuarios.lista.length === 1 ? 'disabled' : ''}><span class="ic rojo">🗑️</span>
+          <span class="celda-t"><b>Borrar usuario</b><small>${usuarios.lista.length === 1 ? 'No se puede borrar el único usuario' : 'Se borran su programa y su historial'}</small></span></button>`)}`,
+  });
+}
+
+function menuUsuarios() {
+  modal(`<h2>¿Quién va a entrenar?</h2>
+    <div class="celdas">${usuarios.lista.map(u => `<button class="celda" data-a="usarUsuario" data-id="${u.id}">${avatarHTML(u)}
+      <span class="celda-t"><b>${esc(u.nombre)}</b><small>${u.id === usuarios.activo ? 'Usuario activo' : `${resumenUsuario(u).sesiones} sesiones`}</small></span>
+      ${u.id === usuarios.activo ? '<span class="celda-v">✓</span>' : ''}</button>`).join('')}</div>
+    <div class="botones"><a class="btn sec" href="#usuarios/nuevo" data-a="cerrar">＋ Nuevo</a><a class="btn sec" href="#usuarios" data-a="cerrar">Gestionar</a></div>`);
+}
+
+function crearUsuario({ nombre, avatar, color }) {
+  const id = nuevoId();
+  usuarios.lista.push({ id, nombre, avatar, color, creado: new Date().toISOString() });
+  localStorage.setItem(claveDe(id), JSON.stringify(vacio()));
+  guardarUsuarios();
+  return id;
+}
+
+async function borrarUsuario(id) {
+  const u = usuarios.lista.find(x => x.id === id);
+  if (!u || usuarios.lista.length === 1) return;
+  const r = resumenUsuario(u);
+  if (!await confirmar(`Se borrarán el programa y las ${r.sesiones} sesiones de ${u.nombre}. No se puede deshacer; si quieres conservarlos, exporta antes sus datos.`,
+    { titulo: `¿Borrar a ${u.nombre}?`, ok: 'Borrar usuario', peligro: true })) return;
+  usuarios.lista = usuarios.lista.filter(x => x.id !== id);
+  localStorage.removeItem(claveDe(id));
+  if (usuarios.activo === id) { usuarios.activo = usuarios.lista[0].id; estado = cargar(); }
+  guardarUsuarios();
+  ir('usuarios');
+  toast(`${u.nombre} borrado`);
+}
+
+function exportarTodos() {
+  guardar();
+  const datos = Object.fromEntries(usuarios.lista.map(u => [u.id, cargar(u.id)]));
+  descargar(JSON.stringify({ app: 'MiEntrenamiento', version: 3, usuarios, datos }, null, 2), 'application/json', 'json');
+  toast('Copia de todos los usuarios descargada');
 }
 
 // =====================================================================
@@ -1094,8 +1259,9 @@ function vistaPerfil() {
 function bienvenida() {
   return `
     <div class="bienvenida">
-      <div class="logo">🏋️</div>
-      <h1>MiEntrenamiento</h1>
+      ${usuarios.lista.length > 1 ? '<a class="enlace usuarios-link" href="#usuarios">‹ Usuarios</a>' : ''}
+      ${usuarios.lista.length > 1 || usuarioActual().nombre !== 'Usuario 1' ? avatarHTML(usuarioActual(), 'enorme') : '<div class="logo">🏋️</div>'}
+      <h1>${usuarios.lista.length > 1 ? `Programa de ${esc(usuarioActual().nombre)}` : 'MiEntrenamiento'}</h1>
       <p class="tenue">${estado.perfil ? 'Revisa tus respuestas para crear tu programa.' : '8 preguntas y tendrás tu programa personalizado.'}</p>
       <div class="pasos-barra"><i style="width:${100 / PASOS.length}%"></i></div>
       <p class="tenue centro" id="pasoTxt">Paso 1 de ${PASOS.length}</p>
@@ -1630,12 +1796,22 @@ document.addEventListener('click', ev => {
     case 'exportar': descargar(JSON.stringify(estado, null, 2), 'application/json', 'json'); toast('Copia descargada'); break;
     case 'csv': toast('Historial descargado en CSV'); descargar('﻿' + historialCSV(estado.historial), 'text/csv', 'csv'); break;
     case 'borrarTodo':
-      confirmar('Se borrarán tu perfil, el programa y todo el historial. No se puede deshacer. Si quieres conservarlos, exporta antes una copia.', { titulo: '¿Borrar todos los datos?', ok: 'Borrar todo', peligro: true })
+      confirmar(`Se borrarán el perfil, el programa y todo el historial de ${usuarioActual().nombre}. Los demás usuarios no se tocan. No se puede deshacer.`, { titulo: '¿Borrar sus datos?', ok: 'Borrar', peligro: true })
         .then(ok => { if (ok) { estado = vacio(); guardar(); ir('bienvenida'); } });
       break;
     case 'descMas': temporizador.fin += 15000; temporizador.total += 15; tic(); break;
     case 'descMenos': temporizador.fin -= 15000; tic(); break;
     case 'descSaltar': pararDescanso(); break;
+    case 'menuUsuarios': menuUsuarios(); break;
+    case 'usarUsuario': cambiarUsuario(d.id); break;
+    case 'borrarUsuario': borrarUsuario(d.id); break;
+    case 'exportarTodos': exportarTodos(); break;
+    case 'exportarUsuario': {
+      if (d.id === usuarios.activo) guardar();
+      const u = usuarios.lista.find(x => x.id === d.id);
+      descargar(JSON.stringify(cargar(d.id), null, 2), 'application/json', `${u.nombre.replace(/[^\wáéíóúñ-]+/gi, '_')}.json`);
+      toast(`Datos de ${u.nombre} descargados`); break;
+    }
     case 'videoAdd':
       modal(`<h2>Guardar un vídeo</h2>
         <p class="tenue">Abre el vídeo en YouTube, copia su enlace (Compartir → Copiar enlace) y pégalo aquí.</p>
@@ -1656,7 +1832,7 @@ document.addEventListener('click', ev => {
 function descargar(texto, tipo, ext) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([texto], { type: tipo }));
-  a.download = `mientrenamiento-${hoy()}.${ext}`;
+  a.download = ext.includes('.') ? `mientrenamiento-${ext.replace(/\.json$/, '')}-${hoy()}.json` : `mientrenamiento-${hoy()}.${ext}`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
@@ -1664,8 +1840,19 @@ function descargar(texto, tipo, ext) {
 async function importar(file) {
   try {
     const datos = JSON.parse(await file.text());
+    if (datos?.usuarios?.lista && datos.datos) {
+      const n = datos.usuarios.lista.length;
+      if (!await confirmar(`La copia tiene ${n} ${n === 1 ? 'usuario' : 'usuarios'} (${datos.usuarios.lista.map(u => u.nombre).join(', ')}). Sustituirá a todos los usuarios actuales de este dispositivo.`, { titulo: '¿Importar todos los usuarios?', ok: 'Importar' })) return;
+      usuarios.lista.forEach(u => localStorage.removeItem(claveDe(u.id)));
+      usuarios = datos.usuarios;
+      for (const u of usuarios.lista) localStorage.setItem(claveDe(u.id), JSON.stringify(datos.datos[u.id] || vacio()));
+      if (!usuarios.lista.some(u => u.id === usuarios.activo)) usuarios.activo = usuarios.lista[0].id;
+      guardarUsuarios(); estado = cargar();
+      ir('usuarios'); toast('Usuarios importados');
+      return;
+    }
     if (!datos || !Array.isArray(datos.historial)) throw new Error('formato');
-    if (!await confirmar(`El archivo tiene ${datos.historial.length} sesiones. Sustituirá todos los datos actuales.`, { titulo: '¿Importar la copia?', ok: 'Importar' })) return;
+    if (!await confirmar(`El archivo tiene ${datos.historial.length} sesiones. Sustituirá los datos de ${usuarioActual().nombre}.`, { titulo: '¿Importar la copia?', ok: 'Importar' })) return;
     estado = { ...vacio(), ...datos };
     guardar(); ir('inicio'); toast('Copia importada');
   } catch {
@@ -1701,9 +1888,14 @@ document.addEventListener('input', ev => {
 document.addEventListener('change', async ev => {
   const t = ev.target;
   if (t.dataset.a === 'selEj') { ui.ejSel = t.value; dibujarGrafica(); }
-  if (t.dataset.a === 'importar' && t.files[0]) importar(t.files[0]);
+  if ((t.dataset.a === 'importar' || t.dataset.a === 'importarTodos') && t.files[0]) { importar(t.files[0]); t.value = ''; }
   if (t.dataset.a === 'foto' && t.files[0]) guardarFoto(t.dataset.id, t.files[0]).catch(() => toast('No he podido leer esa imagen.'));
   if (t.name === 'lugar' && $('#fsEquipo')) $('#fsEquipo').hidden = t.value === 'gimnasio';
+  if (t.form?.id === 'formUsuario' && (t.name === 'avatar' || t.name === 'color')) {
+    const prev = $('.usuario-prev .avatar-u');
+    const fd = new FormData(t.form);
+    prev.textContent = fd.get('avatar'); prev.style.background = COLORES[Number(fd.get('color')) || 0];
+  }
   if (t.dataset.a === 'hora') { estado.ajustes.hora = t.value; guardar(); }
   if (t.dataset.a === 'ayudas') {
     estado.ajustes.ayudas = t.checked; guardar(); render();
@@ -1722,6 +1914,21 @@ document.addEventListener('change', async ev => {
 document.addEventListener('submit', async ev => {
   ev.preventDefault();
   const f = new FormData(ev.target);
+  if (ev.target.id === 'formUsuario') {
+    const nombre = String(f.get('nombre') || '').trim();
+    if (!nombre) { toast('Escribe un nombre'); return; }
+    const datos = { nombre, avatar: f.get('avatar') || '🙂', color: Number(f.get('color')) || 0 };
+    const id = ev.target.dataset.id;
+    if (usuarios.lista.some(u => u.id !== id && u.nombre.toLowerCase() === nombre.toLowerCase())) { toast('Ya hay un usuario con ese nombre'); return; }
+    if (id) {
+      Object.assign(usuarios.lista.find(u => u.id === id), datos);
+      guardarUsuarios(); ir('usuarios'); toast('Usuario actualizado');
+    } else {
+      cambiarUsuario(crearUsuario(datos));
+      toast(`Usuario ${nombre} creado. Vamos a preparar su programa.`, { ms: 5000 });
+    }
+    return;
+  }
   if (ev.target.id === 'formVideo') {
     const vid = idYouTube(f.get('url'));
     if (!vid) { toast('Ese enlace no parece de YouTube. Copia el enlace del vídeo y pégalo.'); return; }

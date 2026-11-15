@@ -1,6 +1,6 @@
 # MiEntrenamiento
 
-App web instalable (PWA) de entrenamiento personal. Genera un programa a tu medida, te guía en cada sesión y registra tu progreso. Funciona sin conexión y guarda los datos solo en tu dispositivo.
+App web instalable (PWA) de entrenamiento personal. Genera un programa a tu medida, te guía en cada sesión y registra tu progreso. Funciona sin conexión, admite varios usuarios y guarda los datos solo en tu dispositivo.
 
 **Probarla:** https://jobeb.github.io/MiEntrenamiento/
 
@@ -13,7 +13,8 @@ App web instalable (PWA) de entrenamiento personal. Genera un programa a tu medi
 - **Seguimiento:** recuperación y equilibrio muscular sobre una silueta, récords, gráfica de 1RM por ejercicio, actividad, historial y calculadora de 1RM.
 - **Biblioteca** de 68 ejercicios con dibujo animado del movimiento, paso a paso, claves, errores comunes y respiración. Puedes guardar tu vídeo de YouTube y tu foto de cada ejercicio.
 - **Ayudas** en todos los botones (ratón, teclado o pulsación larga) e iconos ⓘ en las zonas importantes.
-- **Datos:** resumen en PDF, exportación CSV y copia de seguridad en JSON.
+- **Usuarios:** gestor para crear, editar, cambiar y borrar usuarios; cada uno con su propio programa y seguimiento.
+- **Datos:** resumen en PDF, exportación CSV y copia de seguridad en JSON (de un usuario o de todos).
 
 ## Ejecutar en local
 

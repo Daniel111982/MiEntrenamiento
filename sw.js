@@ -1,6 +1,6 @@
 // Service worker: guarda la app en caché para que funcione sin conexión.
 // Estrategia: primero la red (siempre la versión más reciente) y, sin conexión, la caché.
-const VERSION = 'mientrenamiento-v7';
+const VERSION = 'mientrenamiento-v8';
 const ARCHIVOS = [
   './', './index.html', './css/estilos.css', './manifest.webmanifest',
   './js/app.js', './js/ejercicios.js', './js/generador.js', './js/stats.js', './js/ayudas.js', './js/tecnica.js',

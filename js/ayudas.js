@@ -86,6 +86,13 @@ const TIPS = [
   ['[data-a=borrarTodo]', 'Borra perfil, programa e historial de este dispositivo'],
   ['[data-a=recordatorio]', 'Activa un aviso a tu hora habitual los días que toca entrenar'],
   ['[data-a=hora]', 'Hora a la que quieres el recordatorio'],
+  ['[data-a=menuUsuarios]', 'Cambiar de usuario o gestionar usuarios'],
+  ['[data-a=usarUsuario]', 'Pasar a este usuario: verás su programa y su seguimiento'],
+  ['[data-a=exportarTodos]', 'Descarga un archivo con los datos de todos los usuarios'],
+  ['[data-a=exportarUsuario]', 'Descarga solo los datos de este usuario'],
+  ['[data-a=borrarUsuario]', 'Borra el usuario con su programa e historial'],
+  ['a.icono[href="#usuarios/nuevo"]', 'Crear un usuario nuevo'],
+  ['a.icono[href^="#usuario/"]', 'Editar nombre, avatar y color'],
   ['[data-a=pasoSig]', 'Siguiente pregunta'],
   ['[data-a=pasoAnt]', 'Pregunta anterior'],
   ['[data-a=cerrar], .cerrar-x', 'Cerrar'],
@@ -108,6 +115,7 @@ const ZONAS = [
   ['.tarjeta:has(.rm-res)', 'Calculadora de 1RM', 'Estima el peso máximo que podrías levantar una vez. La tabla te da la carga para cada porcentaje, útil si un programa te pide trabajar al 80 %, por ejemplo.'],
   ['.tecnica', 'Dibujo del movimiento', 'La figura grande muestra el movimiento completo en bucle. Debajo, la posición inicial (1) y la final (2).'],
   ['.guia', 'Paso a paso', 'Sigue los pasos en orden. Las claves y los errores comunes te ayudan a revisar tu técnica.'],
+  ['.usuario-card.activo', 'Usuarios', 'Cada usuario tiene su propio programa, historial, récords, vídeos y fotos. El marcado como «activo» es el que estás usando. Cambia de usuario con el botón de cada tarjeta o tocando tu avatar en Hoy.'],
   ['.ses-card:first-of-type', 'Sesiones', 'Estas sesiones se repiten cada semana. Las repeticiones y descansos cambian según la fase del ciclo.'],
 ];
 
