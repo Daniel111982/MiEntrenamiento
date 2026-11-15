@@ -11,7 +11,8 @@ App web instalable (PWA) de entrenamiento personal. Genera un programa a tu medi
 - **Calendario semanal:** mover sesiones, sesiones perdidas, adelantar o añadir días.
 - **Sesión guiada:** carga sugerida, botones −/+, temporizador de descanso, Tabata, drop set, pirámide y pantalla siempre encendida.
 - **Seguimiento:** recuperación y equilibrio muscular sobre una silueta, récords, gráfica de 1RM por ejercicio, actividad, historial y calculadora de 1RM.
-- **Biblioteca** de unos 70 ejercicios con técnica y alternativas.
+- **Biblioteca** de 68 ejercicios con dibujo animado del movimiento, paso a paso, claves, errores comunes y respiración. Puedes guardar tu vídeo de YouTube y tu foto de cada ejercicio.
+- **Ayudas** en todos los botones (ratón, teclado o pulsación larga) e iconos ⓘ en las zonas importantes.
 - **Datos:** resumen en PDF, exportación CSV y copia de seguridad en JSON.
 
 ## Ejecutar en local
@@ -34,4 +35,6 @@ y abre http://localhost:8765.
 | `js/generador.js` | Generador de programas, fases y fechas |
 | `js/ejercicios.js` | Biblioteca de ejercicios |
 | `js/stats.js` | Récords, rachas, volumen y recuperación |
+| `js/tecnica.js` | Dibujos animados y guía de técnica |
+| `js/ayudas.js` | Ayudas contextuales |
 | `sw.js` | Funcionamiento sin conexión |

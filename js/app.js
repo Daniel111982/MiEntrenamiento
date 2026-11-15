@@ -3,6 +3,7 @@ import {
   OBJETIVOS, METODOS, FRECUENCIAS, frecuenciaPosible, SEMANAS_CICLO, fase, prescribir, generarPrograma, generarAgenda, alternativas, unoRM,
   duracionEstimada, ajustarDuracion, sesionALaCarta, hoyIso, iso, deIso, lunes, sumarDias,
 } from './generador.js';
+import { dibujoSVG, pasosDibujo, guiaEjercicio } from './tecnica.js';
 import { aplicarAyudas, esconder as esconderAyuda } from './ayudas.js';
 import { volumenSesion, mejorSerie, recordAntes, recordsDeSesion, racha, volumenMuscular, recuperacion, historialCSV } from './stats.js';
 
@@ -10,7 +11,7 @@ import { volumenSesion, mejorSerie, recordAntes, recordsDeSesion, racha, volumen
 // Estado
 // =====================================================================
 const CLAVE = 'mientrenamiento:v2';
-const vacio = () => ({ perfil: null, plan: null, historial: [], enCurso: null, misSesiones: [], ajustes: { recordatorio: false, hora: '18:00', avisado: '', ayudas: true, consejoVisto: false } });
+const vacio = () => ({ perfil: null, plan: null, historial: [], enCurso: null, misSesiones: [], videos: {}, fotos: {}, ajustes: { recordatorio: false, hora: '18:00', avisado: '', ayudas: true, consejoVisto: false } });
 
 let estado = cargar();
 function cargar() {
@@ -967,13 +968,9 @@ function ejercicioDetalle(id) {
         <div class="badges centro-flex">${e.musculos.map((m, i) => `<span class="badge ${i ? '' : 'prim'}">${MUSCULOS[m]}</span>`).join('')}
           <span class="badge">🧰 ${equipoTxt(e)}</span>${e.compuesto ? '<span class="badge">Multiarticular</span>' : '<span class="badge">Aislamiento</span>'}</div>
       </div>
-      <div class="tarjeta">
-        <h2>📝 Técnica</h2>
-        <p>${esc(e.desc)}</p>
-        <h2>🛡️ Seguridad</h2>
-        <p class="tenue">Calienta con 1-2 series ligeras. Controla el movimiento en todo el recorrido y para si notas dolor articular.</p>
-        <a class="btn sec" href="https://www.youtube.com/results?search_query=${encodeURIComponent(e.nombre + ' técnica')}" target="_blank" rel="noopener">▶ Ver vídeos de técnica</a>
-      </div>
+      ${tecnicaHTML(e)}
+      ${videoHTML(e)}
+      ${fotoHTML(e)}
       ${enPlan.length ? `<p class="tenue">📋 Está en tu programa: ${enPlan.map(esc).join(', ')}</p>` : ''}
       <h2 class="sec-tit">📈 Tu progreso</h2>
       ${puntos.length ? '<div class="tarjeta"><div id="grafica"></div></div>' : '<div class="tarjeta"><p class="tenue">Aún no lo has registrado. Cuando lo hagas verás aquí tu evolución.</p></div>'}
@@ -1211,13 +1208,84 @@ function detalle(id) {
     <h2>${esc(e.nombre)}</h2>
     <div class="badges">${e.musculos.map((m, i) => `<span class="badge ${i ? '' : 'prim'}">${MUSCULOS[m]}</span>`).join('')}</div>
     <p class="tenue">Material: ${equipoTxt(e)}</p>
-    <h3>Técnica</h3>
-    <p>${esc(e.desc)}</p>
-    <h3>Seguridad</h3>
-    <p class="tenue">Calienta antes con 1-2 series ligeras. Mantén el control en todo el recorrido y para si notas dolor articular.</p>
     ${ult ? `<p>Última vez: <b>${ult.series.map(s => s.kg ? `${s.kg}×${s.reps}` : s.reps).join(' · ')}</b>${rec ? ` · récord ${rec}` : ''}</p>` : ''}
-    <a class="enlace" href="https://www.youtube.com/results?search_query=${encodeURIComponent(e.nombre + ' técnica')}" target="_blank" rel="noopener">▶ Buscar vídeos de técnica</a>
+    ${tecnicaHTML(e, { compacta: true })}
+    ${(estado.videos || {})[e.id] ? videoHTML(e) : `<a class="btn sec" href="${urlBusqueda(e, 'videos')}" target="_blank" rel="noopener">▶ Ver vídeos de técnica</a>`}
   `);
+}
+
+// ---------- Técnica: dibujos, paso a paso, vídeo y foto ----------
+const urlBusqueda = (e, tipo) => tipo === 'videos'
+  ? `https://www.youtube.com/results?search_query=${encodeURIComponent(e.nombre + ' técnica correcta')}`
+  : `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(e.nombre + ' ejercicio técnica')}`;
+
+function tecnicaHTML(e, { compacta = false } = {}) {
+  const g = guiaEjercicio(e);
+  const [ini, fin] = pasosDibujo(e);
+  const lista = (cls, items) => `<ul class="${cls}">${items.map(t => `<li>${esc(t)}</li>`).join('')}</ul>`;
+  return `
+    <div class="tarjeta tecnica">
+      <h2>🎬 Cómo se hace</h2>
+      <div class="dibujo-zona">
+        <div class="dibujo-grande">${dibujoSVG(e)}<span class="badge en-vivo">● Movimiento</span></div>
+        <div class="posturas">
+          <figure>${dibujoSVG(e, { postura: 'A' })}<figcaption><b>1</b>${esc(ini)}</figcaption></figure>
+          <figure>${dibujoSVG(e, { postura: 'B' })}<figcaption><b>2</b>${esc(fin)}</figcaption></figure>
+        </div>
+      </div>
+      <p class="tenue centro nota-dibujo">Dibujo orientativo. Fíjate en la postura y el recorrido.</p>
+    </div>
+    <div class="tarjeta guia">
+      <h2>📝 Paso a paso</h2>
+      <ol class="pasos">${g.pasos.map(p => `<li>${esc(p)}</li>`).join('')}</ol>
+      <h2>✅ Claves</h2>${lista('claves', g.claves)}
+      <h2>⚠️ Errores comunes</h2>${lista('errores', g.errores)}
+      ${compacta ? '' : `<h2>🌬️ Respiración</h2><p>${esc(g.resp)}</p>
+      <h2>🛡️ Seguridad</h2><p class="tenue">Calienta con 1-2 series ligeras. Controla el movimiento en todo el recorrido y para si notas dolor articular.</p>`}
+    </div>`;
+}
+
+function idYouTube(url) {
+  const m = String(url).trim().match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/);
+  return m ? m[1] : null;
+}
+
+function videoHTML(e) {
+  const vid = (estado.videos || {})[e.id];
+  return `<div class="tarjeta">
+    <h2>▶ Vídeo</h2>
+    ${vid ? `<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${vid}?rel=0" title="Vídeo de ${esc(e.nombre)}" loading="lazy"
+        allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe></div>
+      <div class="botones"><button class="btn sec" data-a="videoAdd" data-id="${e.id}">Cambiar vídeo</button><button class="btn sec" data-a="videoQuitar" data-id="${e.id}">Quitar</button></div>`
+      : `<p class="tenue">Busca un vídeo de la técnica y guarda el que más te guste: lo verás aquí siempre que abras este ejercicio.</p>
+      <div class="botones"><a class="btn sec" href="${urlBusqueda(e, 'videos')}" target="_blank" rel="noopener">🔎 Buscar en YouTube</a>
+        <button class="btn" data-a="videoAdd" data-id="${e.id}">＋ Guardar un vídeo</button></div>`}
+  </div>`;
+}
+
+function fotoHTML(e) {
+  const foto = (estado.fotos || {})[e.id];
+  return `<div class="tarjeta">
+    <h2>📷 Fotos</h2>
+    ${foto ? `<img class="foto-ej" src="${foto}" alt="Tu foto de ${esc(e.nombre)}">` : '<p class="tenue">Mira fotos de referencia o guarda una tuya (por ejemplo, para revisar tu postura).</p>'}
+    <div class="botones">
+      <a class="btn sec" href="${urlBusqueda(e, 'fotos')}" target="_blank" rel="noopener">🔎 Ver fotos de referencia</a>
+      <label class="btn ${foto ? 'sec' : ''}">${foto ? 'Cambiar mi foto' : '＋ Añadir mi foto'}<input type="file" accept="image/*" data-a="foto" data-id="${e.id}" hidden></label>
+      ${foto ? `<button class="btn sec" data-a="fotoQuitar" data-id="${e.id}">Quitar</button>` : ''}
+    </div>
+  </div>`;
+}
+
+// Reduce la foto (máx. 720 px, JPEG) para que quepa en el almacenamiento del navegador.
+async function guardarFoto(id, file) {
+  const img = await createImageBitmap(file);
+  const k = Math.min(1, 720 / Math.max(img.width, img.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  estado.fotos = { ...(estado.fotos || {}), [id]: c.toDataURL('image/jpeg', 0.72) };
+  try { guardar(); render(); toast('Foto guardada'); }
+  catch { delete estado.fotos[id]; toast('No queda espacio para más fotos. Quita alguna antes.', { ms: 6000 }); }
 }
 
 // =====================================================================
@@ -1568,6 +1636,18 @@ document.addEventListener('click', ev => {
     case 'descMas': temporizador.fin += 15000; temporizador.total += 15; tic(); break;
     case 'descMenos': temporizador.fin -= 15000; tic(); break;
     case 'descSaltar': pararDescanso(); break;
+    case 'videoAdd':
+      modal(`<h2>Guardar un vídeo</h2>
+        <p class="tenue">Abre el vídeo en YouTube, copia su enlace (Compartir → Copiar enlace) y pégalo aquí.</p>
+        <form id="formVideo" data-id="${d.id}">
+          <input type="url" name="url" placeholder="https://youtu.be/…" required autocomplete="off" inputmode="url">
+          <button class="btn" type="submit">Guardar vídeo</button>
+        </form>
+        <a class="btn sec" href="${urlBusqueda(porId[d.id], 'videos')}" target="_blank" rel="noopener">🔎 Buscar en YouTube</a>`);
+      setTimeout(() => $('#formVideo input')?.focus(), 50);
+      break;
+    case 'videoQuitar': conDeshacer('Vídeo quitado', () => { delete estado.videos[d.id]; }); break;
+    case 'fotoQuitar': conDeshacer('Foto quitada', () => { delete estado.fotos[d.id]; }); break;
     case 'descDeshacer': { const f = temporizador.deshacer; pararDescanso(); f?.(); break; }
   }
 });
@@ -1622,6 +1702,7 @@ document.addEventListener('change', async ev => {
   const t = ev.target;
   if (t.dataset.a === 'selEj') { ui.ejSel = t.value; dibujarGrafica(); }
   if (t.dataset.a === 'importar' && t.files[0]) importar(t.files[0]);
+  if (t.dataset.a === 'foto' && t.files[0]) guardarFoto(t.dataset.id, t.files[0]).catch(() => toast('No he podido leer esa imagen.'));
   if (t.name === 'lugar' && $('#fsEquipo')) $('#fsEquipo').hidden = t.value === 'gimnasio';
   if (t.dataset.a === 'hora') { estado.ajustes.hora = t.value; guardar(); }
   if (t.dataset.a === 'ayudas') {
@@ -1641,6 +1722,13 @@ document.addEventListener('change', async ev => {
 document.addEventListener('submit', async ev => {
   ev.preventDefault();
   const f = new FormData(ev.target);
+  if (ev.target.id === 'formVideo') {
+    const vid = idYouTube(f.get('url'));
+    if (!vid) { toast('Ese enlace no parece de YouTube. Copia el enlace del vídeo y pégalo.'); return; }
+    estado.videos = { ...(estado.videos || {}), [ev.target.dataset.id]: vid };
+    guardar(); cerrarModal(); render(); toast('Vídeo guardado ▶');
+    return;
+  }
   if (ev.target.id === 'formPerfil') {
     const diasSemana = f.getAll('diasSemana').map(Number);
     if (!diasSemana.length) { avisoCampo('#avisoDias', 'Elige al menos un día de entrenamiento.'); return; }

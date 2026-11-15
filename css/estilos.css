@@ -444,3 +444,42 @@ button:focus:not(:focus-visible) { outline: none; }
 body.sin-ayudas .info { display: none; }
 .interruptor.solo { padding: 0; border: 0; }
 @media (hover: none) { [data-tip] { -webkit-touch-callout: none; } }
+
+/* ---------- Técnica: dibujos, guía, vídeo y foto ---------- */
+.dibujo-zona { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; align-items: center; }
+@media (max-width: 420px) { .dibujo-zona { grid-template-columns: 1fr; } }
+.dibujo-grande { position: relative; background: var(--tarjeta2); border-radius: var(--radio-s); padding: 6px; }
+.dibujo-grande .en-vivo { position: absolute; top: 8px; left: 8px; color: var(--acento); background: color-mix(in srgb, var(--acento) 14%, transparent); }
+.posturas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 420px) { .posturas { grid-template-columns: 1fr 1fr; } }
+.posturas figure { margin: 0; background: var(--tarjeta2); border-radius: var(--radio-s); padding: 4px 4px 8px; text-align: center; }
+.posturas figcaption { font-size: .74rem; color: var(--tenue); line-height: 1.3; padding: 0 4px; }
+.posturas figcaption b { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--acento); color: var(--sobre-acento); font-size: .7rem; margin-right: 4px; }
+.dibujo { width: 100%; height: auto; display: block; }
+.dibujo .hueso { stroke: var(--texto); stroke-width: 7; stroke-linecap: round; }
+.dibujo .cabeza { fill: var(--texto); }
+.dibujo .peso { fill: var(--acento2); stroke: color-mix(in srgb, var(--acento2) 60%, #000); stroke-width: 1.5; }
+.dibujo .peso-c { fill: var(--tarjeta2); }
+.dibujo .suelo { stroke: var(--borde); stroke-width: 3; stroke-linecap: round; }
+.dibujo .mueble { fill: var(--borde); }
+.dibujo .mueble-l { stroke: var(--borde); stroke-width: 4; stroke-linecap: round; }
+.dibujo .mueble-l.gruesa { stroke-width: 6; stroke: var(--tenue); }
+.nota-dibujo { margin: 10px 0 0; font-size: .78rem; }
+.guia h2 { margin-top: 16px; }
+.guia h2:first-child { margin-top: 0; }
+.pasos { counter-reset: paso; list-style: none; padding: 0; margin: 0; }
+.pasos li { counter-increment: paso; position: relative; padding: 4px 0 8px 36px; }
+.pasos li::before { content: counter(paso); position: absolute; left: 0; top: 2px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--acento) 18%, transparent); color: var(--acento); font-weight: 800; font-size: .85rem; }
+.claves, .errores { list-style: none; padding: 0; margin: 0 0 4px; }
+.claves li, .errores li { position: relative; padding: 3px 0 3px 26px; }
+.claves li::before { content: "✓"; position: absolute; left: 4px; color: var(--acento); font-weight: 900; }
+.errores li::before { content: "✕"; position: absolute; left: 4px; color: var(--peligro); font-weight: 900; }
+.video { position: relative; aspect-ratio: 16 / 9; border-radius: var(--radio-s); overflow: hidden; background: #000; }
+.video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.foto-ej { width: 100%; max-height: 420px; object-fit: contain; border-radius: var(--radio-s); background: var(--tarjeta2); display: block; }
+label.btn { cursor: pointer; }
+input[type=url] { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--borde); background: var(--fondo2); color: var(--texto); font: inherit; }
+.dibujo .hueso.brazo { stroke: var(--acento); stroke-width: 6; }
+.dibujo .hueso.lejos { stroke: color-mix(in srgb, var(--texto) 45%, var(--tarjeta2)); }
+.dibujo .peso { fill: var(--naranja); stroke: color-mix(in srgb, var(--naranja) 55%, #000); }

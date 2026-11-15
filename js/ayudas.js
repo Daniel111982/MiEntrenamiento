@@ -66,6 +66,11 @@ const TIPS = [
   ['[data-a=descDeshacer]', 'Deshacer la serie que acabas de marcar'],
   ['[data-a=detalle]', 'Ver cómo se hace este ejercicio'],
   ['a[href*="youtube.com"]', 'Abre YouTube en otra pestaña con vídeos de la técnica'],
+  ['a[href*="google.com/search"]', 'Abre en otra pestaña fotos de referencia de este ejercicio'],
+  ['[data-a=videoAdd]', 'Pega el enlace de un vídeo de YouTube para verlo siempre en esta ficha'],
+  ['[data-a=videoQuitar]', 'Quitar el vídeo guardado'],
+  ['[data-a=foto]', 'Haz o elige una foto; se guarda solo en este dispositivo'],
+  ['[data-a=fotoQuitar]', 'Quitar tu foto'],
 
   // Seguimiento, ejercicios y ajustes
   ['[data-a=mes][data-d="-1"]', 'Mes anterior'],
@@ -101,6 +106,8 @@ const ZONAS = [
   ['.tarjeta:has(#grafica)', 'Gráfica de progreso', 'Con carga: 1RM estimado de tu mejor serie en cada sesión. Sin carga: repeticiones. El punto amarillo es tu récord.'],
   ['.tarjeta:has(.mes)', 'Calendario de actividad', 'Verde: días entrenados (toca para ver la sesión). Borde azul: sesiones planificadas.'],
   ['.tarjeta:has(.rm-res)', 'Calculadora de 1RM', 'Estima el peso máximo que podrías levantar una vez. La tabla te da la carga para cada porcentaje, útil si un programa te pide trabajar al 80 %, por ejemplo.'],
+  ['.tecnica', 'Dibujo del movimiento', 'La figura grande muestra el movimiento completo en bucle. Debajo, la posición inicial (1) y la final (2).'],
+  ['.guia', 'Paso a paso', 'Sigue los pasos en orden. Las claves y los errores comunes te ayudan a revisar tu técnica.'],
   ['.ses-card:first-of-type', 'Sesiones', 'Estas sesiones se repiten cada semana. Las repeticiones y descansos cambian según la fase del ciclo.'],
 ];
 
