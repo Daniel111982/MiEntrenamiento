@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>MiEntrenamiento</title>
+  <meta name="description" content="Tu programa de entrenamiento personal: rutinas a medida, calendario, registro de series y progreso.">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icono.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icono-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+  <main id="vista"></main>
+
+  <!-- Temporizador de descanso -->
+  <div id="descanso" class="descanso" hidden>
+    <div id="descansoAnillo" class="anillo"><div><small id="descansoEtq">Descanso</small><b id="descansoTxt">0:00</b></div></div>
+    <p id="descansoSig" class="tenue"></p>
+    <div class="fila">
+      <button class="icono" data-a="descMenos" aria-label="Restar 15 segundos">−15 s</button>
+      <button class="btn" data-a="descSaltar">Saltar descanso</button>
+      <button class="icono" data-a="descMas" aria-label="Sumar 15 segundos">+15 s</button>
+    </div>
+    <button class="enlace bloque" id="descDeshacer" data-a="descDeshacer" hidden>↶ Deshacer la serie</button>
+  </div>
+
+  <!-- Avisos breves -->
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <dialog id="confirmar" class="confirmar"></dialog>
+
+  <!-- Tabata -->
+  <div id="tabata" class="tabata" hidden></div>
+
+  <nav class="nav" hidden>
+    <a href="#inicio" data-v="inicio"><span>🏠</span>Hoy</a>
+    <a href="#programa" data-v="programa"><span>📅</span>Programa</a>
+    <a href="#seguimiento" data-v="seguimiento"><span>📈</span>Seguimiento</a>
+    <a href="#ejercicios" data-v="ejercicios"><span>🏋️</span>Ejercicios</a>
+    <a href="#ajustes" data-v="ajustes"><span>⚙️</span>Ajustes</a>
+  </nav>
+
+  <dialog id="modal"></dialog>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
