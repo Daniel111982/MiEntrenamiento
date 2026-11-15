@@ -417,3 +417,30 @@ button:focus:not(:focus-visible) { outline: none; }
 .frec-grid b { color: var(--acento); letter-spacing: 2px; font-size: .8rem; }
 .frec-grid b i { font-style: normal; color: var(--borde); }
 .frec-grid small { color: var(--tenue); width: 24px; text-align: right; }
+
+/* ---------- Ayudas ---------- */
+.tip { position: fixed; z-index: 100; max-width: min(300px, calc(100vw - 16px)); padding: 9px 12px; border-radius: 12px;
+  background: #0b1222; color: #eef2ff; border: 1px solid #2b3963; box-shadow: 0 10px 30px rgba(0, 0, 0, .45);
+  font: 500 .84rem/1.4 var(--fuente); pointer-events: none; animation: tipIn .14s ease-out; }
+.tip.fija { pointer-events: auto; }
+.tip b { display: block; margin-bottom: 3px; color: #4ade80; font-size: .88rem; }
+.tip span { display: block; }
+.tip::after { content: ""; position: absolute; left: var(--flecha, 50%); bottom: -6px; width: 10px; height: 10px; margin-left: -5px;
+  background: inherit; border: inherit; border-top: 0; border-left: 0; transform: rotate(45deg); }
+.tip.abajo::after { bottom: auto; top: -6px; transform: rotate(225deg); }
+@keyframes tipIn { from { opacity: 0; transform: translateY(3px); } }
+.info { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-left: 8px; padding: 0; vertical-align: 2px;
+  border-radius: 50%; border: 1.5px solid currentColor; background: none; color: var(--tenue);
+  font: italic 800 .75rem/1 Georgia, serif; cursor: pointer; opacity: .8; flex: none; }
+.info:hover, .info:focus-visible { opacity: 1; color: var(--acento2); }
+.hero .info { color: rgba(255, 255, 255, .85); }
+.con-info { position: relative; }
+.con-info > .info { position: absolute; top: 10px; right: 10px; margin: 0; z-index: 2; background: var(--tarjeta); }
+.tira.con-info { padding-top: 26px; }
+.tira.con-info > .info { top: 0; right: 0; }
+.progreso-ses.con-info { overflow: visible; margin-right: 30px; }
+.progreso-ses.con-info > .info { top: -9px; right: -30px; }
+.progreso-ses.con-info > i { border-radius: 99px; }
+body.sin-ayudas .info { display: none; }
+.interruptor.solo { padding: 0; border: 0; }
+@media (hover: none) { [data-tip] { -webkit-touch-callout: none; } }

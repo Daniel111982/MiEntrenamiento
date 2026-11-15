@@ -3,13 +3,14 @@ import {
   OBJETIVOS, METODOS, FRECUENCIAS, frecuenciaPosible, SEMANAS_CICLO, fase, prescribir, generarPrograma, generarAgenda, alternativas, unoRM,
   duracionEstimada, ajustarDuracion, sesionALaCarta, hoyIso, iso, deIso, lunes, sumarDias,
 } from './generador.js';
+import { aplicarAyudas, esconder as esconderAyuda } from './ayudas.js';
 import { volumenSesion, mejorSerie, recordAntes, recordsDeSesion, racha, volumenMuscular, recuperacion, historialCSV } from './stats.js';
 
 // =====================================================================
 // Estado
 // =====================================================================
 const CLAVE = 'mientrenamiento:v2';
-const vacio = () => ({ perfil: null, plan: null, historial: [], enCurso: null, misSesiones: [], ajustes: { recordatorio: false, hora: '18:00', avisado: '' } });
+const vacio = () => ({ perfil: null, plan: null, historial: [], enCurso: null, misSesiones: [], ajustes: { recordatorio: false, hora: '18:00', avisado: '', ayudas: true, consejoVisto: false } });
 
 let estado = cargar();
 function cargar() {
@@ -174,8 +175,11 @@ function render() {
   $('.nav').hidden = !estado.plan || tab === 'sesion' || tab === 'bienvenida';
   if ($('#grafica')) dibujarGrafica();
   if (tab === 'sesion') actualizarCrono();
-  etiquetarIconos();
+  document.body.classList.toggle('sin-ayudas', estado.ajustes.ayudas === false);
+  esconderAyuda();
+  aplicarAyudas();
   pantallaEncendida();
+  consejoAyudas(tab);
 }
 
 // ---------- Piezas comunes de las páginas ----------
@@ -996,7 +1000,10 @@ function ajustes() {
       ${grupo('Aplicación',
         celda('ajustes/recordatorios', '🔔', 'Recordatorios', 'Aviso los días de entrenamiento', 'naranja', estado.ajustes.recordatorio ? estado.ajustes.hora : 'No') +
         celda('ajustes/datos', '💾', 'Tus datos', 'Copia de seguridad, CSV y borrado', 'azul'))}
-      ${grupo('Información', celda('ajustes/acerca', 'ℹ️', 'Cómo funciona', 'Ciclos, fases y cargas sugeridas', 'violeta'))}
+      ${grupo('Ayuda',
+        `<label class="celda"><span class="ic violeta">💡</span><span class="celda-t"><b>Iconos de ayuda ⓘ</b><small>Explicaciones en las zonas importantes</small></span>
+          <span class="interruptor solo"><input type="checkbox" role="switch" data-a="ayudas" ${estado.ajustes.ayudas !== false ? 'checked' : ''} aria-label="Mostrar iconos de ayuda"></span></label>` +
+        celda('ajustes/acerca', 'ℹ️', 'Cómo funciona', 'Ciclos, fases y cargas sugeridas', 'violeta'))}
     `,
   });
 }
@@ -1617,6 +1624,10 @@ document.addEventListener('change', async ev => {
   if (t.dataset.a === 'importar' && t.files[0]) importar(t.files[0]);
   if (t.name === 'lugar' && $('#fsEquipo')) $('#fsEquipo').hidden = t.value === 'gimnasio';
   if (t.dataset.a === 'hora') { estado.ajustes.hora = t.value; guardar(); }
+  if (t.dataset.a === 'ayudas') {
+    estado.ajustes.ayudas = t.checked; guardar(); render();
+    toast(t.checked ? 'Iconos de ayuda activados' : 'Iconos de ayuda ocultos. Las ayudas de los botones siguen disponibles');
+  }
   if (t.dataset.a === 'recordatorio') {
     if (t.checked && 'Notification' in window && Notification.permission !== 'granted') {
       const p = await Notification.requestPermission();
@@ -1775,9 +1786,12 @@ async function pantallaEncendida() {
 }
 document.addEventListener('visibilitychange', pantallaEncendida);
 
-// Los botones con icono heredan su descripción para lectores de pantalla.
-function etiquetarIconos() {
-  document.querySelectorAll('button[title]:not([aria-label])').forEach(b => b.setAttribute('aria-label', b.title));
+// La primera vez que se usa la app explica cómo ver las ayudas.
+function consejoAyudas(tab) {
+  if (estado.ajustes.consejoVisto || tab === 'bienvenida' || !estado.plan) return;
+  estado.ajustes.consejoVisto = true; guardar();
+  const tactil = matchMedia('(pointer: coarse)').matches;
+  setTimeout(() => toast(`Consejo: ${tactil ? 'mantén pulsado' : 'pasa el ratón por'} un botón para ver qué hace, y toca ⓘ para saber cómo funciona cada parte.`, { ms: 8000 }), 1200);
 }
 
 // =====================================================================
