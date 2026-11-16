@@ -11,6 +11,8 @@ App web instalable (PWA) de entrenamiento personal. Genera un programa a tu medi
 - **Calendario semanal:** mover sesiones, sesiones perdidas, adelantar o añadir días.
 - **Sesión guiada:** carga sugerida, botones −/+, temporizador de descanso, Tabata, drop set, pirámide y pantalla siempre encendida.
 - **Seguimiento:** recuperación y equilibrio muscular sobre una silueta, récords, gráfica de 1RM por ejercicio, actividad, historial y calculadora de 1RM.
+- **Peso y medidas:** registra peso, grasa corporal y perímetros (cintura, pecho, cadera, brazo y muslo) con gráfica de evolución, historial editable y notas.
+- **Calorías y proteína:** calculadora de gasto diario (Mifflin-St Jeor), calorías objetivo según tu meta, reparto de macros, proteína, fibra, agua e IMC, tomando tu último peso registrado.
 - **Biblioteca** de 68 ejercicios con dibujo animado del movimiento, paso a paso, claves, errores comunes y respiración. Puedes guardar tu vídeo de YouTube y tu foto de cada ejercicio.
 - **Ayudas** en todos los botones (ratón, teclado o pulsación larga) e iconos ⓘ en las zonas importantes.
 - **Usuarios:** gestor para crear, editar, cambiar y borrar usuarios; cada uno con su propio programa y seguimiento.
@@ -39,3 +41,14 @@ y abre http://localhost:8765.
 | `js/tecnica.js` | Dibujos animados y guía de técnica |
 | `js/ayudas.js` | Ayudas contextuales |
 | `sw.js` | Funcionamiento sin conexión |
+| `VERSIONES/` | Copias completas por versión, historial y scripts para guardar o restaurar |
+
+## Versiones
+
+El proyecto guarda una copia completa de cada versión en `VERSIONES/`, para poder deshacer cambios.
+
+- `VERSIONES/HISTORIAL.md` — árbol de versiones y qué cambia en cada una.
+- `VERSIONES/nueva-version.cmd -Nota "..."` — guarda el estado actual como versión nueva.
+- `VERSIONES/restaurar.cmd -Version v1.00` — vuelve a una versión anterior.
+
+La versión que ve el usuario está en `js/app.js` → `const APP_VERSION`.

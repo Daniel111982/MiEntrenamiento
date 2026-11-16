@@ -12,10 +12,12 @@ import { volumenSesion, mejorSerie, recordAntes, recordsDeSesion, racha, volumen
 // =====================================================================
 // Cada usuario guarda sus datos por separado: 'mientrenamiento:u:<id>'.
 // La lista de usuarios y cuál está activo van en 'mientrenamiento:usuarios'.
+const APP_VERSION = '1.01'; // versión de la app (ver VERSIONES/HISTORIAL.md)
 const CLAVE = 'mientrenamiento:v2'; // formato anterior, de un solo usuario
 const CLAVE_USUARIOS = 'mientrenamiento:usuarios';
 const claveDe = id => `mientrenamiento:u:${id}`;
-const vacio = () => ({ perfil: null, plan: null, historial: [], enCurso: null, misSesiones: [], videos: {}, fotos: {}, ajustes: { recordatorio: false, hora: '18:00', avisado: '', ayudas: true, consejoVisto: false } });
+const NUTRICION_DEF = { sexo: 'hombre', edad: 30, altura: 175, peso: null, actividad: 'moderado', objetivo: 'mantener' };
+const vacio = () => ({ perfil: null, plan: null, historial: [], enCurso: null, misSesiones: [], videos: {}, fotos: {}, medidas: [], nutricion: { ...NUTRICION_DEF }, ajustes: { recordatorio: false, hora: '18:00', avisado: '', ayudas: true, consejoVisto: false } });
 const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const AVATARES = ['🙂', '💪', '🏃', '🧘', '🏋️', '🚴', '🤸', '⚽', '🦁', '🐯', '🌟', '🔥', '🎯', '🦊', '🐻', '👑'];
 const COLORES = [
@@ -47,7 +49,12 @@ function guardarUsuarios() { localStorage.setItem(CLAVE_USUARIOS, JSON.stringify
 function cargar(id = usuarios.activo) {
   try {
     const d = JSON.parse(localStorage.getItem(claveDe(id)));
-    if (d) return { ...vacio(), ...d, ajustes: { ...vacio().ajustes, ...d.ajustes } };
+    if (d) return {
+      ...vacio(), ...d,
+      medidas: Array.isArray(d.medidas) ? d.medidas : [],
+      nutricion: { ...NUTRICION_DEF, ...(d.nutricion || {}) },
+      ajustes: { ...vacio().ajustes, ...d.ajustes },
+    };
   } catch { /* datos corruptos */ }
   return vacio();
 }
@@ -63,7 +70,7 @@ function cambiarUsuario(id) {
   usuarios.activo = id;
   guardarUsuarios();
   estado = cargar(id);
-  Object.assign(ui, { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null });
+  Object.assign(ui, { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, metricaMedida: 'peso' });
   cerrarModal();
   ir(estado.plan ? 'hoy' : 'bienvenida');
   toast(`Usuario activo: ${usuarioActual().nombre}`);
@@ -79,6 +86,8 @@ const DIAS_CORTOS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 const diaSemana = f => (deIso(f).getDay() + 6) % 7;
 const fmtFecha = f => deIso(f).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 const fmtCorta = f => deIso(f.length > 10 ? iso(new Date(f)) : f).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+const fmtDia = f => deIso(f.length > 10 ? iso(new Date(f)) : f).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+const fmtDec = v => Number(v).toLocaleString('es-ES', { maximumFractionDigits: 1 });
 const fmtSeg = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 const nombreEj = id => porId[id]?.nombre || id;
 const objetivoTxt = p => p.tipo === 'tiempo' ? `${p.repsMax} s` : (p.repsMin === p.repsMax ? `${p.repsMin}` : `${p.repsMin}-${p.repsMax}`);
@@ -162,7 +171,7 @@ function seriesObjetivo(item) {
 // =====================================================================
 // Navegación: cada parte es una página con su propia dirección (#seguimiento/historial…)
 // =====================================================================
-const ui = { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null };
+const ui = { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, metricaMedida: 'peso' };
 
 // [patrón de la dirección, página, pestaña de la barra inferior]
 const RUTAS = [
@@ -178,6 +187,8 @@ const RUTAS = [
   [/^seguimiento\/actividad$/, segActividad, 'seguimiento'],
   [/^seguimiento\/recuperacion$/, segRecuperacion, 'seguimiento'],
   [/^seguimiento\/equilibrio$/, segEquilibrio, 'seguimiento'],
+  [/^seguimiento\/medidas$/, segMedidas, 'seguimiento'],
+  [/^seguimiento\/nutricion$/, segNutricion, 'seguimiento'],
   [/^seguimiento\/progreso$/, segProgreso, 'seguimiento'],
   [/^seguimiento\/records$/, segRecords, 'seguimiento'],
   [/^seguimiento\/historial$/, segHistorial, 'seguimiento'],
@@ -221,6 +232,8 @@ function render() {
   document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('activo', a.dataset.v === tab));
   $('.nav').hidden = !estado.plan || tab === 'sesion' || tab === 'bienvenida';
   if ($('#grafica')) dibujarGrafica();
+  if ($('#graficaMedidas')) dibujarGraficaMedidas();
+  if ($('#nutriResultados')) actualizarNutricion();
   if (tab === 'sesion') actualizarCrono();
   document.body.classList.toggle('sin-ayudas', estado.ajustes.ayudas === false);
   esconderAyuda();
@@ -739,6 +752,9 @@ function seguimiento() {
         celda('seguimiento/equilibrio', '⚖️', 'Equilibrio muscular', 'Series por músculo en 7 días', 'violeta') +
         celda('seguimiento/progreso', '📈', 'Progreso por ejercicio', 'Evolución del 1RM y mejores series', 'verde', ids.length || '') +
         celda('seguimiento/records', '🏆', 'Récords personales', 'Tus mejores marcas', 'amarillo', recs || ''))}
+      ${grupo('Cuerpo y nutrición',
+        celda('seguimiento/medidas', '⚖️', 'Peso y medidas', 'Peso, grasa y perímetros en el tiempo', 'verde', (estado.medidas || []).length || '') +
+        celda('seguimiento/nutricion', '🍎', 'Calorías y proteína', 'Gasto diario, macros, fibra y agua', 'naranja'))}
       ${grupo('Registro',
         celda('seguimiento/historial', '🗂️', 'Historial de sesiones', 'Todas tus sesiones con detalle', 'azul', hist.length || '') +
         celda('seguimiento/calculadora', '🧮', 'Calculadora de 1RM', 'Estima tu máximo y tus porcentajes', 'naranja'))}
@@ -798,6 +814,338 @@ function segEquilibrio() {
       <p class="tenue">La franja verde marca el rango orientativo para ganar músculo (10-20 series por semana). Los músculos secundarios de un ejercicio cuentan media serie.</p>
     `,
   });
+}
+
+// =====================================================================
+// Páginas: Peso, medidas y nutrición
+// =====================================================================
+const MEDIDAS_CAMPOS = {
+  peso: { nombre: 'Peso', unidad: 'kg', paso: 0.1, min: 20, max: 400 },
+  grasa: { nombre: 'Grasa corporal', unidad: '%', paso: 0.1, min: 1, max: 75 },
+  cintura: { nombre: 'Cintura', unidad: 'cm', paso: 0.5, min: 30, max: 250 },
+  pecho: { nombre: 'Pecho', unidad: 'cm', paso: 0.5, min: 30, max: 250 },
+  cadera: { nombre: 'Cadera', unidad: 'cm', paso: 0.5, min: 30, max: 250 },
+  brazo: { nombre: 'Brazo', unidad: 'cm', paso: 0.5, min: 10, max: 100 },
+  muslo: { nombre: 'Muslo', unidad: 'cm', paso: 0.5, min: 20, max: 150 },
+};
+
+const medidasDe = () => (estado.medidas || []).slice().sort((a, b) => a.fecha.localeCompare(b.fecha));
+
+function valoresMedida(campo) {
+  return medidasDe()
+    .filter(m => m[campo] != null && m[campo] !== '')
+    .map(m => ({ fecha: m.fecha, v: Number(m[campo]) }))
+    .filter(p => Number.isFinite(p.v));
+}
+const ultimaMedida = campo => valoresMedida(campo).pop() || null;
+const ultimoPeso = () => ultimaMedida('peso');
+const fmtMedida = (v, campo) => v == null ? '—' : `${fmtDec(v)} ${MEDIDAS_CAMPOS[campo].unidad}`;
+
+function fmtDeltaMedida(d, campo) {
+  if (d == null) return '—';
+  if (Math.abs(d) < 0.05) return `0 ${MEDIDAS_CAMPOS[campo].unidad}`;
+  return `${d > 0 ? '+' : '−'}${fmtDec(Math.abs(d))} ${MEDIDAS_CAMPOS[campo].unidad}`;
+}
+
+function cambioMedida(campo, dias = null) {
+  const p = valoresMedida(campo);
+  if (p.length < 2) return null;
+  let base = p[0];
+  if (dias != null) {
+    const corte = sumarDias(hoy(), -dias);
+    const anteriores = p.filter(x => x.fecha <= corte);
+    if (!anteriores.length) return null;
+    base = anteriores[anteriores.length - 1];
+  }
+  return p[p.length - 1].v - base.v;
+}
+
+function notaPesoHTML(n, ult) {
+  if (!ult) return 'Aún no tienes un peso registrado. Escríbelo o <a class="enlace" href="#seguimiento/medidas">añádelo en Peso y medidas</a>.';
+  if (n.peso == null) return `Usando tu último registro de peso (${fmtCorta(ult.fecha)}). Si escribes otro, se usará el tuyo.`;
+  if (Math.abs(n.peso - ult.v) > 0.05) return `Peso manual. Tu último registro es <b>${fmtMedida(ult.v, 'peso')}</b> · <button type="button" class="enlace" data-a="usarUltimoPeso">Usar el último</button>`;
+  return `Usando tu último registro (${fmtCorta(ult.fecha)}).`;
+}
+
+function segMedidas() {
+  let edit = ui.medidaEdit ? (estado.medidas || []).find(m => m.fecha === ui.medidaEdit) : null;
+  if (ui.medidaEdit && !edit) ui.medidaEdit = null;
+  const lista = medidasDe().slice().reverse();
+  const fechaForm = edit?.fecha || hoy();
+  const valorForm = c => edit && edit[c] != null ? edit[c] : '';
+  const ultPeso = ultimoPeso();
+  const ultGrasa = ultimaMedida('grasa');
+  const ultCintura = ultimaMedida('cintura');
+  const cambioPeso = cambioMedida('peso');
+  const cambio30 = cambioMedida('peso', 30);
+  return pagina({
+    titulo: 'Peso y medidas', padre: 'seguimiento', sub: 'Tu evolución corporal, sin servidores ni cuentas',
+    cuerpo: `
+      <div class="tiles cuatro">
+        ${tile('⚖️', ultPeso ? fmtDec(ultPeso.v) : '—', 'kg · peso actual', 'verde')}
+        ${tile('📉', ultGrasa ? `${fmtDec(ultGrasa.v)} %` : '—', 'grasa corporal', 'violeta')}
+        ${tile('📏', ultCintura ? `${fmtDec(ultCintura.v)} cm` : '—', 'cintura', 'azul')}
+        ${tile('🗓️', lista.length, lista.length === 1 ? 'registro' : 'registros', 'amarillo')}
+      </div>
+      ${cambioPeso != null || cambio30 != null ? `<p class="tenue centro">
+        ${cambioPeso != null ? `Peso: <b>${fmtDeltaMedida(cambioPeso, 'peso')}</b> desde el primer registro` : ''}
+        ${cambioPeso != null && cambio30 != null ? ' · ' : ''}
+        ${cambio30 != null ? `<b>${fmtDeltaMedida(cambio30, 'peso')}</b> en los últimos 30 días` : ''}
+      </p>` : ''}
+      <div class="tarjeta">
+        <div class="fila chart-cab">
+          <h2>📈 Evolución</h2>
+          <select class="sel-mini" data-a="metrica" aria-label="Dato que quieres ver en la gráfica">
+            ${Object.entries(MEDIDAS_CAMPOS).map(([k, c]) => `<option value="${k}" ${ui.metricaMedida === k ? 'selected' : ''}>${c.nombre}</option>`).join('')}
+          </select>
+        </div>
+        <div id="graficaMedidas"></div>
+      </div>
+      <form id="formMedida" class="tarjeta" novalidate>
+        <div class="fila">
+          <h2>${edit ? '✏️ Editar medición' : '➕ Nueva medición'}</h2>
+          ${edit ? '<button type="button" class="enlace" data-a="cancelarMedida">Cancelar</button>' : ''}
+        </div>
+        <p class="tenue">${edit ? `Editando el ${fmtCorta(edit.fecha)}.` : 'Rellena solo lo que hayas medido; los campos vacíos se ignoran.'}</p>
+        <label class="campo">Fecha<input type="date" name="fecha" value="${fechaForm}" max="${hoy()}" ${edit ? 'disabled' : ''} required></label>
+        <div class="medida-grid">
+          ${Object.entries(MEDIDAS_CAMPOS).map(([k, c]) => `<label class="campo"><span>${c.nombre} <small class="tenue">(${c.unidad})</small></span>
+            <input type="number" name="${k}" inputmode="decimal" step="${c.paso}" min="${c.min}" max="${c.max}" value="${valorForm(k)}" placeholder="—"></label>`).join('')}
+        </div>
+        <label class="campo">Nota (opcional)<input type="text" name="nota" maxlength="90" value="${esc(edit?.nota || '')}" placeholder="En ayunas, después de entrenar…"></label>
+        <button class="btn" type="submit">${edit ? 'Guardar cambios' : 'Guardar medición'}</button>
+      </form>
+      ${lista.length ? `<div class="tarjeta">
+        <div class="fila"><h2>🗂️ Historial</h2><span class="tenue">${lista.length} ${lista.length === 1 ? 'registro' : 'registros'}</span></div>
+        ${lista.map(m => `<div class="medida-item">
+          <div class="fila"><b>${fmtCorta(m.fecha)}</b><div class="acciones">
+            <button class="icono peq" data-a="editarMedida" data-f="${m.fecha}" title="Editar esta medición">✎</button>
+            <button class="icono peq" data-a="borrarMedida" data-f="${m.fecha}" title="Borrar esta medición">🗑️</button>
+          </div></div>
+          <div class="series-chips">${Object.entries(MEDIDAS_CAMPOS).filter(([k]) => m[k] != null && m[k] !== '').map(([k, c]) => `<span><small>${c.nombre}</small>${fmtDec(m[k])} ${c.unidad}</span>`).join('')}</div>
+          ${m.nota ? `<p class="tenue nota-medida">${esc(m.nota)}</p>` : ''}
+        </div>`).join('')}
+      </div>` : ''}
+      <a class="tarjeta enlace-tarjeta" href="#seguimiento/nutricion">
+        <div class="fila"><div><h2>🍎 Calorías y proteína</h2><p class="tenue">Calcula tu gasto diario y los macros con tu peso actual.</p></div><span class="chev">›</span></div>
+      </a>
+      <p class="tenue">Consejo: mide siempre en las mismas condiciones (por la mañana, en ayunas y con la misma cinta) para que la tendencia sea fiable.</p>
+    `,
+  });
+}
+
+function dibujarGraficaMedidas() {
+  const cont = $('#graficaMedidas');
+  if (!cont) return;
+  const campo = MEDIDAS_CAMPOS[ui.metricaMedida] ? ui.metricaMedida : 'peso';
+  const puntos = valoresMedida(campo);
+  const meta = MEDIDAS_CAMPOS[campo];
+  if (!puntos.length) {
+    cont.innerHTML = `<p class="tenue centro">Aún no hay datos de ${meta.nombre.toLowerCase()}. Anota una medición para ver la evolución.</p>`;
+    return;
+  }
+  const W = 320, H = 150, P = 30;
+  const t0 = deIso(puntos[0].fecha).getTime();
+  const t1 = deIso(puntos[puntos.length - 1].fecha).getTime();
+  const x = p => puntos.length === 1 ? W / 2 : P + (deIso(p.fecha).getTime() - t0) / (t1 - t0 || 1) * (W - 2 * P);
+  const vals = puntos.map(p => p.v);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const margen = (max - min) || Math.max(1, Math.abs(max) * 0.05);
+  const yMin = min - margen * 0.15, yMax = max + margen * 0.15;
+  const y = v => H - P - (v - yMin) / ((yMax - yMin) || 1) * (H - 2 * P);
+  const linea = puntos.map((p, i) => `${i ? 'L' : 'M'}${x(p).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
+  const area = `${linea} L${x(puntos[puntos.length - 1]).toFixed(1)},${H - P} L${x(puntos[0]).toFixed(1)},${H - P} Z`;
+  const ult = puntos[puntos.length - 1];
+  const cambio = ult.v - puntos[0].v;
+  cont.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" class="svg-graf" role="img" aria-label="Evolución de ${meta.nombre}">
+      <defs><linearGradient id="grM" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--acento)" stop-opacity=".35"/><stop offset="1" stop-color="var(--acento)" stop-opacity="0"/></linearGradient></defs>
+      <line x1="${P}" y1="${H - P}" x2="${W - P}" y2="${H - P}" class="eje"/>
+      <text x="${P - 4}" y="${y(max) + 4}" text-anchor="end" class="etq">${fmtDec(max)}</text>
+      <text x="${P - 4}" y="${y(min) + 4}" text-anchor="end" class="etq">${fmtDec(min)}</text>
+      <path d="${area}" fill="url(#grM)"/>
+      <path d="${linea}" class="trazo"/>
+      ${puntos.map((p, i) => `<circle cx="${x(p).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="${i === puntos.length - 1 ? 5 : 3.5}" class="punto ${i === puntos.length - 1 ? 'rec' : ''}"><title>${fmtCorta(p.fecha)}: ${fmtDec(p.v)} ${meta.unidad}</title></circle>`).join('')}
+      ${puntos.length === 1
+        ? `<text x="${W / 2}" y="${H - 6}" text-anchor="middle" class="etq">${fmtDia(puntos[0].fecha)}</text>`
+        : `<text x="${P}" y="${H - 6}" class="etq">${fmtDia(puntos[0].fecha)}</text><text x="${W - P}" y="${H - 6}" text-anchor="end" class="etq">${fmtDia(ult.fecha)}</text>`}
+    </svg>
+    <div class="stats mini">
+      <div><b>${fmtDec(ult.v)}</b><span>actual · ${meta.unidad}</span></div>
+      <div><b>${fmtDeltaMedida(cambio, campo)}</b><span>desde el inicio</span></div>
+      <div><b>${fmtDec(min)}–${fmtDec(max)}</b><span>rango · ${meta.unidad}</span></div>
+    </div>
+    <p class="tenue">${puntos.length} ${puntos.length === 1 ? 'medición' : 'mediciones'} de ${meta.nombre.toLowerCase()}.</p>`;
+}
+
+// Nutrición: gasto energético y reparto de macronutrientes.
+const ACTIVIDADES = {
+  sedentario: { nombre: 'Sedentario', factor: 1.2, desc: 'Poco o nada de ejercicio' },
+  ligero: { nombre: 'Ligero', factor: 1.375, desc: '1-3 días de entrenamiento por semana' },
+  moderado: { nombre: 'Moderado', factor: 1.55, desc: '3-5 días de entrenamiento por semana' },
+  alto: { nombre: 'Alto', factor: 1.725, desc: '6-7 días de entrenamiento por semana' },
+  muyalto: { nombre: 'Muy alto', factor: 1.9, desc: 'Trabajo físico o doble sesión' },
+};
+const OBJETIVOS_NUTRI = {
+  perder: { nombre: 'Perder grasa', factor: -0.2, prot: [2, 2.4], desc: 'Déficit moderado con proteína alta para conservar músculo.' },
+  recomp: { nombre: 'Recomposición', factor: -0.1, prot: [1.8, 2.2], desc: 'Déficit suave: fuerza + proteína para cambiar composición.' },
+  mantener: { nombre: 'Mantener', factor: 0, prot: [1.6, 2], desc: 'Mantén tu peso y mejora el rendimiento.' },
+  ganar: { nombre: 'Ganar músculo', factor: 0.1, prot: [1.8, 2.2], desc: 'Superávit pequeño para ganar músculo sin grasa de más.' },
+};
+
+function leerNutricion() {
+  const form = $('#formNutricion');
+  if (!form) return null;
+  const f = new FormData(form);
+  const actividad = String(f.get('actividad') || '');
+  const objetivo = String(f.get('objetivo') || '');
+  return {
+    sexo: f.get('sexo') === 'mujer' ? 'mujer' : 'hombre',
+    edad: Number(f.get('edad')) || 0,
+    altura: Number(f.get('altura')) || 0,
+    peso: String(f.get('peso') || '').trim() === '' ? null : Number(f.get('peso')),
+    actividad: ACTIVIDADES[actividad] ? actividad : 'moderado',
+    objetivo: OBJETIVOS_NUTRI[objetivo] ? objetivo : 'mantener',
+  };
+}
+
+function guardarNutricion() {
+  const n = leerNutricion();
+  if (!n) return;
+  estado.nutricion = n;
+  guardar();
+}
+
+function guardarMedida(f) {
+  const editando = ui.medidaEdit;
+  const fecha = editando || String(f.get('fecha') || hoy());
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha) || fecha > hoy()) { toast('Elige una fecha válida que no sea futura.'); return; }
+  const datos = { fecha, nota: String(f.get('nota') || '').trim().slice(0, 90) };
+  let alguno = false;
+  for (const [k, c] of Object.entries(MEDIDAS_CAMPOS)) {
+    const raw = String(f.get(k) ?? '').trim();
+    if (raw === '') { datos[k] = null; continue; }
+    const v = Number(raw);
+    if (!Number.isFinite(v)) { toast(`Revisa el campo ${c.nombre.toLowerCase()}.`); return; }
+    if (v < c.min || v > c.max) { toast(`${c.nombre}: usa un valor entre ${c.min} y ${c.max} ${c.unidad}.`); return; }
+    datos[k] = Math.round(v * 10) / 10;
+    alguno = true;
+  }
+  if (!alguno) { toast('Anota al menos un dato para guardar la medición.'); return; }
+  const lista = estado.medidas || (estado.medidas = []);
+  const idx = lista.findIndex(m => m.fecha === fecha);
+  const actualizada = idx !== -1;
+  if (actualizada) lista[idx] = { ...lista[idx], ...datos };
+  else lista.push(datos);
+  lista.sort((a, b) => a.fecha.localeCompare(b.fecha));
+  ui.medidaEdit = null;
+  guardar(); render();
+  toast(actualizada ? 'Medición actualizada' : 'Medición guardada');
+}
+
+function segNutricion() {
+  const n = { ...NUTRICION_DEF, ...(estado.nutricion || {}) };
+  const ult = ultimoPeso();
+  const peso = n.peso ?? ult?.v ?? '';
+  return pagina({
+    titulo: 'Calorías y proteína', padre: 'seguimiento', sub: 'Gasto diario, macros, fibra, agua e IMC',
+    cuerpo: `
+      <form id="formNutricion" class="tarjeta" novalidate>
+        <div class="nutri-grid">
+          <label class="campo">Sexo<select name="sexo" data-a="nutricion">
+            <option value="hombre" ${n.sexo === 'hombre' ? 'selected' : ''}>Hombre</option>
+            <option value="mujer" ${n.sexo === 'mujer' ? 'selected' : ''}>Mujer</option>
+          </select></label>
+          <label class="campo">Edad<input type="number" name="edad" inputmode="numeric" min="14" max="100" value="${n.edad || 30}" data-a="nutricion"></label>
+          <label class="campo">Altura (cm)<input type="number" name="altura" inputmode="numeric" min="120" max="230" value="${n.altura || 175}" data-a="nutricion"></label>
+          <label class="campo">Peso (kg)<input type="number" name="peso" inputmode="decimal" step="0.1" min="30" max="400" value="${peso}" placeholder="—" data-a="nutricion"></label>
+        </div>
+        <div class="nutri-grid">
+          <label class="campo">Actividad<select name="actividad" data-a="nutricion">
+            ${Object.entries(ACTIVIDADES).map(([k, a]) => `<option value="${k}" ${n.actividad === k ? 'selected' : ''}>${a.nombre} · ${a.desc}</option>`).join('')}
+          </select></label>
+          <label class="campo">Objetivo<select name="objetivo" data-a="nutricion">
+            ${Object.entries(OBJETIVOS_NUTRI).map(([k, o]) => `<option value="${k}" ${n.objetivo === k ? 'selected' : ''}>${o.nombre}</option>`).join('')}
+          </select></label>
+        </div>
+        <p class="tenue" id="nutriPesoNota">${notaPesoHTML(n, ult)}</p>
+        <p class="tenue">Los resultados se actualizan al escribir. Fórmula de Mifflin-St Jeor.</p>
+      </form>
+      <div id="nutriResultados"></div>
+      <div class="botones"><a class="btn sec" href="#seguimiento/medidas">⚖️ Registrar mi peso</a></div>
+      <p class="tenue">Es una estimación, no consejo médico. Ajusta las calorías según tu evolución real: si en 2-3 semanas no cambia tu peso, mueve 100-200 kcal.</p>
+    `,
+  });
+}
+
+function actualizarNutricion() {
+  const cont = $('#nutriResultados');
+  if (!cont) return;
+  const n = leerNutricion() || estado.nutricion;
+  const ult = ultimoPeso();
+  const nota = $('#nutriPesoNota');
+  if (nota) nota.innerHTML = notaPesoHTML(n, ult);
+  const kg = Number(n.peso) || 0;
+  const cm = Number(n.altura) || 0;
+  const edad = Number(n.edad) || 0;
+  if (!kg || !cm || !edad) {
+    cont.innerHTML = '<div class="tarjeta"><p class="tenue centro">Completa peso, altura y edad para ver el cálculo.</p></div>';
+    return;
+  }
+  const act = ACTIVIDADES[n.actividad] || ACTIVIDADES.moderado;
+  const obj = OBJETIVOS_NUTRI[n.objetivo] || OBJETIVOS_NUTRI.mantener;
+  const bmr = 10 * kg + 6.25 * cm - 5 * edad + (n.sexo === 'mujer' ? -161 : 5);
+  const tdee = bmr * act.factor;
+  const kcal = Math.round(tdee * (1 + obj.factor));
+  if (!Number.isFinite(kcal) || kcal <= 0) {
+    cont.innerHTML = '<div class="tarjeta"><p class="tenue centro">Revisa los datos: el cálculo no sale con esos valores.</p></div>';
+    return;
+  }
+  const protMin = Math.round(kg * obj.prot[0]);
+  const protMax = Math.round(kg * obj.prot[1]);
+  const protG = Math.round((protMin + protMax) / 2);
+  const grasaG = Math.round(kcal * 0.25 / 9);
+  const carbsG = Math.max(0, Math.round((kcal - protG * 4 - grasaG * 9) / 4));
+  const fibraG = Math.round(kcal * 14 / 1000);
+  const aguaL = Math.round((kg * 0.035 + 0.5) * 10) / 10;
+  const imc = kg / Math.pow(cm / 100, 2);
+  const imcCat = imc < 18.5 ? 'Bajo peso' : imc < 25 ? 'Normopeso' : imc < 30 ? 'Sobrepeso' : 'Obesidad';
+  const signo = obj.factor > 0 ? '+' : obj.factor < 0 ? '−' : '';
+  const ajuste = Math.abs(kcal - tdee);
+  const exceso = protG * 4 + grasaG * 9 > kcal;
+  cont.innerHTML = `
+    <div class="tiles cuatro">
+      ${tile('🔥', fmtNum(kcal), 'kcal al día', 'naranja')}
+      ${tile('🥩', `${protG} g`, 'proteína', 'verde')}
+      ${tile('⚖️', `${fmtDec(kg)} kg`, 'peso usado', 'azul')}
+      ${tile('📊', imc.toFixed(1), imcCat.toLowerCase(), 'violeta')}
+    </div>
+    <div class="tarjeta">
+      <h2>🔥 Cómo sale el número</h2>
+      <div class="nutri-linea"><span>Tasa metabólica basal (TMB)</span><b>${fmtNum(bmr)} kcal</b></div>
+      <div class="nutri-linea"><span>Gasto total · ${act.nombre}</span><b>${fmtNum(tdee)} kcal</b></div>
+      <div class="nutri-linea destacada"><span>${obj.nombre}${obj.factor ? ` (${signo}${Math.abs(Math.round(obj.factor * 100))} %)` : ''}</span><b>${fmtNum(kcal)} kcal</b></div>
+      <p class="tenue">${obj.desc}${obj.factor ? `<br>${obj.factor < 0 ? 'Déficit' : 'Superávit'} de ${fmtNum(ajuste)} kcal al día.` : ''}</p>
+    </div>
+    <div class="tarjeta">
+      <h2>🍽️ Reparto diario</h2>
+      <div class="tiles">
+        <div class="tile"><span class="ic verde">🥩</span><b>${protG} g</b><small>proteína · ${obj.prot[0]}–${obj.prot[1]} g/kg</small></div>
+        <div class="tile"><span class="ic amarillo">🥑</span><b>${grasaG} g</b><small>grasas · 25 % de las kcal</small></div>
+        <div class="tile"><span class="ic azul">🍚</span><b>${carbsG} g</b><small>carbohidratos · el resto</small></div>
+      </div>
+      <div class="nutri-linea"><span>Rango de proteína</span><b>${protMin}–${protMax} g</b></div>
+      <div class="nutri-linea"><span>Fibra orientativa</span><b>${fibraG} g</b></div>
+      <div class="nutri-linea"><span>Agua orientativa</span><b>${aguaL} L</b></div>
+      <div class="nutri-linea"><span>Proteína por comida (4 comidas)</span><b>${Math.round(protG / 4)} g</b></div>
+      ${exceso ? '<p class="tenue">Con este objetivo, la proteína y la grasa ocupan casi todas las calorías: reduce un poco la grasa o elige un objetivo con más margen.</p>' : ''}
+    </div>
+    <div class="tarjeta">
+      <h2>⚖️ IMC</h2>
+      <p><b>${imc.toFixed(1)}</b> · ${imcCat}</p>
+      <p class="tenue">El IMC es solo una referencia: no distingue masa muscular de grasa. Para valorar tu composición, usa también el peso, la cintura y las fotos.</p>
+    </div>
+  `;
 }
 
 function datosEjercicio(id) {
@@ -1094,7 +1442,7 @@ function ajAcerca() {
         <p>Sus ejercicios van al principio de la sesión, cuando estás más fresco, y llevan una serie extra. El resto del cuerpo se mantiene.</p></div>
       <div class="tarjeta"><h2>💚 Recuperación</h2>
         <p>Se estima con las series de cada músculo y las horas desde que lo entrenaste (de 36 a 72 horas).</p></div>
-      <p class="tenue centro">MiEntrenamiento · funciona sin conexión · tus datos no salen de tu dispositivo</p>
+      <p class="tenue centro">MiEntrenamiento · versión ${APP_VERSION} · funciona sin conexión · tus datos no salen de tu dispositivo</p>
     `,
   });
 }
@@ -1640,6 +1988,13 @@ document.addEventListener('click', ev => {
     case 'detalle': detalle(d.id); break;
     case 'semana': ui.semanaVista = sumarDias(ui.semanaVista || (estado.plan.base > lunes(hoy()) ? estado.plan.base : lunes(hoy())), Number(d.d)); render(); break;
     case 'mes': { const base = ui.mesVista ? deIso(ui.mesVista) : new Date(); ui.mesVista = iso(new Date(base.getFullYear(), base.getMonth() + Number(d.d), 1)); render(); break; }
+    case 'editarMedida': ui.medidaEdit = d.f; render(); $('#formMedida')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
+    case 'cancelarMedida': ui.medidaEdit = null; render(); break;
+    case 'borrarMedida': conDeshacer('Medición borrada', () => {
+      estado.medidas = (estado.medidas || []).filter(m => m.fecha !== d.f);
+      if (ui.medidaEdit === d.f) ui.medidaEdit = null;
+    }); break;
+    case 'usarUltimoPeso': estado.nutricion.peso = null; guardar(); render(); toast('Usando tu último peso registrado'); break;
     case 'verDia': {
       const c = agenda().find(x => x.fecha === d.f);
       ui.semanaVista = lunes(d.f);
@@ -1877,6 +2232,9 @@ document.addEventListener('input', ev => {
     const pos = t.selectionStart;
     render();
     const inp = $('.buscar'); inp.focus(); inp.setSelectionRange(pos, pos);
+  } else if (d.a === 'nutricion') {
+    guardarNutricion();
+    actualizarNutricion();
   } else if (t.name === 'diasSemana') {
     const n = document.querySelectorAll('[name=diasSemana]:checked').length;
     $('#avisoDias').classList.remove('error');
@@ -1888,6 +2246,8 @@ document.addEventListener('input', ev => {
 document.addEventListener('change', async ev => {
   const t = ev.target;
   if (t.dataset.a === 'selEj') { ui.ejSel = t.value; dibujarGrafica(); }
+  if (t.dataset.a === 'metrica') { ui.metricaMedida = MEDIDAS_CAMPOS[t.value] ? t.value : 'peso'; dibujarGraficaMedidas(); }
+  if (t.dataset.a === 'nutricion') { guardarNutricion(); actualizarNutricion(); }
   if ((t.dataset.a === 'importar' || t.dataset.a === 'importarTodos') && t.files[0]) { importar(t.files[0]); t.value = ''; }
   if (t.dataset.a === 'foto' && t.files[0]) guardarFoto(t.dataset.id, t.files[0]).catch(() => toast('No he podido leer esa imagen.'));
   if (t.name === 'lugar' && $('#fsEquipo')) $('#fsEquipo').hidden = t.value === 'gimnasio';
@@ -1934,6 +2294,10 @@ document.addEventListener('submit', async ev => {
     if (!vid) { toast('Ese enlace no parece de YouTube. Copia el enlace del vídeo y pégalo.'); return; }
     estado.videos = { ...(estado.videos || {}), [ev.target.dataset.id]: vid };
     guardar(); cerrarModal(); render(); toast('Vídeo guardado ▶');
+    return;
+  }
+  if (ev.target.id === 'formMedida') {
+    guardarMedida(f);
     return;
   }
   if (ev.target.id === 'formPerfil') {

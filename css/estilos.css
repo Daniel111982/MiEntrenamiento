@@ -255,6 +255,27 @@ button.tarjeta { cursor: pointer; }
 .tabla-pct th { text-align: left; color: var(--tenue); font-size: .75rem; padding: 6px; }
 .tabla-pct td { padding: 7px 6px; border-top: 1px solid var(--borde); }
 
+/* ---------- Peso, medidas y nutrición ---------- */
+.chart-cab { flex-wrap: nowrap; margin-bottom: 8px; }
+.chart-cab h2 { margin: 0; }
+.sel-mini { width: auto; max-width: 62%; padding: 8px 10px; border-radius: 12px; font-size: .88rem; font-weight: 600; flex: none; }
+.medida-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0 12px; }
+.nutri-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0 12px; }
+@media (max-width: 380px) { .medida-grid, .nutri-grid { grid-template-columns: 1fr; } }
+.medida-item { padding: 12px 0; border-top: 1px solid var(--borde); }
+.medida-item:first-of-type { border-top: 0; }
+.medida-item .fila b { font-size: 1rem; text-transform: capitalize; }
+.medida-item .series-chips { margin: 8px 0 0; }
+.nota-medida { margin: 6px 0 0; font-style: italic; }
+.nutri-linea { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--borde); font-size: .94rem; }
+.nutri-linea:first-of-type { border-top: 0; }
+.nutri-linea span { color: var(--tenue); }
+.nutri-linea b { white-space: nowrap; }
+.nutri-linea.destacada { border-top-color: color-mix(in srgb, var(--acento) 50%, var(--borde)); }
+.nutri-linea.destacada span, .nutri-linea.destacada b { color: var(--acento); font-weight: 800; }
+.stats.mini div { padding: 8px 4px; }
+.stats.mini b { font-size: 1rem; }
+
 /* ---------- Ejercicios ---------- */
 .buscador { display: flex; align-items: center; gap: 8px; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: var(--radio-s); padding: 0 12px; margin-bottom: 10px; }
 .buscador input { border: 0; background: none; padding: 12px 0; }
@@ -297,7 +318,7 @@ legend { font-weight: 800; margin-bottom: 6px; font-size: 1.08rem; }
 .op-ic { font-size: 1.8rem; line-height: 1; }
 .op-num { font-size: 1.5rem; }
 .dias-sel .chip { min-width: 60px; justify-content: center; }
-input[type=number], input[type=search], input[type=date], input[type=time], select {
+input[type=number], input[type=text], input[type=search], input[type=date], input[type=time], select {
   width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--borde); background: var(--fondo2); color: var(--texto); font: inherit;
 }
 .tenue.error { color: var(--peligro); font-weight: 700; }

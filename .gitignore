@@ -1,3 +1,6 @@
 Thumbs.db
 .DS_Store
 *.log
+
+# Copias de versiones locales (ver VERSIONES/LEEME.md)
+VERSIONES/
