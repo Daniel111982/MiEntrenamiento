@@ -2,7 +2,7 @@
 
 App web instalable (PWA) de entrenamiento personal. Genera un programa a tu medida, te guía en cada sesión y registra tu progreso. Funciona sin conexión, admite varios usuarios y guarda los datos solo en tu dispositivo.
 
-**Probarla:** https://jobeb.github.io/MiEntrenamiento/
+**Probarla:** https://daniel111982.github.io/MiEntrenamiento/
 
 ## Funciones
 
