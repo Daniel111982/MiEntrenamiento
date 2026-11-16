@@ -4,3 +4,6 @@ Thumbs.db
 
 # Copias de versiones locales (ver VERSIONES/LEEME.md)
 VERSIONES/
+
+# Script local para publicar (especifico de este equipo)
+publicar.cmd
