@@ -1974,8 +1974,10 @@ function ajustes() {
           <span class="interruptor solo"><input type="checkbox" role="switch" data-a="ayudas" ${estado.ajustes.ayudas !== false ? 'checked' : ''} aria-label="Mostrar iconos de ayuda"></span></label>` +
         celda('ajustes/idea', '💡', '¿Una idea o un problema?', 'Cuéntame qué mejorar o qué no funciona', 'amarillo') +
         celda('ajustes/acerca', 'ℹ️', 'Cómo funciona', 'Ciclos, fases y cargas sugeridas', 'violeta'))}
-      ${soyDueno() ? grupo('Administración',
-        celda('ajustes/incidencias', '📥', 'Ideas e incidencias', 'Lo que envían los usuarios de este dispositivo', 'rojo', contarNuevas() ? `${contarNuevas()} sin leer` : '')) : ''}
+      ${soyDueno() || !hayDueno() ? grupo('Administración',
+        soyDueno()
+          ? celda('ajustes/incidencias', '📥', 'Ideas e incidencias', 'Lo que envían los usuarios de este dispositivo', 'rojo', contarNuevas() ? `${contarNuevas()} sin leer` : '')
+          : celda('ajustes/incidencias', '👑', 'Activar el modo dueño', 'Marca esta cuenta como administradora de la app', 'rojo')) : ''}
     `,
   });
 }
