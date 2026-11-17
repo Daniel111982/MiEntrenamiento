@@ -308,6 +308,16 @@ function render() {
   }
   render.ultima = r;
   document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('activo', a.dataset.v === tab));
+  // Aviso al dueño: puntito con los mensajes sin leer en la pestaña de Ajustes.
+  const navAjustes = document.querySelector('.nav a[data-v="ajustes"]');
+  if (navAjustes) {
+    const sinLeer = soyDueno() ? contarNuevas() : 0;
+    let b = navAjustes.querySelector('.nav-badge');
+    if (sinLeer) {
+      if (!b) { b = document.createElement('i'); b.className = 'nav-badge'; navAjustes.appendChild(b); }
+      b.textContent = sinLeer > 9 ? '9+' : String(sinLeer);
+    } else if (b) b.remove();
+  }
   $('.nav').hidden = !estado.plan || tab === 'sesion' || tab === 'bienvenida' || tab === 'login' || tab === 'recuperar';
   if ($('#grafica')) dibujarGrafica();
   if ($('#graficaMedidas')) dibujarGraficaMedidas();
@@ -512,6 +522,7 @@ function inicio() {
     <button class="avatar-btn" data-a="menuUsuarios" title="Cambiar de usuario">${avatarHTML(usuarioActual())}</button>`;
   if (estado.enCurso) {
     return `${cabecera(rachaBtn)}
+      ${avisoIncidencias()}
       <div class="hero"><p class="eyebrow">Sesión en curso</p><h2>${esc(estado.enCurso.nombre)}</h2>
       <p>${estado.enCurso.ejercicios.reduce((t, e) => t + e.series.filter(r => r.hecho).length, 0)} series hechas</p>
       <button class="btn" data-a="ir" data-v="sesion">Continuar entrenamiento</button></div>`;
@@ -533,6 +544,7 @@ function inicio() {
 
   return `
     ${cabecera(rachaBtn)}
+    ${avisoIncidencias()}
     ${tiraSemana(lunes(hoy()), true)}
     ${perdidas.length ? `<div class="alerta">
       <b>Tienes ${perdidas.length === 1 ? 'una sesión perdida' : `${perdidas.length} sesiones perdidas`} esta semana</b>
@@ -2078,6 +2090,17 @@ function incCard(i) {
       <button class="btn peligro" data-a="incBorrar" data-id="${i.id}">🗑️ Borrar</button>
     </div>
   </div>`;
+}
+
+// Aviso para el dueño en la pantalla de inicio: mensajes sin leer.
+function avisoIncidencias() {
+  if (!soyDueno()) return '';
+  const n = contarNuevas();
+  if (!n) return '';
+  return `<a class="tarjeta enlace-tarjeta aviso-inc" href="#ajustes/incidencias">
+    <div class="fila"><b>📥 ${n === 1 ? 'Tienes 1 mensaje nuevo' : `Tienes ${n} mensajes nuevos`}</b><span class="chev">›</span></div>
+    <p class="tenue">Ideas y problemas enviados por los usuarios de este dispositivo.</p>
+  </a>`;
 }
 
 // Formulario para que cualquier usuario cuente una idea o un problema.

@@ -186,6 +186,8 @@ button.tarjeta { cursor: pointer; }
 .dia.hoy { outline: 2px solid var(--acento2); outline-offset: 1px; }
 .alerta { background: color-mix(in srgb, var(--peligro) 12%, var(--tarjeta)); border: 1px solid color-mix(in srgb, var(--peligro) 40%, transparent); border-radius: var(--radio); padding: 12px 14px; margin: 0 0 14px; font-size: .92rem; }
 .alerta .fila { margin-top: 6px; }
+.aviso-inc { border-color: color-mix(in srgb, var(--amarillo) 55%, var(--borde)); }
+.aviso-inc b { color: var(--amarillo); }
 .sugerencia { margin: 0 0 10px; font-size: .9rem; color: var(--tenue); background: color-mix(in srgb, var(--acento2) 10%, transparent); padding: 8px 12px; border-radius: 12px; }
 .chip-mini { font-size: .66rem; background: var(--acento); color: var(--sobre-acento); border-radius: 99px; padding: 2px 8px; vertical-align: middle; font-weight: 800; margin-left: 4px; }
 .chip-mini.alt { background: var(--violeta); color: #fff; }
@@ -378,10 +380,13 @@ details summary::-webkit-details-marker { display: none; }
 .nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-around; z-index: 5;
   background: color-mix(in srgb, var(--tarjeta) 86%, transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid var(--borde); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); }
-.nav a { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .68rem; color: var(--tenue); text-decoration: none; padding: 5px 12px; border-radius: 14px; font-weight: 600; transition: background .15s; }
+.nav a { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .68rem; color: var(--tenue); text-decoration: none; padding: 5px 12px; border-radius: 14px; font-weight: 600; transition: background .15s; }
 .nav a span { font-size: 1.25rem; filter: grayscale(1); opacity: .65; transition: transform .15s; }
 .nav a.activo { color: var(--acento); background: color-mix(in srgb, var(--acento) 12%, transparent); }
 .nav a.activo span { filter: none; opacity: 1; transform: translateY(-1px); }
+.nav-badge { position: absolute; top: 1px; right: 5px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 99px;
+  background: var(--peligro); color: #fff; font-size: .62rem; font-weight: 800; font-style: normal; line-height: 1;
+  display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px var(--fondo); }
 @media (min-width: 900px) {
   .nav { left: 50%; right: auto; transform: translateX(-50%); bottom: 16px; border: 1px solid var(--borde); border-radius: 22px; padding: 6px; gap: 4px; box-shadow: var(--sombra); }
 }
