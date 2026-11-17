@@ -40,9 +40,16 @@ let estado = cargar();
 
 // Los ejercicios propios del usuario se añaden a la biblioteca al arrancar.
 sincronizarEjerciciosUsuario(estado.ejerciciosPropios);
-// El bloqueo por contraseña se resuelve en cada sesión: nunca se guarda.
+// El acceso se resuelve en cada sesión: nunca se guarda.
+// La app siempre pide usuario y contraseña antes de entrar.
 let desbloqueado = false;
-const estaBloqueado = () => Boolean(estado.seguridad?.activa) && !desbloqueado;
+let usuarioLogin = null; // usuario elegido en la pantalla de acceso
+const estaBloqueado = () => !desbloqueado;
+// Primera vez en este dispositivo: todavía no hay una cuenta real que se pueda abrir.
+const esCuentaNueva = () => usuarios.lista.length === 1 && !estado.plan && !estado.seguridad
+  && !(estado.historial || []).length && usuarioActual().nombre === 'Usuario 1';
+// Datos guardados de un usuario, sea el activo o no.
+const datosUsuario = id => (id === usuarios.activo ? estado : cargar(id));
 const sincronizarPropios = () => sincronizarEjerciciosUsuario(estado.ejerciciosPropios || []);
 
 function cargarUsuarios() {
@@ -84,20 +91,34 @@ function guardar() { localStorage.setItem(claveDe(usuarios.activo), JSON.stringi
 const usuarioActual = () => usuarios.lista.find(u => u.id === usuarios.activo) || usuarios.lista[0];
 const avatarHTML = (u, clase = '') => `<span class="avatar-u ${clase}" style="background:${COLORES[u.color % COLORES.length]}">${u.avatar}</span>`;
 
-function cambiarUsuario(id) {
-  if (id === usuarios.activo) return;
+// Estado de interfaz que se reinicia al cambiar de usuario.
+const UI_INICIAL = { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, videoAbierto: null, verMaestro: false, recMetodo: null };
+
+// Cambia de usuario. Sin `entrar`, la sesión queda bloqueada y se pide la contraseña.
+function cambiarUsuario(id, { entrar: entrarYa = false } = {}) {
+  if (id === usuarios.activo) { if (entrarYa) desbloqueado = true; return; }
   guardar();
   pararDescanso();
   usuarios.activo = id;
   guardarUsuarios();
   estado = cargar(id);
-  desbloqueado = false;
+  desbloqueado = Boolean(entrarYa);
+  usuarioLogin = id;
   recuperacionProc.ok = false; recuperacionProc.codigo = null;
   sincronizarPropios();
-  Object.assign(ui, { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, videoAbierto: null, verMaestro: false, recMetodo: null });
+  Object.assign(ui, UI_INICIAL);
   cerrarModal();
   ir(estado.plan ? 'hoy' : 'bienvenida');
-  toast(`Usuario activo: ${usuarioActual().nombre}`);
+  if (!entrarYa) toast(`Usuario activo: ${usuarioActual().nombre}`);
+}
+
+// Inicia sesión con un usuario cuya contraseña ya se ha comprobado.
+function entrarComo(id) {
+  usuarioLogin = id;
+  if (id !== usuarios.activo) { cambiarUsuario(id, { entrar: true }); return; }
+  desbloqueado = true;
+  recuperacionProc.ok = false; recuperacionProc.codigo = null; ui.recMetodo = null;
+  ir(estado.plan ? 'hoy' : 'bienvenida');
 }
 
 // =====================================================================
@@ -195,7 +216,7 @@ function seriesObjetivo(item) {
 // =====================================================================
 // Navegación: cada parte es una página con su propia dirección (#seguimiento/historial…)
 // =====================================================================
-const ui = { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, videoAbierto: null, verMaestro: false, recMetodo: null };
+const ui = { ...UI_INICIAL };
 
 // [patrón de la dirección, página, pestaña de la barra inferior]
 const RUTAS = [
@@ -252,6 +273,7 @@ function render() {
   let r = ruta();
   if (estaBloqueado()) {
     if (!/^(login|recuperar|usuarios|usuarios\/nuevo|usuario\/[\w-]+)$/.test(r)) r = 'login';
+    if (esCuentaNueva() && r === 'login') r = 'usuarios/nuevo';
   } else if (!estado.plan && !/^usuario/.test(r)) {
     r = 'bienvenida';
   } else if (r === 'bienvenida') {
@@ -1158,10 +1180,7 @@ const OBJETIVOS_NUTRI = {
   ganar: { nombre: 'Ganar músculo', factor: 0.1, prot: [1.8, 2.2], desc: 'Superávit pequeño para ganar músculo sin grasa de más.' },
 };
 
-function leerNutricion() {
-  const form = $('#formNutricion');
-  if (!form) return null;
-  const f = new FormData(form);
+function nutricionDeForm(f) {
   const actividad = String(f.get('actividad') || '');
   const objetivo = String(f.get('objetivo') || '');
   return {
@@ -1172,6 +1191,12 @@ function leerNutricion() {
     actividad: ACTIVIDADES[actividad] ? actividad : 'moderado',
     objetivo: OBJETIVOS_NUTRI[objetivo] ? objetivo : 'mantener',
   };
+}
+
+function leerNutricion() {
+  const form = $('#formNutricion');
+  if (!form) return null;
+  return nutricionDeForm(new FormData(form));
 }
 
 function guardarNutricion() {
@@ -1994,10 +2019,13 @@ function ajAcerca() {
 const SEG_PREG = i => PREGUNTAS_SEG[Number(i)] || PREGUNTAS_SEG[0];
 const normalizarResp = t => String(t ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-async function verificarClave(clave) {
-  const s = estado.seguridad;
+async function verificarClaveDe(d, clave) {
+  const s = d?.seguridad;
   if (!s?.hash) return false;
   return await hashClave(String(clave ?? ''), s.salt) === s.hash;
+}
+async function verificarClave(clave) {
+  return verificarClaveDe(estado, clave);
 }
 async function verificarRespuesta(txt) {
   const s = estado.seguridad;
@@ -2005,33 +2033,58 @@ async function verificarRespuesta(txt) {
   return await hashClave(normalizarResp(txt), s.salt) === s.respuesta;
 }
 
-// Activa el bloqueo creando el hash de la contraseña y de la respuesta.
-async function crearSeguridad({ clave, pregunta, respuesta, correo }) {
+// Construye el objeto de seguridad (contraseña con SHA-256 + salt).
+async function construirSeguridad({ clave, pregunta = 0, respuesta = '', correo = '' }) {
   const salt = nuevoSalt();
-  estado.seguridad = {
+  return {
     activa: true, salt,
     hash: await hashClave(clave, salt),
     pregunta: Number(pregunta) || 0,
-    respuesta: await hashClave(normalizarResp(respuesta), salt),
+    respuesta: respuesta ? await hashClave(normalizarResp(respuesta), salt) : '',
     correo: String(correo || '').trim(),
     maestro: generarMaestro(),
     creado: new Date().toISOString(),
   };
 }
 
+// Activa el bloqueo del usuario activo.
+async function crearSeguridad(datos) {
+  estado.seguridad = await construirSeguridad(datos);
+}
+
 function login() {
-  const u = usuarioActual();
+  const lista = usuarios.lista;
+  const sel = lista.some(u => u.id === usuarioLogin) ? usuarioLogin : usuarios.activo;
+  const u = lista.find(x => x.id === sel) || lista[0];
+  const tieneClave = Boolean(datosUsuario(u.id).seguridad?.activa);
+  const selector = lista.length > 1
+    ? `<label class="campo">Usuario<select name="usuario" data-a="loginUsuario">
+        ${lista.map(x => `<option value="${x.id}" ${x.id === u.id ? 'selected' : ''}>${esc(x.nombre)}</option>`).join('')}
+      </select></label>`
+    : '';
+  const formulario = tieneClave
+    ? `<form id="formLogin" class="tarjeta" novalidate>
+        ${selector}
+        <label class="campo">Contraseña<input type="password" name="clave" autocomplete="current-password" required autofocus></label>
+        <p class="tenue error" id="avisoLogin"></p>
+        <button class="btn" type="submit">🔓 Entrar</button>
+      </form>
+      <a class="btn sec" href="#recuperar">He olvidado la contraseña</a>`
+    : `<form id="formLoginClave" class="tarjeta" novalidate>
+        ${selector}
+        <p class="tenue"><b>${esc(u.nombre)}</b> todavía no tiene contraseña. Crea una para entrar.</p>
+        <label class="campo">Contraseña<input type="password" name="clave" minlength="4" autocomplete="new-password" required autofocus placeholder="Al menos 4 caracteres"></label>
+        <label class="campo">Repite la contraseña<input type="password" name="clave2" minlength="4" autocomplete="new-password" required></label>
+        <p class="tenue error" id="avisoLogin"></p>
+        <button class="btn" type="submit">🔒 Crear contraseña y entrar</button>
+      </form>`;
   return `<div class="login">
     ${isotipoCuadrado({ tam: 72, clase: 'login-logo' })}
     <h1>${MARCA.nombre}</h1>
-    <p class="tenue">${esc(u.nombre)} · app bloqueada</p>
-    <form id="formLogin" class="tarjeta" novalidate>
-      <label class="campo">Contraseña<input type="password" name="clave" autocomplete="current-password" required autofocus></label>
-      <p class="tenue error" id="avisoLogin"></p>
-      <button class="btn" type="submit">🔓 Desbloquear</button>
-    </form>
-    <a class="btn sec" href="#recuperar">He olvidado la contraseña</a>
-    <button class="btn sec" data-a="bloquearUsuario">Cambiar de usuario</button>
+    <p class="tenue">${lista.length > 1 ? 'Elige tu usuario y entra con tu contraseña.' : (tieneClave ? 'Entra con tu contraseña.' : 'Crea tu contraseña de acceso.')}</p>
+    ${formulario}
+    <a class="btn sec" href="#usuarios/nuevo">＋ Crear cuenta nueva</a>
+    <p class="tenue centro">Tus datos se guardan solo en este dispositivo.</p>
   </div>`;
 }
 
@@ -2094,8 +2147,8 @@ function recuperar() {
   const s = estado.seguridad;
   if (!s?.activa) {
     return `<div class="login">${isotipoCuadrado({ tam: 64, clase: 'login-logo' })}
-      <h1>Sin bloqueo</h1><p class="tenue">Esta cuenta no tiene contraseña activada.</p>
-      <a class="btn" href="#hoy">Volver</a></div>`;
+      <h1>Sin bloqueo</h1><p class="tenue">Esta cuenta todavía no tiene contraseña. Créala en el acceso.</p>
+      <a class="btn" href="#login">Volver al acceso</a></div>`;
   }
   const paso = recuperacionProc.ok ? 'nueva' : (ui.recMetodo || 'elegir');
   const cuerpo = paso === 'pregunta' ? recPregunta(s)
@@ -2265,15 +2318,49 @@ function formUsuario(u, nuevo) {
   return `<form id="formUsuario" class="tarjeta" data-id="${nuevo ? '' : u.id}">
     <div class="usuario-prev">${avatarHTML(u, 'enorme')}</div>
     <label class="campo">Nombre<input type="search" name="nombre" value="${esc(nuevo ? '' : u.nombre)}" maxlength="24" placeholder="Por ejemplo: Ana" required autocomplete="off"></label>
+    ${nuevo ? `
+      <label class="campo">Contraseña<input type="password" name="clave" minlength="4" autocomplete="new-password" required placeholder="Al menos 4 caracteres"></label>
+      <label class="campo">Repite la contraseña<input type="password" name="clave2" minlength="4" autocomplete="new-password" required></label>` : ''}
     <fieldset><legend>Avatar</legend><div class="chips avatares">${AVATARES.map(a => `<label class="chip"><input type="radio" name="avatar" value="${a}" ${a === u.avatar ? 'checked' : ''}>${a}</label>`).join('')}</div></fieldset>
     <fieldset><legend>Color</legend><div class="chips colores">${COLORES.map((c, i) => `<label class="chip color" style="background:${c}"><input type="radio" name="color" value="${i}" ${i === u.color ? 'checked' : ''} aria-label="Color ${i + 1}"></label>`).join('')}</div></fieldset>
-    <button class="btn" type="submit">${nuevo ? 'Crear y configurar su programa' : 'Guardar cambios'}</button>
+    ${nuevo ? formMedidasHTML() : ''}
+    <button class="btn" type="submit">${nuevo ? 'Crear cuenta y continuar' : 'Guardar cambios'}</button>
   </form>`;
+}
+
+// Medidas iniciales al crear la cuenta: alimentan la nutrición y el programa.
+function formMedidasHTML() {
+  const n = NUTRICION_DEF;
+  return `
+    <h3 class="sub-leg">Tus medidas</h3>
+    <p class="tenue">Con estos datos calculo tus calorías, tu proteína y ajusto tus sesiones desde el primer día.</p>
+    <div class="nutri-grid">
+      <label class="campo">Sexo<select name="sexo">
+        <option value="hombre">Hombre</option><option value="mujer">Mujer</option>
+      </select></label>
+      <label class="campo">Edad<input type="number" name="edad" inputmode="numeric" min="14" max="100" value="30" required></label>
+      <label class="campo">Altura (cm)<input type="number" name="altura" inputmode="numeric" min="120" max="230" value="175" required></label>
+      <label class="campo">Peso (kg)<input type="number" name="peso" inputmode="decimal" step="0.1" min="30" max="400" placeholder="—" required></label>
+    </div>
+    <div class="nutri-grid">
+      <label class="campo">Actividad<select name="actividad">
+        ${Object.entries(ACTIVIDADES).map(([k, a]) => `<option value="${k}" ${k === n.actividad ? 'selected' : ''}>${a.nombre} · ${a.desc}</option>`).join('')}
+      </select></label>
+      <label class="campo">Objetivo<select name="objetivo">
+        ${Object.entries(OBJETIVOS_NUTRI).map(([k, o]) => `<option value="${k}" ${k === n.objetivo ? 'selected' : ''}>${o.nombre}</option>`).join('')}
+      </select></label>
+    </div>`;
 }
 
 function usuarioNuevo() {
   const u = { avatar: AVATARES[usuarios.lista.length % AVATARES.length], color: usuarios.lista.length % COLORES.length };
-  return pagina({ titulo: 'Nuevo usuario', padre: 'usuarios', sub: 'Tendrá su propio programa y seguimiento', cuerpo: formUsuario(u, true) });
+  const primeraVez = esCuentaNueva();
+  return pagina({
+    titulo: primeraVez ? 'Crear cuenta' : 'Nuevo usuario',
+    padre: primeraVez ? null : (estaBloqueado() ? 'login' : 'usuarios'),
+    sub: 'Con tus medidas calculo tus calorías y ajusto tu programa',
+    cuerpo: formUsuario(u, true),
+  });
 }
 
 function usuarioEditar(id) {
@@ -2298,10 +2385,14 @@ function menuUsuarios() {
     <div class="botones"><a class="btn sec" href="#usuarios/nuevo" data-a="cerrar">＋ Nuevo</a><a class="btn sec" href="#usuarios" data-a="cerrar">Gestionar</a></div>`);
 }
 
-function crearUsuario({ nombre, avatar, color }) {
+function crearUsuario({ nombre, avatar, color, nutricion, medidas, seguridad }) {
   const id = nuevoId();
   usuarios.lista.push({ id, nombre, avatar, color, creado: new Date().toISOString() });
-  localStorage.setItem(claveDe(id), JSON.stringify(vacio()));
+  const datos = vacio();
+  if (nutricion) datos.nutricion = { ...NUTRICION_DEF, ...nutricion };
+  if (Array.isArray(medidas) && medidas.length) datos.medidas = medidas;
+  if (seguridad) datos.seguridad = seguridad;
+  localStorage.setItem(claveDe(id), JSON.stringify(datos));
   guardarUsuarios();
   return id;
 }
@@ -3103,6 +3194,7 @@ document.addEventListener('input', ev => {
 
 document.addEventListener('change', async ev => {
   const t = ev.target;
+  if (t.dataset.a === 'loginUsuario') { usuarioLogin = t.value; render(); return; }
   if (t.dataset.a === 'selEj') { ui.ejSel = t.value; dibujarGrafica(); }
   if (t.dataset.a === 'metrica') { ui.metricaMedida = MEDIDAS_CAMPOS[t.value] ? t.value : 'peso'; dibujarGraficaMedidas(); }
   if (t.dataset.a === 'nutricion') { guardarNutricion(); actualizarNutricion(); }
@@ -3134,14 +3226,26 @@ document.addEventListener('submit', async ev => {
   const f = new FormData(ev.target);
   // ---- Acceso y recuperación ----
   if (ev.target.id === 'formLogin') {
-    if (await verificarClave(f.get('clave'))) {
-      desbloqueado = true;
-      ir(estado.plan ? 'hoy' : 'bienvenida');
+    const id = String(f.get('usuario') || usuarioLogin || usuarios.activo);
+    if (await verificarClaveDe(datosUsuario(id), f.get('clave'))) {
+      entrarComo(id);
       toast(`Hola, ${usuarioActual().nombre} 👋`);
     } else {
       $('#avisoLogin').textContent = 'Contraseña incorrecta. Inténtalo de nuevo.';
       $('#formLogin input[name=clave]')?.select();
     }
+    return;
+  }
+  if (ev.target.id === 'formLoginClave') {
+    const id = String(f.get('usuario') || usuarioLogin || usuarios.activo);
+    const clave = String(f.get('clave') || ''), clave2 = String(f.get('clave2') || '');
+    if (clave.length < 4) { $('#avisoLogin').textContent = 'Usa al menos 4 caracteres.'; return; }
+    if (clave !== clave2) { $('#avisoLogin').textContent = 'Las dos contraseñas no coinciden.'; return; }
+    const seguridad = await construirSeguridad({ clave });
+    if (id === usuarios.activo) { estado.seguridad = seguridad; guardar(); }
+    else { const d = cargar(id); d.seguridad = seguridad; localStorage.setItem(claveDe(id), JSON.stringify(d)); }
+    entrarComo(id);
+    toast(`Contraseña creada. ¡Dentro, ${usuarioActual().nombre}! 🔓`);
     return;
   }
   if (ev.target.id === 'formPregunta') {
@@ -3258,16 +3362,28 @@ document.addEventListener('submit', async ev => {
   if (ev.target.id === 'formUsuario') {
     const nombre = String(f.get('nombre') || '').trim();
     if (!nombre) { toast('Escribe un nombre'); return; }
-    const datos = { nombre, avatar: f.get('avatar') || '🙂', color: Number(f.get('color')) || 0 };
+    const avatar = f.get('avatar') || '🙂';
+    const color = Number(f.get('color')) || 0;
     const id = ev.target.dataset.id;
     if (usuarios.lista.some(u => u.id !== id && u.nombre.toLowerCase() === nombre.toLowerCase())) { toast('Ya hay un usuario con ese nombre'); return; }
     if (id) {
-      Object.assign(usuarios.lista.find(u => u.id === id), datos);
+      Object.assign(usuarios.lista.find(u => u.id === id), { nombre, avatar, color });
       guardarUsuarios(); ir('usuarios'); toast('Usuario actualizado');
-    } else {
-      cambiarUsuario(crearUsuario(datos));
-      toast(`Usuario ${nombre} creado. Vamos a preparar su programa.`, { ms: 5000 });
+      return;
     }
+    // Cuenta nueva: contraseña y medidas obligatorias.
+    const clave = String(f.get('clave') || ''), clave2 = String(f.get('clave2') || '');
+    if (clave.length < 4) { toast('Usa al menos 4 caracteres en la contraseña'); return; }
+    if (clave !== clave2) { toast('Las dos contraseñas no coinciden'); return; }
+    const nutricion = nutricionDeForm(f);
+    if (!nutricion.peso || !nutricion.altura || !nutricion.edad) { toast('Completa tu peso, tu altura y tu edad'); return; }
+    const seguridad = await construirSeguridad({ clave });
+    const nuevoId = crearUsuario({
+      nombre, avatar, color, nutricion, seguridad,
+      medidas: [{ fecha: hoy(), peso: nutricion.peso, nota: 'Peso inicial' }],
+    });
+    entrarComo(nuevoId);
+    toast(`Cuenta de ${nombre} creada. Vamos a preparar su programa.`, { ms: 6000 });
     return;
   }
   if (ev.target.id === 'formVideo') {
