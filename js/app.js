@@ -93,7 +93,7 @@ function cambiarUsuario(id) {
   desbloqueado = false;
   recuperacionProc.ok = false; recuperacionProc.codigo = null;
   sincronizarPropios();
-  Object.assign(ui, { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, verMaestro: false, recMetodo: null });
+  Object.assign(ui, { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, verMaestro: false, recMetodo: null });
   cerrarModal();
   ir(estado.plan ? 'hoy' : 'bienvenida');
   toast(`Usuario activo: ${usuarioActual().nombre}`);
@@ -194,7 +194,7 @@ function seriesObjetivo(item) {
 // =====================================================================
 // Navegación: cada parte es una página con su propia dirección (#seguimiento/historial…)
 // =====================================================================
-const ui = { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, verMaestro: false, recMetodo: null };
+const ui = { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, verMaestro: false, recMetodo: null };
 
 // [patrón de la dirección, página, pestaña de la barra inferior]
 const RUTAS = [
@@ -1703,8 +1703,9 @@ function dibujarGrafica() {
 // Páginas: Ejercicios
 // =====================================================================
 function itemEjercicio(e) {
+  const tg = infoTechnogym(e)?.video ? '<span class="tg-badge" title="Con vídeo de la máquina">🎬</span>' : '';
   return `<a class="celda ${e.propio ? 'ej-propio' : ''}" href="#ejercicio/${e.id}"><span class="ic azul">${ICONO_PATRON[e.patron] || '🏋️'}</span>
-    <span class="celda-t"><b>${esc(e.nombre)}</b><small>${e.musculos.map(m => MUSCULOS[m]).join(', ')} · ${equipoTxt(e)}${e.propio ? ' · propio' : ''}</small></span><span class="chev">›</span></a>`;
+    <span class="celda-t"><b>${esc(e.nombre)}${tg}</b><small>${e.musculos.map(m => MUSCULOS[m]).join(', ')} · ${equipoTxt(e)}${e.propio ? ' · propio' : ''}</small></span><span class="chev">›</span></a>`;
 }
 
 function ejercicios() {
@@ -1712,24 +1713,27 @@ function ejercicios() {
   const lista = EJERCICIOS.filter(e =>
     (!ui.filtro || e.musculos.includes(ui.filtro)) &&
     (!ui.soloPropios || e.propio) &&
+    (!ui.soloTG || infoTechnogym(e)?.video) &&
     (!q || e.nombre.toLowerCase().includes(q)));
   let cuerpo;
   if (!lista.length) cuerpo = vacioMsg('🔍', 'Sin resultados', 'Prueba con otra palabra o quita el filtro.');
-  else if (ui.filtro || q || ui.soloPropios) cuerpo = `<div class="celdas">${lista.map(itemEjercicio).join('')}</div>`;
+  else if (ui.filtro || q || ui.soloPropios || ui.soloTG) cuerpo = `<div class="celdas">${lista.map(itemEjercicio).join('')}</div>`;
   else cuerpo = Object.entries(MUSCULOS).map(([m, nombre]) => {
     const deEste = lista.filter(e => e.musculos[0] === m);
     return deEste.length ? grupo(`${nombre} · ${deEste.length}`, deEste.map(itemEjercicio).join('')) : '';
   }).join('');
   const nPropios = EJERCICIOS.filter(e => e.propio).length;
+  const nTG = EJERCICIOS.filter(e => infoTechnogym(e)?.video).length;
   return pagina({
     titulo: 'Ejercicios', sub: `${EJERCICIOS.length} ejercicios con su técnica`,
     extra: '<a class="icono" href="#ejercicios/nuevo" title="Crear ejercicio propio">＋</a>',
     cuerpo: `
       <div class="buscador"><span>🔍</span><input type="search" placeholder="Buscar ejercicio" value="${esc(ui.q)}" data-a="buscar" class="buscar" aria-label="Buscar ejercicio"></div>
       <div class="chips scroll">
-        <button class="chip ${!ui.filtro && !ui.soloPropios ? 'on' : ''}" data-a="filtro" data-m="">Todos</button>
+        <button class="chip ${!ui.filtro && !ui.soloPropios && !ui.soloTG ? 'on' : ''}" data-a="filtro" data-m="">Todos</button>
+        ${nTG ? `<button class="chip ${ui.soloTG ? 'on' : ''}" data-a="soloTG">🎬 Technogym (${nTG})</button>` : ''}
         <button class="chip ${ui.soloPropios ? 'on' : ''}" data-a="soloPropios">🧩 Míos${nPropios ? ` (${nPropios})` : ''}</button>
-        ${Object.entries(MUSCULOS).map(([k, v]) => `<button class="chip ${ui.filtro === k && !ui.soloPropios ? 'on' : ''}" data-a="filtro" data-m="${k}">${v}</button>`).join('')}
+        ${Object.entries(MUSCULOS).map(([k, v]) => `<button class="chip ${ui.filtro === k && !ui.soloPropios && !ui.soloTG ? 'on' : ''}" data-a="filtro" data-m="${k}">${v}</button>`).join('')}
       </div>
       <div id="listaEj">${cuerpo}</div>
       ${nPropios ? `<a class="tarjeta enlace-tarjeta" href="#ejercicios/mios"><div class="fila"><div><h2>🧩 Mis ejercicios</h2><p class="tenue">${nPropios} ${nPropios === 1 ? 'ejercicio propio' : 'ejercicios propios'}</p></div><span class="chev">›</span></div></a>` : ''}
@@ -1740,7 +1744,9 @@ function ejercicios() {
 function technogymHTML(e) {
   const info = infoTechnogym(e);
   if (!info) return '';
-  const vid = info.video;
+  const vid = info.video || '';
+  const esId = /^[A-Za-z0-9_-]{11}$/.test(vid); // identificador de YouTube incrustable
+  const esUrl = /^https?:/i.test(vid);
   return `<div class="tarjeta">
     <div class="tg-ficha">
       ${ilustracionTechnogymSVG(e, { postura: 'A', ancho: 160 })}
@@ -1749,9 +1755,11 @@ function technogymHTML(e) {
         <p class="tg-maquina">${esc(info.maquina)}</p>
         ${info.musculo ? `<p class="tenue">${esc(info.musculo)}</p>` : ''}
         ${info.ajuste ? `<p class="tg-ajuste">${esc(info.ajuste)}</p>` : ''}
-        ${vid ? `<a class="btn sec" href="https://www.youtube.com/watch?v=${vid}" target="_blank" rel="noopener">▶ Vídeo de la máquina</a>` : ''}
       </div>
     </div>
+    ${esId ? `<div class="tg-video"><iframe src="${urlVideoTechnogym(vid)}" title="Vídeo de técnica: ${esc(info.maquina)}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen></iframe></div>
+      <p class="tenue centro"><a class="enlace" href="https://www.youtube.com/watch?v=${esc(vid)}" target="_blank" rel="noopener">▶ Abrir en YouTube</a></p>`
+      : esUrl ? `<p><a class="btn sec" href="${esc(vid)}" target="_blank" rel="noopener">▶ Vídeo de la máquina</a></p>` : ''}
     <p class="tenue centro">Ajusta la máquina a tu cuerpo antes de empezar: el recorrido correcto empieza por una buena postura.</p>
   </div>`;
 }
@@ -2866,8 +2874,9 @@ document.addEventListener('click', ev => {
     case 'pdfMia': { const s = estado.misSesiones[i]; imprimir(s.nombre, `Sesión a la carta · ~${duracionEstimada(s.ejercicios)} min`, filasPlan(s.ejercicios)); break; }
     case 'pdfCurso': { const s = estado.enCurso; imprimir(s.nombre, 'Sesión en curso', filasPlan(s.ejercicios.map(e => ({ ...e, series: e.series.length })))); break; }
     case 'pdfHist': pdfHist(i); break;
-    case 'filtro': ui.filtro = d.m; ui.soloPropios = false; render(); break;
-    case 'soloPropios': ui.soloPropios = !ui.soloPropios; ui.filtro = ''; render(); break;
+    case 'filtro': ui.filtro = d.m; ui.soloPropios = false; ui.soloTG = false; render(); break;
+    case 'soloPropios': ui.soloPropios = !ui.soloPropios; ui.filtro = ''; ui.soloTG = false; render(); break;
+    case 'soloTG': ui.soloTG = !ui.soloTG; ui.filtro = ''; ui.soloPropios = false; render(); break;
     case 'borrarEjPropio': borrarEjPropio(d.id); break;
     case 'restRec': {
       const s = estado.plan?.sesiones[Number(d.i)];
