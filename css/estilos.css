@@ -643,3 +643,50 @@ input[type=url] { width: 100%; padding: 12px; border-radius: 12px; border: 1px s
 .rest-edit input { width: 64px; padding: 6px 8px; border-radius: 10px; border: 1px solid var(--borde); background: var(--fondo2); color: var(--texto); font: inherit; text-align: center; }
 .ej-propio { border-color: var(--acento2); }
 @media (max-width: 420px) { .nav a { padding: 5px 7px; font-size: .6rem; } .nav a span { font-size: 1.15rem; } }
+
+/* ---------- Entender tu sesión (ciencia y método) ---------- */
+.ciencia-hero { background: linear-gradient(135deg, #123c50, #087f91); }
+.ciencia-indice { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+.ciencia-indice .chip { padding: 7px 12px; font-size: .78rem; }
+.ciencia-sec { scroll-margin-top: 70px; }
+.ciencia-sec h2 { display: flex; align-items: center; gap: 8px; }
+.ciencia-sec h3 { margin-top: 16px; }
+.ciencia-flujo { list-style: none; padding: 0; margin: 12px 0 6px; counter-reset: cf; }
+.ciencia-flujo li { position: relative; padding: 0 0 14px 34px; border-left: 2px solid var(--borde); margin-left: 12px; }
+.ciencia-flujo li:last-child { border-left-color: transparent; padding-bottom: 0; }
+.ciencia-flujo li::before { counter-increment: cf; content: counter(cf); position: absolute; left: -13px; top: -2px; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--acento); color: var(--sobre-acento); display: grid; place-items: center; font-size: .74rem; font-weight: 800; }
+.ciencia-flujo b { display: block; font-size: .94rem; }
+.ciencia-flujo small { display: block; color: var(--tenue); font-size: .82rem; line-height: 1.35; }
+.ciencia-lista { list-style: none; padding: 0; margin: 0; }
+.ciencia-lista li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--borde); }
+.ciencia-lista li:first-child { border-top: 0; }
+.ciencia-lista .cn { flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--tarjeta2); border: 1px solid var(--borde);
+  display: grid; place-items: center; font-size: .74rem; font-weight: 800; color: var(--acento); }
+.ciencia-lista .ct { flex: 1; min-width: 0; }
+.ciencia-lista .ct b { display: block; font-size: .92rem; }
+.ciencia-lista .ct small { color: var(--tenue); font-size: .76rem; }
+.ciencia-mini { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 12px 0; }
+.ciencia-mini div { background: var(--tarjeta2); border: 1px solid var(--borde); border-radius: var(--radio-s); padding: 10px 12px; }
+.ciencia-mini b { display: block; font-size: .86rem; }
+.ciencia-mini span { color: var(--tenue); font-size: .76rem; }
+.ciencia-tabla { margin: 12px 0; }
+.ciencia-tabla div { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--borde); font-size: .88rem; }
+.ciencia-tabla div:first-child { border-top: 0; }
+.ciencia-tabla b { color: var(--acento); font-variant-numeric: tabular-nums; text-align: right; }
+.ciencia-puntos { padding-left: 20px; margin: 12px 0; }
+.ciencia-puntos li { margin-bottom: 8px; font-size: .92rem; }
+.ciencia-nota { background: color-mix(in srgb, var(--acento) 10%, var(--tarjeta2)); border: 1px solid color-mix(in srgb, var(--acento) 30%, var(--borde));
+  border-radius: var(--radio-s); padding: 10px 12px; margin: 14px 0; font-size: .88rem; }
+.citas { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 12px 0 0; font-size: .78rem; }
+.citas-lbl { color: var(--tenue); font-weight: 600; }
+.cita { background: color-mix(in srgb, var(--violeta) 12%, transparent); color: var(--violeta); border: 1px solid color-mix(in srgb, var(--violeta) 32%, transparent);
+  border-radius: 99px; padding: 3px 9px; font-weight: 700; text-decoration: none; font-size: .74rem; }
+.cita:hover { background: color-mix(in srgb, var(--violeta) 22%, transparent); }
+.estudios { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 4px; }
+.estudio { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--borde); border-radius: var(--radio-s);
+  background: var(--tarjeta2); text-decoration: none; }
+.estudio:hover { border-color: color-mix(in srgb, var(--violeta) 45%, var(--borde)); }
+.estudio-ic { flex: none; }
+.estudio-t { font-size: .82rem; line-height: 1.35; }
+.estudio-t small { display: block; color: var(--acento); font-weight: 700; margin-top: 3px; font-size: .72rem; }

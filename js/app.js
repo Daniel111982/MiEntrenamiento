@@ -16,6 +16,7 @@ import {
   contarNuevas, nuevaIncidencia, nombreCategoria, textoIncidencia,
 } from './incidencias.js';
 import { interpretarSalud, fusionarMedidas, fusionarActividad } from './salud.js';
+import { htmlCiencia } from './ciencia.js';
 
 // =====================================================================
 // Estado
@@ -239,10 +240,13 @@ const RUTAS = [
   [/^programa$/, programa, 'programa'],
   [/^programa\/sesiones$/, programaSesiones, 'programa'],
   [/^programa\/sesion\/(\d+)$/, programaSesion, 'programa'],
+  [/^programa\/sesion\/(\d+)\/ciencia$/, programaSesionCiencia, 'programa'],
   [/^programa\/mias$/, programaMias, 'programa'],
   [/^programa\/mia\/(\d+)$/, programaMia, 'programa'],
+  [/^programa\/mia\/(\d+)\/ciencia$/, programaMiaCiencia, 'programa'],
   [/^programa\/carta$/, programaCarta, 'programa'],
   [/^sesion$/, sesion, 'sesion'],
+  [/^sesion\/ciencia$/, sesionCiencia, 'sesion'],
   [/^seguimiento$/, seguimiento, 'seguimiento'],
   [/^seguimiento\/actividad$/, segActividad, 'seguimiento'],
   [/^seguimiento\/recuperacion$/, segRecuperacion, 'seguimiento'],
@@ -740,6 +744,7 @@ function programaSesion(i) {
       </div>
       <div class="fila"><h2>Ejercicios</h2><span class="tenue">⚡ método · ⇄ cambiar</span></div>
       <div class="tarjeta">${listaEjercicios(ejs, { editable: true, i })}</div>
+      ${tarjetaCiencia(`programa/sesion/${i}`)}
     `,
   });
 }
@@ -769,8 +774,46 @@ function programaMia(i) {
         </div>
       </div>
       <div class="tarjeta">${listaEjercicios(s.ejercicios)}</div>
+      ${tarjetaCiencia(`programa/mia/${i}`)}
       <button class="btn peligro" data-a="borrarMia" data-i="${i}">Borrar esta sesión</button>
     `,
+  });
+}
+
+// Enlace a «Entender tu sesión» desde una sesión concreta.
+function tarjetaCiencia(href) {
+  return `<a class="tarjeta enlace-tarjeta" href="#${href}/ciencia">
+    <div class="fila"><h2>🧠 Entender tu sesión</h2><span class="chev">›</span></div>
+    <p class="tenue">Ciencia y método: cómo se organiza, por qué este orden de ejercicios, los descansos, el calentamiento y cómo ajustar el esfuerzo y la recuperación. Con los estudios que lo respaldan.</p>
+  </a>`;
+}
+
+function programaSesionCiencia(i) {
+  const s = estado.plan?.sesiones[i];
+  if (!s) return null;
+  const sem = semanaDe();
+  const ejs = s.ejercicios.map(e => prescribir(e, sem));
+  return pagina({
+    titulo: 'Entender tu sesión', padre: `programa/sesion/${i}`, sub: esc(s.nombre),
+    cuerpo: htmlCiencia({ nombre: s.nombre, ejercicios: ejs }, estado.perfil, sem),
+  });
+}
+
+function programaMiaCiencia(i) {
+  const s = estado.misSesiones[i];
+  if (!s) return null;
+  return pagina({
+    titulo: 'Entender tu sesión', padre: `programa/mia/${i}`, sub: esc(s.nombre),
+    cuerpo: htmlCiencia({ nombre: s.nombre, ejercicios: s.ejercicios }, estado.perfil, null),
+  });
+}
+
+function sesionCiencia() {
+  const s = estado.enCurso;
+  if (!s) return null;
+  return pagina({
+    titulo: 'Entender tu sesión', padre: 'sesion', sub: esc(s.nombre),
+    cuerpo: htmlCiencia({ nombre: s.nombre, ejercicios: s.ejercicios }, estado.perfil, s.semana || (s.fase ? s.fase.semana : null)),
   });
 }
 
@@ -854,6 +897,7 @@ function sesion() {
       </div>`;
     }).join('')}
     <button class="btn" data-a="terminar">Terminar sesión</button>
+    <a class="btn sec" href="#sesion/ciencia">🧠 Entender esta sesión</a>
     <button class="btn sec" data-a="pdfCurso">📄 Resumen PDF</button>
     <button class="btn peligro" data-a="descartar">Descartar sesión</button>
   `;
@@ -3284,6 +3328,7 @@ document.addEventListener('click', ev => {
       estado.medidas = (estado.medidas || []).filter(m => m.fecha !== d.f);
       if (ui.medidaEdit === d.f) ui.medidaEdit = null;
     }); break;
+    case 'cienciaIr': document.getElementById(d.sec)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
     case 'editarPaso': ui.pasoEdit = d.f; render(); $('#formPasos')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
     case 'cancelarPaso': ui.pasoEdit = null; render(); break;
     case 'borrarPaso': conDeshacer('Día borrado', () => {
