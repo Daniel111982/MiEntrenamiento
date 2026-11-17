@@ -185,6 +185,36 @@ export const EJERCICIOS = [
     desc: 'En plancha alta, lleva las rodillas al pecho alternando a ritmo rápido.' },
   { id: 'jumping-jacks', nombre: 'Saltos de tijera', patron: 'metabolico', musculos: ['gemelos'], equipo: [], compuesto: false, tipo: 'tiempo',
     desc: 'Salta abriendo piernas y brazos y vuelve a cerrar. Ritmo constante.' },
+
+  // ---- Máquinas guiadas (Technogym Selection 900 / Pure Strength) ----
+  { id: 'prensa-horizontal', nombre: 'Prensa horizontal', patron: 'sentadilla', musculos: ['cuadriceps', 'gluteos'], equipo: ['maquinas'], compuesto: true,
+    desc: 'Pies en el centro de la plataforma. Baja hasta unos 90° de rodilla sin despegar la zona lumbar del respaldo y empuja sin bloquear las rodillas.' },
+  { id: 'hack-squat', nombre: 'Hack squat', patron: 'sentadilla', musculos: ['cuadriceps', 'gluteos'], equipo: ['maquinas'], compuesto: true,
+    desc: 'Espalda y hombros apoyados. Baja controlando hasta que los muslos queden paralelos y empuja con todo el pie.' },
+  { id: 'hip-thrust-maquina', nombre: 'Hip thrust en máquina', patron: 'bisagra', musculos: ['gluteos', 'femorales'], equipo: ['maquinas'], compuesto: true,
+    desc: 'Espalda alta en el respaldo y almohadilla sobre la cadera. Extiende la cadera apretando glúteos sin arquear la lumbar.' },
+  { id: 'abductores-maquina', nombre: 'Abductores en máquina', patron: 'gluteos_aisl', musculos: ['gluteos'], equipo: ['maquinas'], compuesto: false,
+    desc: 'Sentado con las piernas en las almohadillas. Abre las piernas contra la resistencia y vuelve despacio.' },
+  { id: 'aductores-maquina', nombre: 'Aductores en máquina', patron: 'gluteos_aisl', musculos: ['gluteos'], equipo: ['maquinas'], compuesto: false,
+    desc: 'Sentado con las piernas abiertas. Cierra las piernas contra la resistencia y vuelve controlando.' },
+  { id: 'patada-gluteo', nombre: 'Patada de glúteo en máquina', patron: 'gluteos_aisl', musculos: ['gluteos'], equipo: ['maquinas'], compuesto: false,
+    desc: 'Apoyado en la máquina, empuja la pierna hacia atrás hasta extender la cadera. Aprieta el glúteo arriba.' },
+  { id: 'pec-deck', nombre: 'Aperturas en máquina (pec deck)', patron: 'pecho_aisl', musculos: ['pecho'], equipo: ['maquinas'], compuesto: false,
+    desc: 'Codos a la altura del pecho. Junta los brazos al frente apretando el pecho y vuelve controlando el estiramiento.' },
+  { id: 'press-inclinado-maquina', nombre: 'Press inclinado en máquina', patron: 'empuje_h', musculos: ['pecho', 'hombros', 'triceps'], equipo: ['maquinas'], compuesto: true,
+    desc: 'Asiento bajo para empujar en diagonal. Escápulas juntas y recorrido completo.' },
+  { id: 'pullover-maquina', nombre: 'Pullover en máquina', patron: 'tiron_v', musculos: ['espalda', 'pecho'], equipo: ['maquinas'], compuesto: false,
+    desc: 'Codos sobre la almohadilla. Baja los brazos en arco hasta las caderas llevando los codos al cuerpo.' },
+  { id: 'remo-alto-maquina', nombre: 'Remo al cuello en máquina', patron: 'hombro_post', musculos: ['hombros', 'espalda'], equipo: ['maquinas'], compuesto: false,
+    desc: 'Asas altas. Tira llevando los codos hacia fuera y arriba, juntando las escápulas.' },
+  { id: 'curl-biceps-maquina', nombre: 'Curl de bíceps en máquina', patron: 'biceps', musculos: ['biceps'], equipo: ['maquinas'], compuesto: false,
+    desc: 'Codos apoyados en la almohadilla. Flexiona sin mover los hombros y baja controlando.' },
+  { id: 'extension-triceps-maquina', nombre: 'Extensión de tríceps en máquina', patron: 'triceps', musculos: ['triceps'], equipo: ['maquinas'], compuesto: false,
+    desc: 'Codos fijos. Extiende los brazos por completo y vuelve despacio sin mover los hombros.' },
+  { id: 'gemelos-sentado', nombre: 'Gemelos sentado en máquina', patron: 'gemelo', musculos: ['gemelos'], equipo: ['maquinas'], compuesto: false,
+    desc: 'Rodillas bajo la almohadilla y puntas en la plataforma. Estira abajo y sube al máximo con pausa.' },
+  { id: 'crunch-maquina', nombre: 'Crunch en máquina', patron: 'core', musculos: ['abdomen'], equipo: ['maquinas'], compuesto: false,
+    desc: 'Sujeto con los brazos y los pies fijos. Flexiona el tronco llevando el esternón hacia la pelvis.' },
 ];
 
 export const PATRONES = {
@@ -192,7 +222,35 @@ export const PATRONES = {
   empuje_h: 'Empuje horizontal', empuje_v: 'Empuje vertical', tiron_h: 'Tirón horizontal', tiron_v: 'Tirón vertical',
   cuadriceps_aisl: 'Cuádriceps', femoral: 'Femoral', gemelo: 'Gemelos', pecho_aisl: 'Pecho',
   hombro_lat: 'Hombro lateral', hombro_post: 'Hombro posterior', biceps: 'Bíceps', triceps: 'Tríceps',
-  core: 'Core', metabolico: 'Metabólico',
+  gluteos_aisl: 'Glúteos (aislamiento)', core: 'Core', metabolico: 'Metabólico',
 };
 
+// Copia de los ejercicios de serie. Los ejercicios propios del usuario se añaden
+// después y se pueden quitar sin tocar esta base.
+export const EJERCICIOS_BASE = EJERCICIOS.map(e => ({ ...e }));
+
 export const porId = Object.fromEntries(EJERCICIOS.map(e => [e.id, e]));
+
+// Añade (o reemplaza) los ejercicios propios del usuario. Muta EJERCICIOS y porId
+// en el sitio para que los enlaces vivos de los demás módulos sigan siendo válidos.
+export function sincronizarEjerciciosUsuario(propios = []) {
+  for (let i = EJERCICIOS.length - 1; i >= 0; i--) {
+    if (EJERCICIOS[i].propio) { delete porId[EJERCICIOS[i].id]; EJERCICIOS.splice(i, 1); }
+  }
+  for (const e of propios) {
+    if (!e?.id || porId[e.id]) continue;
+    const ej = {
+      id: e.id, nombre: e.nombre, patron: e.patron, musculos: e.musculos || [],
+      equipo: e.equipo || [], compuesto: Boolean(e.compuesto), desc: e.desc || '',
+      tipo: e.tipo === 'tiempo' ? 'tiempo' : undefined,
+      ...(e.maquinaCustom ? {
+        maquinaCustom: e.maquinaCustom, lineaCustom: e.lineaCustom,
+        musculoCustom: e.musculoCustom, ajusteCustom: e.ajusteCustom, videoCustom: e.videoCustom,
+      } : {}),
+      propio: true,
+    };
+    if (ej.tipo === undefined) delete ej.tipo;
+    EJERCICIOS.push(ej);
+    porId[ej.id] = ej;
+  }
+}

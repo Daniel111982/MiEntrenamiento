@@ -32,7 +32,7 @@ const SESIONES = {
   fullB: { nombre: 'Cuerpo completo B', huecos: ['bisagra', 'empuje_h', 'tiron_h', 'zancada', 'empuje_v', 'biceps', 'triceps', 'core', 'gemelo'] },
   fullC: { nombre: 'Cuerpo completo C', huecos: ['zancada', 'empuje_h', 'tiron_h', 'sentadilla', 'hombro_post', 'biceps', 'core'] },
   torso: { nombre: 'Torso', huecos: ['empuje_h', 'tiron_h', 'empuje_v', 'tiron_v', 'hombro_lat', 'biceps', 'triceps'] },
-  pierna: { nombre: 'Pierna', huecos: ['sentadilla', 'bisagra', 'zancada', 'femoral', 'gemelo', 'core', 'cuadriceps_aisl'] },
+  pierna: { nombre: 'Pierna', huecos: ['sentadilla', 'bisagra', 'zancada', 'femoral', 'gluteos_aisl', 'gemelo', 'core', 'cuadriceps_aisl'] },
   empuje: { nombre: 'Empuje', huecos: ['empuje_h', 'empuje_v', 'pecho_aisl', 'hombro_lat', 'triceps', 'core'] },
   tiron: { nombre: 'Tirón', huecos: ['tiron_v', 'tiron_h', 'hombro_post', 'biceps', 'core', 'tiron_h'] },
   piernaP: { nombre: 'Pierna', huecos: ['sentadilla', 'bisagra', 'zancada', 'cuadriceps_aisl', 'femoral', 'gemelo'] },
@@ -48,7 +48,7 @@ Object.assign(SESIONES, {
   espalda: { nombre: 'Espalda', huecos: ['tiron_v', 'tiron_h', 'tiron_v', 'tiron_h', 'hombro_post'] },
   brazos: { nombre: 'Brazos', huecos: ['biceps', 'triceps', 'biceps', 'triceps', 'core'] },
   cuadriceps: { nombre: 'Pierna: cuádriceps', huecos: ['sentadilla', 'zancada', 'sentadilla', 'cuadriceps_aisl', 'gemelo'] },
-  gluteoFemoral: { nombre: 'Pierna: glúteo y femoral', huecos: ['bisagra', 'zancada', 'femoral', 'bisagra', 'gemelo', 'core'] },
+  gluteoFemoral: { nombre: 'Pierna: glúteo y femoral', huecos: ['bisagra', 'zancada', 'femoral', 'gluteos_aisl', 'bisagra', 'gemelo', 'core'] },
 });
 
 // Reparto según cuántas veces por semana se entrena cada músculo.
@@ -105,15 +105,26 @@ export function candidatos(patron, perfil, equipo = equipoDisponible(perfil)) {
     NIVELES.indexOf(e.nivelMin || 'principiante') <= nivel);
 }
 
+// Descanso recomendado (segundos) según objetivo, tipo de ejercicio y nivel.
+export function descansoRecomendado(ej, perfil = {}) {
+  const obj = OBJETIVOS[perfil.objetivo] || OBJETIVOS.musculo;
+  let d = obj.descanso;
+  if (!ej?.compuesto) d = Math.min(d, 75);
+  if (ej?.tipo === 'tiempo') d = Math.min(d, 60);
+  if (ej?.patron === 'metabolico') d = 30;
+  if (perfil.nivel === 'principiante') d = Math.round(d * 0.9);
+  if (perfil.nivel === 'avanzado') d = Math.round(d * 1.1);
+  return Math.max(20, Math.round(d / 5) * 5);
+}
+
 // Prescripción base de un ejercicio dentro del programa.
 export function prescripcion(ej, perfil, enfoque = perfil.enfoque || []) {
   const obj = OBJETIVOS[perfil.objetivo];
   let series = obj.series + (perfil.nivel === 'principiante' ? -1 : perfil.nivel === 'avanzado' ? 1 : 0);
   let [min, max] = obj.reps;
-  let descanso = obj.descanso;
+  let descanso = descansoRecomendado(ej, perfil);
   if (!ej.compuesto) {
     min = Math.max(min, 8) + 2; max = Math.max(max, 12) + 3;
-    descanso = Math.min(descanso, 75);
     series = Math.min(series, 3);
   }
   if (ej.musculos.some(m => enfoque.includes(m))) series += 1;
@@ -121,9 +132,9 @@ export function prescripcion(ej, perfil, enfoque = perfil.enfoque || []) {
   const base = { id: ej.id, series, metodo: 'normal', foco: ej.musculos.some(m => enfoque.includes(m)) };
   if (ej.tipo === 'tiempo') {
     const seg = perfil.nivel === 'principiante' ? 30 : perfil.nivel === 'avanzado' ? 60 : 45;
-    return { ...base, tipo: 'tiempo', repsMin: seg, repsMax: seg, descanso: Math.min(descanso, 60) };
+    return { ...base, tipo: 'tiempo', repsMin: seg, repsMax: seg, descanso };
   }
-  if (ej.patron === 'metabolico') return { ...base, tipo: 'reps', repsMin: 10, repsMax: 15, descanso: 45 };
+  if (ej.patron === 'metabolico') return { ...base, tipo: 'reps', repsMin: 10, repsMax: 15, descanso: 30 };
   return { ...base, tipo: 'reps', repsMin: min, repsMax: max, descanso };
 }
 
@@ -268,7 +279,7 @@ export function generarAgenda(plan, perfil) {
 const HUECOS_MUSCULO = {
   pecho: ['empuje_h', 'pecho_aisl'], espalda: ['tiron_v', 'tiron_h'], hombros: ['empuje_v', 'hombro_lat', 'hombro_post'],
   biceps: ['biceps'], triceps: ['triceps'], cuadriceps: ['sentadilla', 'zancada', 'cuadriceps_aisl'],
-  femorales: ['bisagra', 'femoral'], gluteos: ['bisagra', 'zancada'], gemelos: ['gemelo'], abdomen: ['core', 'core'],
+  femorales: ['bisagra', 'femoral'], gluteos: ['bisagra', 'zancada', 'gluteos_aisl'], gemelos: ['gemelo'], abdomen: ['core', 'core'],
 };
 export function sesionALaCarta({ musculos, lugar, equipo, duracion, nombre }, perfil) {
   const p = { ...perfil, lugar, equipo, duracion, enfoque: [] };

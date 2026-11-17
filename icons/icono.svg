@@ -1,10 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#0f172a"/>
-  <g fill="#22c55e">
-    <rect x="96" y="176" width="48" height="160" rx="14"/>
-    <rect x="368" y="176" width="48" height="160" rx="14"/>
-    <rect x="152" y="208" width="36" height="96" rx="10"/>
-    <rect x="324" y="208" width="36" height="96" rx="10"/>
-    <rect x="188" y="240" width="136" height="32" rx="8"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="DANTAL">
+  <defs>
+    <linearGradient id="dantal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#123C50"/>
+      <stop offset="0.65" stop-color="#087F91"/>
+      <stop offset="1" stop-color="#42C4C5"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#dantal)"/>
+  <path d="M50 3 C54.5 30 70 45.5 97 50 C70 54.5 54.5 70 50 97 C45.5 70 30 54.5 3 50 C30 45.5 45.5 30 50 3 Z" fill="#FFFFFF" transform="scale(5.12)"/>
+  <path d="M50 3 C54.5 30 70 45.5 97 50 C70 54.5 54.5 70 50 97 C45.5 70 30 54.5 3 50 C30 45.5 45.5 30 50 3 Z" fill="#42C4C5" transform="translate(256 256) scale(2.56) translate(-50 -50)"/>
 </svg>

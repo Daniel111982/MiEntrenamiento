@@ -1,23 +1,32 @@
-import { EJERCICIOS, EQUIPOS, MUSCULOS, PATRONES, porId } from './ejercicios.js';
+import { EJERCICIOS, EJERCICIOS_BASE, EQUIPOS, MUSCULOS, PATRONES, porId, sincronizarEjerciciosUsuario } from './ejercicios.js';
 import {
   OBJETIVOS, METODOS, FRECUENCIAS, frecuenciaPosible, SEMANAS_CICLO, fase, prescribir, generarPrograma, generarAgenda, alternativas, unoRM,
-  duracionEstimada, ajustarDuracion, sesionALaCarta, hoyIso, iso, deIso, lunes, sumarDias,
+  duracionEstimada, ajustarDuracion, sesionALaCarta, descansoRecomendado, hoyIso, iso, deIso, lunes, sumarDias,
 } from './generador.js';
 import { dibujoSVG, pasosDibujo, guiaEjercicio } from './tecnica.js';
 import { aplicarAyudas, esconder as esconderAyuda } from './ayudas.js';
 import { volumenSesion, mejorSerie, recordAntes, recordsDeSesion, racha, volumenMuscular, recuperacion, historialCSV } from './stats.js';
+import { MARCA, logoDantal, isotipoCuadrado, cabeceraMarca } from './marca.js';
+import { COMIDAS, CATEGORIAS_ALIMENTO, ALIMENTOS, alimentoPorId, macrosDe, sumarMacros, buscarAlimentos, RECETAS, resumenReceta } from './alimentos.js';
+import { generarInsightsDantal } from './ia.js';
+import { EQUIPO_TECHNOGYM, urlVideoTechnogym, infoTechnogym, esTechnogym, ilustracionTechnogymSVG } from './technogym.js';
 
 // =====================================================================
 // Estado
 // =====================================================================
 // Cada usuario guarda sus datos por separado: 'mientrenamiento:u:<id>'.
 // La lista de usuarios y cuál está activo van en 'mientrenamiento:usuarios'.
-const APP_VERSION = '1.01'; // versión de la app (ver VERSIONES/HISTORIAL.md)
+const APP_VERSION = '2.00'; // versión de la app (ver VERSIONES/HISTORIAL.md)
 const CLAVE = 'mientrenamiento:v2'; // formato anterior, de un solo usuario
 const CLAVE_USUARIOS = 'mientrenamiento:usuarios';
 const claveDe = id => `mientrenamiento:u:${id}`;
 const NUTRICION_DEF = { sexo: 'hombre', edad: 30, altura: 175, peso: null, actividad: 'moderado', objetivo: 'mantener' };
-const vacio = () => ({ perfil: null, plan: null, historial: [], enCurso: null, misSesiones: [], videos: {}, fotos: {}, medidas: [], nutricion: { ...NUTRICION_DEF }, ajustes: { recordatorio: false, hora: '18:00', avisado: '', ayudas: true, consejoVisto: false } });
+const VASO_ML = 250; // capacidad de un vaso de agua
+const vacio = () => ({
+  perfil: null, plan: null, historial: [], enCurso: null, misSesiones: [], videos: {}, fotos: {}, medidas: [],
+  nutricion: { ...NUTRICION_DEF }, ajustes: { recordatorio: false, hora: '18:00', avisado: '', ayudas: true, consejoVisto: false },
+  comidas: {}, agua: {}, ejerciciosPropios: [], seguridad: null,
+});
 const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const AVATARES = ['🙂', '💪', '🏃', '🧘', '🏋️', '🚴', '🤸', '⚽', '🦁', '🐯', '🌟', '🔥', '🎯', '🦊', '🐻', '👑'];
 const COLORES = [
@@ -27,6 +36,13 @@ const COLORES = [
 
 let usuarios = cargarUsuarios();
 let estado = cargar();
+
+// Los ejercicios propios del usuario se añaden a la biblioteca al arrancar.
+sincronizarEjerciciosUsuario(estado.ejerciciosPropios);
+// El bloqueo por contraseña se resuelve en cada sesión: nunca se guarda.
+let desbloqueado = false;
+const estaBloqueado = () => Boolean(estado.seguridad?.activa) && !desbloqueado;
+const sincronizarPropios = () => sincronizarEjerciciosUsuario(estado.ejerciciosPropios || []);
 
 function cargarUsuarios() {
   try {
@@ -54,6 +70,10 @@ function cargar(id = usuarios.activo) {
       medidas: Array.isArray(d.medidas) ? d.medidas : [],
       nutricion: { ...NUTRICION_DEF, ...(d.nutricion || {}) },
       ajustes: { ...vacio().ajustes, ...d.ajustes },
+      comidas: d.comidas && typeof d.comidas === 'object' ? d.comidas : {},
+      agua: d.agua && typeof d.agua === 'object' ? d.agua : {},
+      ejerciciosPropios: Array.isArray(d.ejerciciosPropios) ? d.ejerciciosPropios : [],
+      seguridad: d.seguridad && typeof d.seguridad === 'object' ? d.seguridad : null,
     };
   } catch { /* datos corruptos */ }
   return vacio();
@@ -70,7 +90,10 @@ function cambiarUsuario(id) {
   usuarios.activo = id;
   guardarUsuarios();
   estado = cargar(id);
-  Object.assign(ui, { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, metricaMedida: 'peso' });
+  desbloqueado = false;
+  recuperacionProc.ok = false; recuperacionProc.codigo = null;
+  sincronizarPropios();
+  Object.assign(ui, { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, verMaestro: false, recMetodo: null });
   cerrarModal();
   ir(estado.plan ? 'hoy' : 'bienvenida');
   toast(`Usuario activo: ${usuarioActual().nombre}`);
@@ -171,7 +194,7 @@ function seriesObjetivo(item) {
 // =====================================================================
 // Navegación: cada parte es una página con su propia dirección (#seguimiento/historial…)
 // =====================================================================
-const ui = { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, metricaMedida: 'peso' };
+const ui = { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, verMaestro: false, recMetodo: null };
 
 // [patrón de la dirección, página, pestaña de la barra inferior]
 const RUTAS = [
@@ -194,14 +217,27 @@ const RUTAS = [
   [/^seguimiento\/historial$/, segHistorial, 'seguimiento'],
   [/^seguimiento\/calculadora$/, segCalculadora, 'seguimiento'],
   [/^historial\/(\d+)$/, historialDetalle, 'seguimiento'],
+  [/^nutricion$/, nutricion, 'nutricion'],
+  [/^nutricion\/diario$/, nutricion, 'nutricion'],
+  [/^nutricion\/recetas$/, nutricionRecetas, 'nutricion'],
+  [/^nutricion\/receta\/([\w-]+)$/, nutricionReceta, 'nutricion'],
+  [/^nutricion\/hidratacion$/, nutricionAgua, 'nutricion'],
+  [/^nutricion\/ia$/, nutricionIA, 'nutricion'],
+  [/^nutricion\/objetivos$/, nutricionObjetivos, 'nutricion'],
   [/^ejercicios$/, ejercicios, 'ejercicios'],
+  [/^ejercicios\/nuevo$/, ejercicioNuevo, 'ejercicios'],
+  [/^ejercicios\/mios$/, ejerciciosPropios, 'ejercicios'],
+  [/^ejercicio\/([\w-]+)\/editar$/, ejercicioEditar, 'ejercicios'],
   [/^ejercicio\/([\w-]+)$/, ejercicioDetalle, 'ejercicios'],
   [/^ajustes$/, ajustes, 'ajustes'],
   [/^ajustes\/perfil$/, vistaPerfil, 'ajustes'],
   [/^ajustes\/recordatorios$/, ajRecordatorios, 'ajustes'],
+  [/^ajustes\/seguridad$/, ajSeguridad, 'ajustes'],
   [/^ajustes\/datos$/, ajDatos, 'ajustes'],
   [/^ajustes\/acerca$/, ajAcerca, 'ajustes'],
   [/^bienvenida$/, bienvenida, 'bienvenida'],
+  [/^login$/, login, 'login'],
+  [/^recuperar$/, recuperar, 'recuperar'],
   [/^usuarios$/, gestorUsuarios, 'ajustes'],
   [/^usuarios\/nuevo$/, usuarioNuevo, 'ajustes'],
   [/^usuario\/([\w-]+)$/, usuarioEditar, 'ajustes'],
@@ -213,8 +249,13 @@ window.addEventListener('hashchange', render);
 
 function render() {
   let r = ruta();
-  if (!estado.plan && !/^usuario/.test(r)) r = 'bienvenida';
-  else if (r === 'bienvenida') r = 'hoy';
+  if (estaBloqueado()) {
+    if (!/^(login|recuperar|usuarios|usuarios\/nuevo|usuario\/[\w-]+)$/.test(r)) r = 'login';
+  } else if (!estado.plan && !/^usuario/.test(r)) {
+    r = 'bienvenida';
+  } else if (r === 'bienvenida') {
+    r = 'hoy';
+  }
   if (r === 'sesion' && !estado.enCurso) r = 'hoy';
   let entrada = RUTAS.find(([re]) => re.test(r));
   if (!entrada) { r = 'hoy'; entrada = RUTAS[0]; }
@@ -230,7 +271,7 @@ function render() {
   }
   render.ultima = r;
   document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('activo', a.dataset.v === tab));
-  $('.nav').hidden = !estado.plan || tab === 'sesion' || tab === 'bienvenida';
+  $('.nav').hidden = !estado.plan || tab === 'sesion' || tab === 'bienvenida' || tab === 'login' || tab === 'recuperar';
   if ($('#grafica')) dibujarGrafica();
   if ($('#graficaMedidas')) dibujarGraficaMedidas();
   if ($('#nutriResultados')) actualizarNutricion();
@@ -264,6 +305,96 @@ const ICONO_PATRON = {
   biceps: '💪', triceps: '💪', core: '🧱', metabolico: '🔥',
 };
 const vacioMsg = (icono, titulo, texto, boton = '') => `<div class="vacio"><div class="vacio-ic">${icono}</div><h2>${titulo}</h2><p class="tenue">${texto}</p>${boton}</div>`;
+const subnav = (items, actual) => `<nav class="subnav">${items.map(([h, t]) => `<a href="#${h}" class="${h === actual ? 'on' : ''}">${t}</a>`).join('')}</nav>`;
+const SUBNAV_NUTRICION = [['nutricion', 'Diario'], ['nutricion/recetas', 'Recetas'], ['nutricion/hidratacion', 'Agua'], ['nutricion/ia', 'Asistente'], ['nutricion/objetivos', 'Objetivos']];
+
+// =====================================================================
+// Nutrición: objetivos, consumo del día y agua
+// =====================================================================
+const ceroMacros = () => ({ kcal: 0, prot: 0, carbs: 0, grasa: 0, fibra: 0 });
+
+// Gasto energético y reparto de macros a partir del perfil nutricional.
+function metasNutricion(n = estado.nutricion) {
+  const ult = ultimoPeso();
+  const peso = Number(n?.peso) || Number(ult?.v) || 0;
+  const cm = Number(n?.altura) || 0;
+  const edad = Number(n?.edad) || 0;
+  if (!peso || !cm || !edad) return null;
+  const act = ACTIVIDADES[n.actividad] || ACTIVIDADES.moderado;
+  const obj = OBJETIVOS_NUTRI[n.objetivo] || OBJETIVOS_NUTRI.mantener;
+  const bmr = 10 * peso + 6.25 * cm - 5 * edad + (n.sexo === 'mujer' ? -161 : 5);
+  const tdee = bmr * act.factor;
+  const kcal = Math.round(tdee * (1 + obj.factor));
+  if (!Number.isFinite(kcal) || kcal <= 0) return null;
+  const protMin = Math.round(peso * obj.prot[0]);
+  const protMax = Math.round(peso * obj.prot[1]);
+  const protG = Math.round((protMin + protMax) / 2);
+  const grasaG = Math.round(kcal * 0.25 / 9);
+  const carbsG = Math.max(0, Math.round((kcal - protG * 4 - grasaG * 9) / 4));
+  const fibraG = Math.round(kcal * 14 / 1000);
+  const aguaMl = Math.round((peso * 0.035 + 0.5) * 1000);
+  const imc = peso / Math.pow(cm / 100, 2);
+  return { peso, cm, edad, bmr, tdee, kcal, protMin, protMax, protG, grasaG, carbsG, fibraG, aguaMl, imc, act, obj };
+}
+
+const diaNutri = () => ui.diaNutri || hoy();
+const comidasDia = (fecha = diaNutri()) => (estado.comidas || {})[fecha] || {};
+const vasosDia = (fecha = diaNutri()) => Number((estado.agua || {})[fecha]) || 0;
+
+function macrosEntrada(en) {
+  if (!en) return ceroMacros();
+  if (en.tipo === 'receta') {
+    const r = RECETAS.find(x => x.id === en.id);
+    if (!r) return ceroMacros();
+    const k = Number(en.racion) || 1;
+    const t = resumenReceta(r).total;
+    return { kcal: t.kcal * k, prot: t.prot * k, carbs: t.carbs * k, grasa: t.grasa * k, fibra: t.fibra * k };
+  }
+  return macrosDe(alimentoPorId(en.id), Number(en.gramos) || 0);
+}
+const macrosComida = entradas => sumarMacros((entradas || []).map(macrosEntrada));
+function macrosDia(fecha = diaNutri()) {
+  const dia = comidasDia(fecha);
+  return sumarMacros(Object.keys(COMIDAS).map(c => macrosComida(dia[c])));
+}
+
+function barrasMacros(consumo, metas) {
+  if (!metas) return '';
+  const filas = [
+    ['prot', 'Proteína', consumo.prot, metas.protG, 'g'],
+    ['carbs', 'Carbohidratos', consumo.carbs, metas.carbsG, 'g'],
+    ['grasa', 'Grasas', consumo.grasa, metas.grasaG, 'g'],
+    ['fibra', 'Fibra', consumo.fibra, metas.fibraG, 'g'],
+  ];
+  return `<div class="macro-barras">${filas.map(([cls, nombre, val, meta, u]) => {
+    const pct = meta ? Math.min(100, Math.round(val / meta * 100)) : 0;
+    return `<div class="macro-barra p-${cls}"><span>${nombre}</span><div class="macro-pista"><i style="width:${pct}%"></i></div><b>${Math.round(val)}/${Math.round(meta)} ${u}</b></div>`;
+  }).join('')}</div>`;
+}
+
+// =====================================================================
+// Seguridad local: contraseña con SHA-256 + salt, pregunta y código maestro
+// =====================================================================
+async function sha256Hex(txt) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txt));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+const nuevoSalt = () => [...crypto.getRandomValues(new Uint8Array(16))].map(b => b.toString(16).padStart(2, '0')).join('');
+const hashClave = (clave, salt) => sha256Hex(`${salt}::${clave}`);
+function generarMaestro() {
+  const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const blk = n => Array.from(crypto.getRandomValues(new Uint8Array(n))).map(x => abc[x % abc.length]).join('');
+  return `DNT-${blk(4)}-${blk(4)}`;
+}
+const PREGUNTAS_SEG = [
+  '¿Cuál es el nombre de tu primera mascota?',
+  '¿En qué ciudad naciste?',
+  '¿Cuál es tu comida favorita?',
+  '¿Cómo se llamaba tu primer entrenador?',
+  '¿Cuál es tu grupo o cantante favorito?',
+];
+// Estado temporal del proceso de recuperación (no se guarda).
+const recuperacionProc = { ok: false, codigo: null, expira: 0 };
 
 // Silueta de frente y de espalda con cada músculo coloreado.
 function cuerpoSVG(colores = {}, { mini = false } = {}) {
@@ -377,6 +508,18 @@ function inicio() {
       ${tile('🏋️', estado.historial.length, 'sesiones', 'violeta')}
       ${tile('📦', ultima ? fmtNum(volumenSesion(ultima)) : 0, 'kg última sesión', 'verde')}
     </div>
+    ${(() => {
+      const metas = metasNutricion();
+      const consumo = macrosDia(hoy());
+      const vasos = vasosDia(hoy());
+      return `<a class="tarjeta enlace-tarjeta" href="#nutricion">
+        <div class="fila"><h2>🍎 Nutrición de hoy</h2><span class="chev">›</span></div>
+        <div class="tiles">
+          ${tile('🔥', fmtNum(consumo.kcal), metas ? `de ${fmtNum(metas.kcal)} kcal` : 'kcal', 'naranja')}
+          ${tile('🥩', `${Math.round(consumo.prot)} g`, metas ? `de ${metas.protG} g proteína` : 'proteína', 'verde')}
+          ${tile('💧', `${(vasos * VASO_ML / 1000).toFixed(2)} L`, metas ? `de ${(metas.aguaMl / 1000).toFixed(1)} L` : 'agua', 'azul')}
+        </div></a>`;
+    })()}
     <a class="tarjeta enlace-tarjeta" href="#seguimiento/recuperacion">
       <div class="fila"><h2>Recuperación muscular</h2><span class="chev">›</span></div>
       ${cuerpoSVG(coloresRecuperacion(rec), { mini: true })}
@@ -469,6 +612,15 @@ function vistaCalendario() {
     </div>`;
 }
 
+// Control para ajustar el descanso de un ejercicio desde el programa.
+function restControl(e, i, j) {
+  const rec = descansoRecomendado(porId[e.id] || e, estado.perfil);
+  return `<span class="rest-edit">descanso
+    <input type="number" inputmode="numeric" min="0" max="600" step="5" value="${e.descanso}" data-a="rest" data-i="${i}" data-j="${j}" aria-label="Descanso en segundos">s
+    ${e.descanso !== rec ? `<button class="chip-mini" data-a="restRec" data-i="${i}" data-j="${j}" data-d="${rec}" title="Descanso recomendado para este ejercicio">sugerido ${rec} s</button>` : ''}
+  </span>`;
+}
+
 function listaEjercicios(ejs, { editable = false, i = null } = {}) {
   return `<ul class="lista">${ejs.map((e, j) => `
     <li>
@@ -477,7 +629,8 @@ function listaEjercicios(ejs, { editable = false, i = null } = {}) {
         <a class="enlace fuerte" href="#ejercicio/${e.id}">${esc(nombreEj(e.id))}</a>
         ${e.foco ? '<span class="chip-mini">foco</span>' : ''}
         ${e.metodo && e.metodo !== 'normal' ? `<span class="chip-mini alt">${METODOS[e.metodo].nombre}</span>` : ''}
-        <br><span class="tenue">${e.metodo === 'tabata' ? '8 × 20 s / 10 s' : `${e.series} × ${objetivoTxt(e)} · descanso ${e.descanso} s`}</span>
+        <br><span class="tenue">${e.metodo === 'tabata' ? '8 × 20 s / 10 s' : `${e.series} × ${objetivoTxt(e)}`}</span>
+        ${e.metodo === 'tabata' ? '' : editable ? restControl(e, i, j) : `<span class="tenue"> · descanso ${e.descanso} s</span>`}
       </div>
       ${editable ? `<div class="acciones">
         <button class="icono" title="Método de intensificación" data-a="metodo" data-i="${i}" data-j="${j}">⚡</button>
@@ -1043,34 +1196,38 @@ function guardarMedida(f) {
   toast(actualizada ? 'Medición actualizada' : 'Medición guardada');
 }
 
-function segNutricion() {
+function formNutricionHTML() {
   const n = { ...NUTRICION_DEF, ...(estado.nutricion || {}) };
   const ult = ultimoPeso();
   const peso = n.peso ?? ult?.v ?? '';
+  return `<form id="formNutricion" class="tarjeta" novalidate>
+    <div class="nutri-grid">
+      <label class="campo">Sexo<select name="sexo" data-a="nutricion">
+        <option value="hombre" ${n.sexo === 'hombre' ? 'selected' : ''}>Hombre</option>
+        <option value="mujer" ${n.sexo === 'mujer' ? 'selected' : ''}>Mujer</option>
+      </select></label>
+      <label class="campo">Edad<input type="number" name="edad" inputmode="numeric" min="14" max="100" value="${n.edad || 30}" data-a="nutricion"></label>
+      <label class="campo">Altura (cm)<input type="number" name="altura" inputmode="numeric" min="120" max="230" value="${n.altura || 175}" data-a="nutricion"></label>
+      <label class="campo">Peso (kg)<input type="number" name="peso" inputmode="decimal" step="0.1" min="30" max="400" value="${peso}" placeholder="—" data-a="nutricion"></label>
+    </div>
+    <div class="nutri-grid">
+      <label class="campo">Actividad<select name="actividad" data-a="nutricion">
+        ${Object.entries(ACTIVIDADES).map(([k, a]) => `<option value="${k}" ${n.actividad === k ? 'selected' : ''}>${a.nombre} · ${a.desc}</option>`).join('')}
+      </select></label>
+      <label class="campo">Objetivo<select name="objetivo" data-a="nutricion">
+        ${Object.entries(OBJETIVOS_NUTRI).map(([k, o]) => `<option value="${k}" ${n.objetivo === k ? 'selected' : ''}>${o.nombre}</option>`).join('')}
+      </select></label>
+    </div>
+    <p class="tenue" id="nutriPesoNota">${notaPesoHTML(n, ult)}</p>
+    <p class="tenue">Los resultados se actualizan al escribir. Fórmula de Mifflin-St Jeor.</p>
+  </form>`;
+}
+
+function segNutricion() {
   return pagina({
     titulo: 'Calorías y proteína', padre: 'seguimiento', sub: 'Gasto diario, macros, fibra, agua e IMC',
     cuerpo: `
-      <form id="formNutricion" class="tarjeta" novalidate>
-        <div class="nutri-grid">
-          <label class="campo">Sexo<select name="sexo" data-a="nutricion">
-            <option value="hombre" ${n.sexo === 'hombre' ? 'selected' : ''}>Hombre</option>
-            <option value="mujer" ${n.sexo === 'mujer' ? 'selected' : ''}>Mujer</option>
-          </select></label>
-          <label class="campo">Edad<input type="number" name="edad" inputmode="numeric" min="14" max="100" value="${n.edad || 30}" data-a="nutricion"></label>
-          <label class="campo">Altura (cm)<input type="number" name="altura" inputmode="numeric" min="120" max="230" value="${n.altura || 175}" data-a="nutricion"></label>
-          <label class="campo">Peso (kg)<input type="number" name="peso" inputmode="decimal" step="0.1" min="30" max="400" value="${peso}" placeholder="—" data-a="nutricion"></label>
-        </div>
-        <div class="nutri-grid">
-          <label class="campo">Actividad<select name="actividad" data-a="nutricion">
-            ${Object.entries(ACTIVIDADES).map(([k, a]) => `<option value="${k}" ${n.actividad === k ? 'selected' : ''}>${a.nombre} · ${a.desc}</option>`).join('')}
-          </select></label>
-          <label class="campo">Objetivo<select name="objetivo" data-a="nutricion">
-            ${Object.entries(OBJETIVOS_NUTRI).map(([k, o]) => `<option value="${k}" ${n.objetivo === k ? 'selected' : ''}>${o.nombre}</option>`).join('')}
-          </select></label>
-        </div>
-        <p class="tenue" id="nutriPesoNota">${notaPesoHTML(n, ult)}</p>
-        <p class="tenue">Los resultados se actualizan al escribir. Fórmula de Mifflin-St Jeor.</p>
-      </form>
+      ${formNutricionHTML()}
       <div id="nutriResultados"></div>
       <div class="botones"><a class="btn sec" href="#seguimiento/medidas">⚖️ Registrar mi peso</a></div>
       <p class="tenue">Es una estimación, no consejo médico. Ajusta las calorías según tu evolución real: si en 2-3 semanas no cambia tu peso, mueve 100-200 kcal.</p>
@@ -1146,6 +1303,233 @@ function actualizarNutricion() {
       <p class="tenue">El IMC es solo una referencia: no distingue masa muscular de grasa. Para valorar tu composición, usa también el peso, la cintura y las fotos.</p>
     </div>
   `;
+}
+
+// =====================================================================
+// Páginas: Nutrición (diario, recetas, agua, asistente y objetivos)
+// =====================================================================
+const fechaLargaNutri = f => deIso(f).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+
+function resumenDia(fecha = diaNutri()) {
+  const metas = metasNutricion();
+  const consumo = macrosDia(fecha);
+  const vasos = vasosDia(fecha);
+  return { metas, consumo, vasos, aguaMl: vasos * VASO_ML, aguaMeta: metas ? metas.aguaMl : 0 };
+}
+
+function navegadorDiasNutri() {
+  const f = diaNutri();
+  return `<div class="fila nav-semana">
+    <button class="icono" data-a="nutriDia" data-d="-1" aria-label="Día anterior">‹</button>
+    <div class="centro"><b>${f === hoy() ? 'Hoy' : fmtCorta(f)}</b><br><span class="tenue">${fechaLargaNutri(f)}</span></div>
+    <button class="icono" data-a="nutriDia" data-d="1" ${f >= hoy() ? 'disabled' : ''} aria-label="Día siguiente">›</button>
+  </div>`;
+}
+
+function nutricion() {
+  const f = diaNutri();
+  const { metas, consumo, vasos, aguaMl, aguaMeta } = resumenDia(f);
+  const kcalMeta = metas ? metas.kcal : 0;
+  const restante = Math.max(0, kcalMeta - consumo.kcal);
+  const comidas = comidasDia(f);
+  return pagina({
+    titulo: 'Nutrición', sub: MARCA.eslogan,
+    cuerpo: `
+      ${subnav(SUBNAV_NUTRICION, 'nutricion')}
+      ${navegadorDiasNutri()}
+      <div class="tiles cuatro">
+        ${tile('🔥', fmtNum(consumo.kcal), kcalMeta ? `de ${fmtNum(kcalMeta)} kcal` : 'kcal registradas', 'naranja')}
+        ${tile('🥩', `${Math.round(consumo.prot)} g`, metas ? `de ${metas.protG} g de proteína` : 'proteína', 'verde')}
+        ${tile('💧', `${(aguaMl / 1000).toFixed(2)} L`, aguaMeta ? `de ${(aguaMeta / 1000).toFixed(1)} L` : 'agua', 'azul')}
+        ${tile('🍽️', kcalMeta ? fmtNum(restante) : '—', kcalMeta ? (restante ? 'kcal disponibles' : 'objetivo cubierto') : 'sin objetivo', 'violeta')}
+      </div>
+      ${metas ? `<div class="tarjeta"><h2>📊 Macros del día</h2>${barrasMacros(consumo, metas)}
+        <p class="tenue">${fmtNum(consumo.kcal)} kcal registradas de ${fmtNum(kcalMeta)}.</p></div>`
+        : `<div class="tarjeta"><h2>Configura tus objetivos</h2><p class="tenue">Añade sexo, edad, altura y peso en <a class="enlace" href="#nutricion/objetivos">Objetivos</a> para ver tus metas diarias de calorías y macros.</p></div>`}
+      <div class="fila"><h2>Comidas</h2><a class="enlace" href="#nutricion/ia">🤖 Asistente</a></div>
+      ${Object.entries(COMIDAS).map(([k, c]) => bloqueComida(k, c, comidas[k] || [])).join('')}
+      <a class="tarjeta enlace-tarjeta" href="#nutricion/recetas"><div class="fila"><div><h2>🍳 Recetas equilibradas</h2><p class="tenue">Añádelas a tu diario con un toque.</p></div><span class="chev">›</span></div></a>
+      <p class="tenue">${vasos} ${vasos === 1 ? 'vaso' : 'vasos'} de agua (${VASO_ML} ml cada uno). <a class="enlace" href="#nutricion/hidratacion">Registrar agua</a></p>
+    `,
+  });
+}
+
+function bloqueComida(clave, c, entradas) {
+  const macros = macrosComida(entradas);
+  return `<div class="comida-bloque">
+    <div class="fila"><h3>${c.icono} ${c.nombre}</h3><span class="kcal-comida">${fmtNum(macros.kcal)} kcal</span></div>
+    ${entradas.length ? entradas.map((en, idx) => itemComida(en, clave, idx)).join('') : '<p class="tenue">Sin registros todavía.</p>'}
+    <div class="botones">
+      <button class="btn sec" data-a="addAlimento" data-comida="${clave}">＋ Alimento</button>
+      <button class="btn sec" data-a="addReceta" data-comida="${clave}">🍳 Receta</button>
+    </div>
+  </div>`;
+}
+
+function itemComida(en, clave, idx) {
+  const esReceta = en.tipo === 'receta';
+  const receta = esReceta ? RECETAS.find(r => r.id === en.id) : null;
+  const al = esReceta ? null : alimentoPorId(en.id);
+  const macros = macrosEntrada(en);
+  const nombre = esReceta ? (receta?.nombre || en.id) : (al?.nombre || en.id);
+  const sub = esReceta ? `${fmtDec(en.racion || 1)} ${Number(en.racion || 1) === 1 ? 'ración' : 'raciones'}` : `${en.gramos} g`;
+  return `<div class="alimento-item">
+    <div class="ai-t"><b>${esc(nombre)}</b><small>${sub}</small></div>
+    <div class="ai-m"><b>${fmtNum(macros.kcal)}</b><small>kcal · ${Math.round(macros.prot)} P</small></div>
+    <div class="acciones">
+      <button class="icono peq" data-a="editCantidad" data-comida="${clave}" data-i="${idx}" title="Cambiar cantidad">✎</button>
+      <button class="icono peq" data-a="quitarComida" data-comida="${clave}" data-i="${idx}" title="Quitar">🗑️</button>
+    </div>
+  </div>`;
+}
+
+function listaAlimentosHTML() {
+  const lista = buscarAlimentos(ui.nutriQ, ui.nutriCat);
+  if (!lista.length) return '<p class="tenue centro">Sin resultados. Prueba con otra palabra.</p>';
+  return lista.map(a => `<button class="celda" data-a="ponerAlimento" data-id="${a.id}">
+    <span class="ic verde">🍽️</span>
+    <span class="celda-t"><b>${esc(a.nombre)}</b><small>${a.porcion} g · ${fmtNum(a.kcal * a.porcion / 100)} kcal · ${fmtNum(a.prot * a.porcion / 100)} g proteína</small></span>
+    <span class="chev">＋</span></button>`).join('');
+}
+
+// Vuelve a pintar la lista dentro del modal de alimentos (sin cerrarlo).
+function refrescarListaAlimentos() {
+  const cont = $('#listaAlimentos');
+  if (!cont) return;
+  cont.innerHTML = listaAlimentosHTML();
+  document.querySelectorAll('#modal .chip[data-a="nutriCat"]').forEach(c =>
+    c.classList.toggle('on', (c.dataset.m || '') === (ui.nutriCat || '')));
+}
+
+function elegirAlimento(comida) {
+  ui.comidaSel = comida;
+  ui.nutriQ = '';
+  ui.nutriCat = '';
+  modal(`<h2>${COMIDAS[comida].icono} Añadir a ${COMIDAS[comida].nombre}</h2>
+    <div class="buscador"><span>🔍</span><input type="search" placeholder="Buscar alimento" data-a="nutriBuscar" class="buscar" aria-label="Buscar alimento"></div>
+    <div class="chips scroll">
+      <button class="chip ${!ui.nutriCat ? 'on' : ''}" data-a="nutriCat" data-m="">Todos</button>
+      ${Object.entries(CATEGORIAS_ALIMENTO).map(([k, v]) => `<button class="chip ${ui.nutriCat === k ? 'on' : ''}" data-a="nutriCat" data-m="${k}">${v}</button>`).join('')}
+    </div>
+    <div id="listaAlimentos">${listaAlimentosHTML()}</div>`);
+  setTimeout(() => $('#listaAlimentos')?.closest('.modal-cont')?.querySelector('input')?.focus(), 50);
+}
+
+function elegirReceta(comida) {
+  ui.comidaSel = comida;
+  modal(`<h2>${COMIDAS[comida].icono} Recetas para ${COMIDAS[comida].nombre}</h2>
+    <div class="celdas">${RECETAS.map(r => {
+      const t = resumenReceta(r).total;
+      return `<button class="celda" data-a="ponerReceta" data-id="${r.id}">
+        <span class="ic naranja">${r.icono}</span>
+        <span class="celda-t"><b>${esc(r.nombre)}</b><small>${fmtNum(t.kcal)} kcal · ${Math.round(t.prot)} g proteína</small></span>
+        <span class="chev">＋</span></button>`;
+    }).join('')}</div>`);
+}
+
+function nutricionRecetas() {
+  return pagina({
+    titulo: 'Recetas', sub: 'Ideas equilibradas con sus macros',
+    cuerpo: `
+      ${subnav(SUBNAV_NUTRICION, 'nutricion/recetas')}
+      ${RECETAS.map(r => {
+        const t = resumenReceta(r).total;
+        return `<a class="tarjeta enlace-tarjeta receta-card" href="#nutricion/receta/${r.id}">
+          <div class="fila"><h2>${r.icono} ${esc(r.nombre)}</h2><span class="chev">›</span></div>
+          <div class="receta-macros"><span>${fmtNum(t.kcal)} kcal</span><span>${Math.round(t.prot)} g P</span><span>${Math.round(t.carbs)} g C</span><span>${Math.round(t.grasa)} g G</span></div>
+          <p class="tenue">${r.comidas.map(c => COMIDAS[c].nombre).join(' · ')}</p></a>`;
+      }).join('')}
+    `,
+  });
+}
+
+function nutricionReceta(id) {
+  const r = RECETAS.find(x => x.id === id);
+  if (!r) return null;
+  const res = resumenReceta(r);
+  return pagina({
+    titulo: esc(r.nombre), padre: 'nutricion/recetas', sub: r.comidas.map(c => COMIDAS[c].nombre).join(' · '),
+    cuerpo: `
+      <div class="tarjeta receta-card">
+        <div class="receta-macros"><span>${fmtNum(res.total.kcal)} kcal</span><span>${Math.round(res.total.prot)} g proteína</span><span>${Math.round(res.total.carbs)} g hidratos</span><span>${Math.round(res.total.grasa)} g grasas</span><span>${Math.round(res.total.fibra)} g fibra</span></div>
+        <h2>🧾 Ingredientes</h2>
+        ${res.items.map(i => `<div class="alimento-item"><div class="ai-t"><b>${esc(i.alimento.nombre)}</b><small>${i.gramos} g</small></div><div class="ai-m"><b>${fmtNum(i.macros.kcal)}</b><small>kcal</small></div></div>`).join('')}
+        <h2>👩‍🍳 Preparación</h2><ol class="pasos">${r.pasos.map(p => `<li>${esc(p)}</li>`).join('')}</ol>
+      </div>
+      <div class="tarjeta"><h2>Añadir a mi diario de hoy</h2>
+        <div class="botones">${r.comidas.map(c => `<button class="btn sec" data-a="recetaA" data-receta="${r.id}" data-comida="${c}">＋ ${COMIDAS[c].icono} ${COMIDAS[c].nombre}</button>`).join('')}</div>
+      </div>
+    `,
+  });
+}
+
+function nutricionAgua() {
+  const f = diaNutri();
+  const { vasos, aguaMl, aguaMeta } = resumenDia(f);
+  const objetivo = aguaMeta || 2500;
+  const nVasos = Math.max(8, Math.ceil(objetivo / VASO_ML));
+  const pct = Math.min(100, Math.round(aguaMl / objetivo * 100));
+  return pagina({
+    titulo: 'Hidratación', sub: 'Agua del día',
+    cuerpo: `
+      ${subnav(SUBNAV_NUTRICION, 'nutricion/hidratacion')}
+      ${navegadorDiasNutri()}
+      <div class="tarjeta">
+        <div class="fila"><h2>💧 ${(aguaMl / 1000).toFixed(2)} L</h2><span class="tenue">objetivo ${(objetivo / 1000).toFixed(1)} L · ${pct} %</span></div>
+        <div class="macro-pista" style="margin:6px 0 14px"><i style="width:${pct}%"></i></div>
+        <div class="agua-vasos">${Array.from({ length: nVasos }, (_, i) => `<button class="vaso-btn ${i < vasos ? 'lleno' : ''}" data-a="vaso" data-n="${i + 1}" aria-label="Vaso ${i + 1} de ${nVasos}"></button>`).join('')}</div>
+        <div class="botones">
+          <button class="btn sec" data-a="aguaMenos" ${vasos ? '' : 'disabled'}>− Un vaso</button>
+          <button class="btn" data-a="aguaMas">＋ Un vaso</button>
+        </div>
+        <p class="tenue">Cada vaso son ${VASO_ML} ml. Toca un vaso para marcar hasta ahí.</p>
+      </div>
+      <p class="tenue">La recomendación incluye el agua de los alimentos y sube los días de entrenamiento o con calor. Si tienes sed, bebe.</p>
+    `,
+  });
+}
+
+function nutricionIA() {
+  const metas = metasNutricion();
+  const consumo = macrosDia();
+  const avisos = generarInsightsDantal(estado, metas || {}, consumo);
+  return pagina({
+    titulo: 'Asistente DANTAL', sub: 'Avisos a partir de tus datos',
+    cuerpo: `
+      ${subnav(SUBNAV_NUTRICION, 'nutricion/ia')}
+      <div class="tarjeta"><h2>🤖 Tu resumen</h2>
+        <p class="tenue">DANTAL separa siempre el <b>Dato real</b> (lo que has registrado) de la <b>Estimación</b> (cálculos metabólicos o de recuperación).</p></div>
+      ${avisos.map(a => `<div class="insight ${a.tipo === 'Estimación' ? 'estimacion' : ''}">
+        <span class="ins-ic">${a.icono}</span>
+        <div class="ins-t"><span class="ins-tipo">${a.tipo}</span><b>${esc(a.titulo)}</b><p>${esc(a.texto)}</p></div></div>`).join('')}
+      <p class="tenue">DANTAL no es un servicio médico. Ante cualquier duda sobre alimentación o salud, consulta con un profesional.</p>
+    `,
+  });
+}
+
+function nutricionObjetivos() {
+  return pagina({
+    titulo: 'Objetivos', sub: 'Gasto diario, macros, fibra, agua e IMC',
+    cuerpo: `
+      ${subnav(SUBNAV_NUTRICION, 'nutricion/objetivos')}
+      ${formNutricionHTML()}
+      <div id="nutriResultados"></div>
+      <div class="botones"><a class="btn sec" href="#seguimiento/medidas">⚖️ Registrar mi peso</a></div>
+      <p class="tenue">Es una estimación, no consejo médico. Ajusta las calorías según tu evolución real: si en 2-3 semanas no cambia tu peso, mueve 100-200 kcal.</p>
+    `,
+  });
+}
+
+// Añade o quita entradas del diario (fecha, comida).
+function guardarComidas() { guardar(); render(); }
+function anadirEntrada(comida, entrada, fecha = diaNutri()) {
+  const dia = (estado.comidas[fecha] = estado.comidas[fecha] || {});
+  (dia[comida] = dia[comida] || []).push(entrada);
+  guardarComidas();
+}
+function quitarEntrada(comida, idx, fecha = diaNutri()) {
+  const dia = estado.comidas[fecha];
+  if (dia?.[comida]) { dia[comida].splice(idx, 1); guardarComidas(); }
 }
 
 function datosEjercicio(id) {
@@ -1319,31 +1703,57 @@ function dibujarGrafica() {
 // Páginas: Ejercicios
 // =====================================================================
 function itemEjercicio(e) {
-  return `<a class="celda" href="#ejercicio/${e.id}"><span class="ic azul">${ICONO_PATRON[e.patron] || '🏋️'}</span>
-    <span class="celda-t"><b>${esc(e.nombre)}</b><small>${e.musculos.map(m => MUSCULOS[m]).join(', ')} · ${equipoTxt(e)}</small></span><span class="chev">›</span></a>`;
+  return `<a class="celda ${e.propio ? 'ej-propio' : ''}" href="#ejercicio/${e.id}"><span class="ic azul">${ICONO_PATRON[e.patron] || '🏋️'}</span>
+    <span class="celda-t"><b>${esc(e.nombre)}</b><small>${e.musculos.map(m => MUSCULOS[m]).join(', ')} · ${equipoTxt(e)}${e.propio ? ' · propio' : ''}</small></span><span class="chev">›</span></a>`;
 }
 
 function ejercicios() {
   const q = ui.q.toLowerCase();
-  const lista = EJERCICIOS.filter(e => (!ui.filtro || e.musculos.includes(ui.filtro)) && (!q || e.nombre.toLowerCase().includes(q)));
+  const lista = EJERCICIOS.filter(e =>
+    (!ui.filtro || e.musculos.includes(ui.filtro)) &&
+    (!ui.soloPropios || e.propio) &&
+    (!q || e.nombre.toLowerCase().includes(q)));
   let cuerpo;
   if (!lista.length) cuerpo = vacioMsg('🔍', 'Sin resultados', 'Prueba con otra palabra o quita el filtro.');
-  else if (ui.filtro || q) cuerpo = `<div class="celdas">${lista.map(itemEjercicio).join('')}</div>`;
+  else if (ui.filtro || q || ui.soloPropios) cuerpo = `<div class="celdas">${lista.map(itemEjercicio).join('')}</div>`;
   else cuerpo = Object.entries(MUSCULOS).map(([m, nombre]) => {
     const deEste = lista.filter(e => e.musculos[0] === m);
     return deEste.length ? grupo(`${nombre} · ${deEste.length}`, deEste.map(itemEjercicio).join('')) : '';
   }).join('');
+  const nPropios = EJERCICIOS.filter(e => e.propio).length;
   return pagina({
     titulo: 'Ejercicios', sub: `${EJERCICIOS.length} ejercicios con su técnica`,
+    extra: '<a class="icono" href="#ejercicios/nuevo" title="Crear ejercicio propio">＋</a>',
     cuerpo: `
       <div class="buscador"><span>🔍</span><input type="search" placeholder="Buscar ejercicio" value="${esc(ui.q)}" data-a="buscar" class="buscar" aria-label="Buscar ejercicio"></div>
       <div class="chips scroll">
-        <button class="chip ${!ui.filtro ? 'on' : ''}" data-a="filtro" data-m="">Todos</button>
-        ${Object.entries(MUSCULOS).map(([k, v]) => `<button class="chip ${ui.filtro === k ? 'on' : ''}" data-a="filtro" data-m="${k}">${v}</button>`).join('')}
+        <button class="chip ${!ui.filtro && !ui.soloPropios ? 'on' : ''}" data-a="filtro" data-m="">Todos</button>
+        <button class="chip ${ui.soloPropios ? 'on' : ''}" data-a="soloPropios">🧩 Míos${nPropios ? ` (${nPropios})` : ''}</button>
+        ${Object.entries(MUSCULOS).map(([k, v]) => `<button class="chip ${ui.filtro === k && !ui.soloPropios ? 'on' : ''}" data-a="filtro" data-m="${k}">${v}</button>`).join('')}
       </div>
       <div id="listaEj">${cuerpo}</div>
+      ${nPropios ? `<a class="tarjeta enlace-tarjeta" href="#ejercicios/mios"><div class="fila"><div><h2>🧩 Mis ejercicios</h2><p class="tenue">${nPropios} ${nPropios === 1 ? 'ejercicio propio' : 'ejercicios propios'}</p></div><span class="chev">›</span></div></a>` : ''}
     `,
   });
+}
+
+function technogymHTML(e) {
+  const info = infoTechnogym(e);
+  if (!info) return '';
+  const vid = info.video;
+  return `<div class="tarjeta">
+    <div class="tg-ficha">
+      ${ilustracionTechnogymSVG(e, { postura: 'A', ancho: 160 })}
+      <div>
+        <p class="tg-linea">${esc(info.linea)}${info.personalizada ? ' · propia' : ''}</p>
+        <p class="tg-maquina">${esc(info.maquina)}</p>
+        ${info.musculo ? `<p class="tenue">${esc(info.musculo)}</p>` : ''}
+        ${info.ajuste ? `<p class="tg-ajuste">${esc(info.ajuste)}</p>` : ''}
+        ${vid ? `<a class="btn sec" href="https://www.youtube.com/watch?v=${vid}" target="_blank" rel="noopener">▶ Vídeo de la máquina</a>` : ''}
+      </div>
+    </div>
+    <p class="tenue centro">Ajusta la máquina a tu cuerpo antes de empezar: el recorrido correcto empieza por una buena postura.</p>
+  </div>`;
 }
 
 function ejercicioDetalle(id) {
@@ -1355,14 +1765,16 @@ function ejercicioDetalle(id) {
   const colores = Object.fromEntries(e.musculos.map((m, i) => [m, i ? 'var(--acento2)' : 'var(--acento)']));
   const enPlan = estado.plan.sesiones.filter(s => !s.oculta && s.ejercicios.some(x => x.id === id)).map(s => s.nombre);
   return pagina({
-    titulo: esc(e.nombre), padre: 'ejercicios', sub: PATRONES[e.patron],
+    titulo: esc(e.nombre), padre: e.propio ? 'ejercicios/mios' : 'ejercicios', sub: PATRONES[e.patron],
+    extra: e.propio ? `<a class="icono" href="#ejercicio/${id}/editar" title="Editar ejercicio">✎</a>` : '',
     cuerpo: `
       <div class="tarjeta">
         ${cuerpoSVG(colores)}
         <p class="leyenda centro"><i class="lg" style="background:var(--acento)"></i>principal <i class="lg" style="background:var(--acento2)"></i>secundario</p>
         <div class="badges centro-flex">${e.musculos.map((m, i) => `<span class="badge ${i ? '' : 'prim'}">${MUSCULOS[m]}</span>`).join('')}
-          <span class="badge">🧰 ${equipoTxt(e)}</span>${e.compuesto ? '<span class="badge">Multiarticular</span>' : '<span class="badge">Aislamiento</span>'}</div>
+          <span class="badge">🧰 ${equipoTxt(e)}</span>${e.compuesto ? '<span class="badge">Multiarticular</span>' : '<span class="badge">Aislamiento</span>'}${e.propio ? '<span class="badge">🧩 Propio</span>' : ''}</div>
       </div>
+      ${technogymHTML(e)}
       ${tecnicaHTML(e)}
       ${videoHTML(e)}
       ${fotoHTML(e)}
@@ -1370,8 +1782,88 @@ function ejercicioDetalle(id) {
       <h2 class="sec-tit">📈 Tu progreso</h2>
       ${puntos.length ? '<div class="tarjeta"><div id="grafica"></div></div>' : '<div class="tarjeta"><p class="tenue">Aún no lo has registrado. Cuando lo hagas verás aquí tu evolución.</p></div>'}
       ${alt.length ? `<h2 class="sec-tit">⇄ Alternativas con tu material</h2><div class="celdas">${alt.map(itemEjercicio).join('')}</div>` : ''}
+      ${e.propio ? `<div class="botones"><a class="btn sec" href="#ejercicio/${id}/editar">✎ Editar ejercicio</a>
+        <button class="btn peligro" data-a="borrarEjPropio" data-id="${id}">Borrar ejercicio</button></div>` : ''}
     `,
   });
+}
+
+// =====================================================================
+// Páginas: ejercicios propios (crear, editar y listar)
+// =====================================================================
+function formEjercicio(e = null, nuevo = true) {
+  const p = e || { nombre: '', patron: 'empuje_h', musculos: [], equipo: [], compuesto: true, tipo: 'reps', desc: '', maquinaCustom: '', lineaCustom: '', musculoCustom: '', ajusteCustom: '', videoCustom: '' };
+  const video = p.videoCustom && !/^https?:/.test(p.videoCustom) ? `https://www.youtube.com/watch?v=${p.videoCustom}` : (p.videoCustom || '');
+  return `<form id="formEjercicio" class="tarjeta" data-id="${nuevo ? '' : esc(e.id)}" novalidate>
+    <label class="campo">Nombre<input type="search" name="nombre" value="${esc(p.nombre)}" maxlength="40" required placeholder="Por ejemplo: Press inclinado en Smith"></label>
+    <label class="campo">Patrón de movimiento<select name="patron">${Object.entries(PATRONES).map(([k, v]) => `<option value="${k}" ${p.patron === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
+    <fieldset><legend>Músculos</legend><div class="chips">${Object.entries(MUSCULOS).map(([k, v]) => `<label class="chip"><input type="checkbox" name="musculos" value="${k}" ${(p.musculos || []).includes(k) ? 'checked' : ''}>${v}</label>`).join('')}</div></fieldset>
+    <fieldset><legend>Material</legend><div class="chips">${Object.entries(EQUIPOS).map(([k, v]) => `<label class="chip"><input type="checkbox" name="equipo" value="${k}" ${(p.equipo || []).includes(k) ? 'checked' : ''}>${v}</label>`).join('')}</div></fieldset>
+    <div class="nutri-grid">
+      <label class="campo">Tipo<select name="tipo"><option value="reps" ${p.tipo !== 'tiempo' ? 'selected' : ''}>Repeticiones</option><option value="tiempo" ${p.tipo === 'tiempo' ? 'selected' : ''}>Por tiempo</option></select></label>
+      <label class="campo">¿Multiarticular?<select name="compuesto"><option value="si" ${p.compuesto ? 'selected' : ''}>Sí (compuesto)</option><option value="no" ${!p.compuesto ? 'selected' : ''}>No (aislamiento)</option></select></label>
+    </div>
+    <label class="campo">Descripción / técnica<textarea name="desc" rows="3" maxlength="300" placeholder="Cómo se hace, en una o dos frases.">${esc(p.desc)}</textarea></label>
+    <fieldset><legend>Máquina (opcional)</legend>
+      <p class="tenue">Si lo haces en una máquina concreta, guarda sus datos para verlos en la ficha con su ilustración.</p>
+      <div class="nutri-grid">
+        <label class="campo">Máquina<input type="search" name="maquinaCustom" value="${esc(p.maquinaCustom || '')}" placeholder="Leg Press" maxlength="40"></label>
+        <label class="campo">Línea<input type="search" name="lineaCustom" value="${esc(p.lineaCustom || '')}" placeholder="Selection 900" maxlength="40"></label>
+      </div>
+      <label class="campo">Músculo principal (texto)<input type="search" name="musculoCustom" value="${esc(p.musculoCustom || '')}" placeholder="Cuádriceps y glúteos" maxlength="60"></label>
+      <label class="campo">Ajuste recomendado<textarea name="ajusteCustom" rows="2" maxlength="200" placeholder="Altura del asiento, posición de los pies…">${esc(p.ajusteCustom || '')}</textarea></label>
+      <label class="campo">Vídeo de YouTube (opcional)<input type="url" name="videoCustom" value="${esc(video)}" placeholder="https://youtu.be/…"></label>
+    </fieldset>
+    <button class="btn" type="submit">${nuevo ? 'Crear ejercicio' : 'Guardar cambios'}</button>
+  </form>`;
+}
+
+const slugEjercicio = nombre => 'propio-' + String(nombre).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 32);
+
+function ejercicioNuevo() {
+  return pagina({ titulo: 'Nuevo ejercicio', padre: 'ejercicios', sub: 'Se añadirá a tu biblioteca', cuerpo: formEjercicio(null, true) });
+}
+
+function ejercicioEditar(id) {
+  const e = (estado.ejerciciosPropios || []).find(x => x.id === id);
+  if (!e) return null;
+  return pagina({ titulo: 'Editar ejercicio', padre: `ejercicio/${id}`, sub: esc(e.nombre), cuerpo: formEjercicio(e, false) });
+}
+
+function ejerciciosPropios() {
+  const lista = estado.ejerciciosPropios || [];
+  return pagina({
+    titulo: 'Mis ejercicios', padre: 'ejercicios', sub: `${lista.length} ${lista.length === 1 ? 'ejercicio propio' : 'ejercicios propios'}`,
+    extra: '<a class="icono" href="#ejercicios/nuevo" title="Nuevo ejercicio">＋</a>',
+    cuerpo: lista.length ? `<div class="celdas">${lista.map(e => `<div class="celda ej-propio">
+        <span class="ic azul">${ICONO_PATRON[e.patron] || '🏋️'}</span>
+        <span class="celda-t"><a class="enlace fuerte" href="#ejercicio/${e.id}">${esc(e.nombre)}</a><small>${(e.musculos || []).map(m => MUSCULOS[m]).join(', ') || 'Sin músculos'} · ${equipoTxt({ equipo: e.equipo || [] })}</small></span>
+        <div class="acciones"><a class="icono peq" href="#ejercicio/${e.id}/editar" title="Editar">✎</a>
+        <button class="icono peq" data-a="borrarEjPropio" data-id="${e.id}" title="Borrar">🗑️</button></div></div>`).join('')}</div>
+      <a class="btn" href="#ejercicios/nuevo">＋ Crear ejercicio</a>`
+      : vacioMsg('🧩', 'Aún no tienes ejercicios propios', 'Crea un ejercicio para tus máquinas o variantes concretas y aparecerá junto al resto.', '<a class="btn" href="#ejercicios/nuevo">＋ Crear ejercicio</a>'),
+  });
+}
+
+async function borrarEjPropio(id) {
+  const e = (estado.ejerciciosPropios || []).find(x => x.id === id);
+  if (!e) return;
+  const usado = estado.plan?.sesiones.some(s => s.ejercicios.some(x => x.id === id))
+    || (estado.misSesiones || []).some(s => s.ejercicios.some(x => x.id === id));
+  const enHistorial = estado.historial.some(h => h.ejercicios.some(x => x.id === id));
+  if (!await confirmar(usado || enHistorial
+    ? `«${e.nombre}» está en tu programa o historial. Se quitará de las sesiones (el historial conserva el registro).`
+    : `Se borrará «${e.nombre}» de tu biblioteca.`,
+    { titulo: '¿Borrar ejercicio?', ok: 'Borrar', peligro: true })) return;
+  estado.ejerciciosPropios = (estado.ejerciciosPropios || []).filter(x => x.id !== id);
+  if (estado.plan) estado.plan.sesiones.forEach(s => { s.ejercicios = s.ejercicios.filter(x => x.id !== id); });
+  estado.misSesiones = (estado.misSesiones || []).map(s => ({ ...s, ejercicios: s.ejercicios.filter(x => x.id !== id) }));
+  if (estado.enCurso) estado.enCurso.ejercicios = estado.enCurso.ejercicios.filter(x => x.id !== id);
+  sincronizarPropios();
+  guardar();
+  ir('ejercicios/mios');
+  toast('Ejercicio borrado');
 }
 
 // =====================================================================
@@ -1392,6 +1884,7 @@ function ajustes() {
       ${grupo('Programa', celda('ajustes/perfil', '🎯', 'Perfil y programa', 'Objetivo, días, frecuencia, duración, material y enfoque', 'verde'))}
       ${grupo('Aplicación',
         celda('ajustes/recordatorios', '🔔', 'Recordatorios', 'Aviso los días de entrenamiento', 'naranja', estado.ajustes.recordatorio ? estado.ajustes.hora : 'No') +
+        celda('ajustes/seguridad', '🔒', 'Seguridad', estado.seguridad?.activa ? 'Bloqueo activo con contraseña' : 'Protege la app con una contraseña', 'violeta') +
         celda('ajustes/datos', '💾', 'Tus datos', 'Copia de seguridad, CSV y borrado', 'azul'))}
       ${grupo('Ayuda',
         `<label class="celda"><span class="ic violeta">💡</span><span class="celda-t"><b>Iconos de ayuda ⓘ</b><small>Explicaciones en las zonas importantes</small></span>
@@ -1442,9 +1935,235 @@ function ajAcerca() {
         <p>Sus ejercicios van al principio de la sesión, cuando estás más fresco, y llevan una serie extra. El resto del cuerpo se mantiene.</p></div>
       <div class="tarjeta"><h2>💚 Recuperación</h2>
         <p>Se estima con las series de cada músculo y las horas desde que lo entrenaste (de 36 a 72 horas).</p></div>
-      <p class="tenue centro">MiEntrenamiento · versión ${APP_VERSION} · funciona sin conexión · tus datos no salen de tu dispositivo</p>
+      <div class="tarjeta"><h2>🍎 Nutrición</h2>
+        <p>Registra lo que comes y bebes en el diario. DANTAL calcula tus objetivos con la fórmula de Mifflin-St Jeor y te avisa de lo que te falta, separando siempre los datos reales de las estimaciones.</p></div>
+      <div class="tarjeta"><h2>🔒 Seguridad</h2>
+        <p>Puedes proteger la app con una contraseña que se guarda cifrada (SHA-256 con salt) en este dispositivo. Si la olvidas, tienes tres formas de recuperar el acceso: la pregunta de seguridad, un código por correo o el código maestro.</p></div>
+      <p class="tenue centro">${MARCA.nombre} · versión ${APP_VERSION} · funciona sin conexión · tus datos no salen de tu dispositivo</p>
     `,
   });
+}
+
+// =====================================================================
+// Páginas: acceso (login) y recuperación de contraseña
+// =====================================================================
+const SEG_PREG = i => PREGUNTAS_SEG[Number(i)] || PREGUNTAS_SEG[0];
+const normalizarResp = t => String(t ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+async function verificarClave(clave) {
+  const s = estado.seguridad;
+  if (!s?.hash) return false;
+  return await hashClave(String(clave ?? ''), s.salt) === s.hash;
+}
+async function verificarRespuesta(txt) {
+  const s = estado.seguridad;
+  if (!s?.respuesta) return false;
+  return await hashClave(normalizarResp(txt), s.salt) === s.respuesta;
+}
+
+// Activa el bloqueo creando el hash de la contraseña y de la respuesta.
+async function crearSeguridad({ clave, pregunta, respuesta, correo }) {
+  const salt = nuevoSalt();
+  estado.seguridad = {
+    activa: true, salt,
+    hash: await hashClave(clave, salt),
+    pregunta: Number(pregunta) || 0,
+    respuesta: await hashClave(normalizarResp(respuesta), salt),
+    correo: String(correo || '').trim(),
+    maestro: generarMaestro(),
+    creado: new Date().toISOString(),
+  };
+}
+
+function login() {
+  const u = usuarioActual();
+  return `<div class="login">
+    ${isotipoCuadrado({ tam: 72, clase: 'login-logo' })}
+    <h1>${MARCA.nombre}</h1>
+    <p class="tenue">${esc(u.nombre)} · app bloqueada</p>
+    <form id="formLogin" class="tarjeta" novalidate>
+      <label class="campo">Contraseña<input type="password" name="clave" autocomplete="current-password" required autofocus></label>
+      <p class="tenue error" id="avisoLogin"></p>
+      <button class="btn" type="submit">🔓 Desbloquear</button>
+    </form>
+    <a class="btn sec" href="#recuperar">He olvidado la contraseña</a>
+    <button class="btn sec" data-a="bloquearUsuario">Cambiar de usuario</button>
+  </div>`;
+}
+
+function recElegir(s) {
+  return `
+    <p class="tenue">Elige cómo quieres demostrar que eres tú y poner una contraseña nueva.</p>
+    <div class="celdas">
+      <button class="celda" data-a="recMetodo" data-m="pregunta"><span class="ic azul">❓</span>
+        <span class="celda-t"><b>Pregunta de seguridad</b><small>${esc(SEG_PREG(s.pregunta))}</small></span><span class="chev">›</span></button>
+      <button class="celda" data-a="recMetodo" data-m="correo"><span class="ic verde">✉️</span>
+        <span class="celda-t"><b>Código por correo</b><small>${s.correo ? esc(s.correo) : 'No hay correo configurado'}</small></span><span class="chev">›</span></button>
+      <button class="celda" data-a="recMetodo" data-m="maestro"><span class="ic violeta">🆘</span>
+        <span class="celda-t"><b>Código maestro</b><small>El código que guardaste al activar el bloqueo</small></span><span class="chev">›</span></button>
+    </div>`;
+}
+
+function recPregunta(s) {
+  return `<form id="formPregunta" class="tarjeta" novalidate>
+    <h2>❓ ${esc(SEG_PREG(s.pregunta))}</h2>
+    <label class="campo">Tu respuesta<input type="search" name="respuesta" autocomplete="off" required autofocus></label>
+    <p class="tenue error" id="avisoRec"></p>
+    <button class="btn" type="submit">Comprobar respuesta</button>
+  </form>`;
+}
+
+function recCorreo(s) {
+  if (!s.correo) return `<div class="tarjeta"><p class="tenue">No configuraste un correo de recuperación. Usa la pregunta de seguridad o el código maestro.</p></div>`;
+  return `<form id="formCodigo" class="tarjeta" novalidate>
+    <p>Generaré un código de 6 dígitos y abriré tu correo para enviártelo a <b>${esc(s.correo)}</b>.</p>
+    ${recuperacionProc.codigo ? `<div class="codigo-maestro">${recuperacionProc.codigo}</div>
+      <p class="tenue centro">Si el correo no llega, usa este código. Caduca en 10 minutos.</p>` : ''}
+    <button class="btn sec" type="button" data-a="enviarCodigo">✉️ ${recuperacionProc.codigo ? 'Generar otro código' : 'Enviar código'}</button>
+    <label class="campo">Código recibido<input type="search" name="codigo" inputmode="numeric" maxlength="6" autocomplete="one-time-code" required></label>
+    <p class="tenue error" id="avisoRec"></p>
+    <button class="btn" type="submit">Comprobar código</button>
+  </form>`;
+}
+
+function recMaestro() {
+  return `<form id="formMaestro" class="tarjeta" novalidate>
+    <p class="tenue">Escribe el código maestro que guardaste al activar el bloqueo (con el formato DNT-XXXX-XXXX).</p>
+    <label class="campo">Código maestro<input type="search" name="maestro" autocomplete="off" required autofocus></label>
+    <p class="tenue error" id="avisoRec"></p>
+    <button class="btn" type="submit">Comprobar código</button>
+  </form>`;
+}
+
+function recNueva() {
+  return `<form id="formNuevaClave" class="tarjeta" novalidate>
+    <h2>Nueva contraseña</h2>
+    <p class="tenue">Has verificado tu identidad. Elige una contraseña nueva para volver a entrar.</p>
+    <label class="campo">Nueva contraseña<input type="password" name="clave" minlength="4" autocomplete="new-password" required autofocus></label>
+    <label class="campo">Repite la contraseña<input type="password" name="clave2" minlength="4" autocomplete="new-password" required></label>
+    <p class="tenue error" id="avisoRec"></p>
+    <button class="btn" type="submit">Guardar y entrar</button>
+  </form>`;
+}
+
+function recuperar() {
+  const s = estado.seguridad;
+  if (!s?.activa) {
+    return `<div class="login">${isotipoCuadrado({ tam: 64, clase: 'login-logo' })}
+      <h1>Sin bloqueo</h1><p class="tenue">Esta cuenta no tiene contraseña activada.</p>
+      <a class="btn" href="#hoy">Volver</a></div>`;
+  }
+  const paso = recuperacionProc.ok ? 'nueva' : (ui.recMetodo || 'elegir');
+  const cuerpo = paso === 'pregunta' ? recPregunta(s)
+    : paso === 'correo' ? recCorreo(s)
+      : paso === 'maestro' ? recMaestro(s)
+        : paso === 'nueva' ? recNueva()
+          : recElegir(s);
+  return `<div class="login">
+    ${isotipoCuadrado({ tam: 64, clase: 'login-logo' })}
+    <h1>Recuperar acceso</h1>
+    ${paso === 'elegir' ? '' : '<button class="enlace centro" data-a="recVolver">‹ Elegir otro método</button>'}
+    ${cuerpo}
+    <a class="btn sec" href="#login">Volver al acceso</a>
+  </div>`;
+}
+
+// Genera un código de 6 dígitos y abre el correo del usuario (sin servidor).
+function enviarCodigo() {
+  const s = estado.seguridad;
+  if (!s?.correo) { toast('No hay correo configurado'); return; }
+  const codigo = String(Math.floor(100000 + Math.random() * 900000));
+  recuperacionProc.codigo = codigo;
+  recuperacionProc.expira = Date.now() + 10 * 60 * 1000;
+  const asunto = encodeURIComponent(`${MARCA.nombre}: código de recuperación`);
+  const cuerpo = encodeURIComponent(`Tu código para recuperar el acceso a ${MARCA.nombre} es:\n\n${codigo}\n\nCaduca en 10 minutos.`);
+  window.location.href = `mailto:${s.correo}?subject=${asunto}&body=${cuerpo}`;
+  render();
+  toast('Código generado. Revisa tu correo (o usa el que se muestra).', { ms: 6000 });
+}
+
+// =====================================================================
+// Páginas: Seguridad (activar, cambiar y desactivar el bloqueo)
+// =====================================================================
+function segInactivaHTML() {
+  return `
+    <div class="seg-aviso">🔒 Al activar la contraseña, la app pedirá desbloquearla cada vez que la abras en este dispositivo. Tus datos siguen guardados solo aquí.</div>
+    <form id="formSeguridad" class="tarjeta" novalidate>
+      <label class="campo">Contraseña
+        <div class="clave-fila"><input type="password" name="clave" minlength="4" autocomplete="new-password" required>
+          <button class="icono peq" type="button" data-a="verClave" data-f="clave" title="Mostrar u ocultar">👁️</button></div></label>
+      <label class="campo">Repite la contraseña<input type="password" name="clave2" minlength="4" autocomplete="new-password" required></label>
+      <label class="campo">Pregunta de seguridad<select name="pregunta">
+        ${PREGUNTAS_SEG.map((p, i) => `<option value="${i}">${esc(p)}</option>`).join('')}
+      </select></label>
+      <label class="campo">Tu respuesta<input type="search" name="respuesta" autocomplete="off" required placeholder="No distingue mayúsculas ni tildes"></label>
+      <label class="campo">Correo (opcional, para recuperar)<input type="email" name="correo" autocomplete="email" placeholder="tucorreo@ejemplo.com"></label>
+      <p class="tenue error" id="avisoSeg"></p>
+      <p class="tenue">Guarda bien la contraseña. Si la olvidas, tendrás tres formas de entrar: la pregunta de seguridad, un código enviado a tu correo o el código maestro.</p>
+      <button class="btn" type="submit">🔒 Activar contraseña</button>
+    </form>`;
+}
+
+function segActivaHTML(s) {
+  return `
+    <div class="tarjeta">
+      <div class="fila"><h2>🔒 Bloqueo activo</h2><span class="badge">Activado</span></div>
+      <p class="tenue">La app pide la contraseña al abrirse en este dispositivo.</p>
+      <div class="botones">
+        <button class="btn sec" data-a="bloquearAhora">🔒 Bloquear ahora</button>
+        <button class="btn sec" data-a="cambiarClaveBtn">Cambiar contraseña</button>
+      </div>
+    </div>
+    <div class="tarjeta"><h2>🔑 Recuperación</h2>
+      <p><b>Pregunta:</b> ${esc(SEG_PREG(s.pregunta))}</p>
+      <p><b>Correo:</b> ${s.correo ? esc(s.correo) : '<span class="tenue">no indicado</span>'}</p>
+      <button class="btn sec" data-a="cambiarPreguntaBtn">Cambiar pregunta o correo</button>
+    </div>
+    <div class="tarjeta"><h2>🆘 Código maestro</h2>
+      <p class="tenue">Guárdalo en un lugar seguro. Es la última forma de entrar si olvidas todo lo demás.</p>
+      <div class="codigo-maestro">${ui.verMaestro ? esc(s.maestro) : '•••• ••••'}</div>
+      <div class="botones">
+        <button class="btn sec" data-a="verMaestro">${ui.verMaestro ? '🙈 Ocultar' : '👁️ Mostrar código'}</button>
+        ${ui.verMaestro ? '<button class="btn sec" data-a="copiarMaestro">📋 Copiar</button>' : ''}
+      </div>
+    </div>
+    <div class="tarjeta"><h2>⚠️ Desactivar</h2>
+      <p class="tenue">Quita la contraseña. La app se abrirá sin pedir nada.</p>
+      <button class="btn peligro" data-a="desactivarSeg">Desactivar bloqueo</button>
+    </div>`;
+}
+
+function ajSeguridad() {
+  const s = estado.seguridad;
+  return pagina({
+    titulo: 'Seguridad', padre: 'ajustes', sub: s?.activa ? 'Bloqueo con contraseña activo' : 'Protege la app con una contraseña',
+    cuerpo: s?.activa ? segActivaHTML(s) : segInactivaHTML(),
+  });
+}
+
+function modalCambiarClave() {
+  modal(`<h2>Cambiar contraseña</h2>
+    <form id="formCambiarClave" novalidate>
+      <label class="campo">Contraseña actual<input type="password" name="actual" autocomplete="current-password" required></label>
+      <label class="campo">Nueva contraseña<input type="password" name="clave" minlength="4" autocomplete="new-password" required></label>
+      <label class="campo">Repite la nueva<input type="password" name="clave2" minlength="4" autocomplete="new-password" required></label>
+      <button class="btn" type="submit">Guardar contraseña</button>
+    </form>`);
+  setTimeout(() => $('#formCambiarClave input')?.focus(), 50);
+}
+
+function modalCambiarPregunta() {
+  const s = estado.seguridad;
+  modal(`<h2>Pregunta y correo</h2>
+    <form id="formCambiarPregunta" novalidate>
+      <label class="campo">Pregunta de seguridad<select name="pregunta">
+        ${PREGUNTAS_SEG.map((p, i) => `<option value="${i}" ${Number(s?.pregunta) === i ? 'selected' : ''}>${esc(p)}</option>`).join('')}
+      </select></label>
+      <label class="campo">Respuesta nueva<input type="search" name="respuesta" autocomplete="off" required></label>
+      <label class="campo">Correo<input type="email" name="correo" autocomplete="email" value="${esc(s?.correo || '')}" placeholder="tucorreo@ejemplo.com"></label>
+      <button class="btn" type="submit">Guardar cambios</button>
+    </form>`);
+  setTimeout(() => $('#formCambiarPregunta input')?.focus(), 50);
 }
 
 // =====================================================================
@@ -1605,11 +2324,13 @@ function vistaPerfil() {
 }
 
 function bienvenida() {
+  const primerUsuario = usuarios.lista.length === 1 && usuarioActual().nombre === 'Usuario 1';
   return `
     <div class="bienvenida">
       ${usuarios.lista.length > 1 ? '<a class="enlace usuarios-link" href="#usuarios">‹ Usuarios</a>' : ''}
-      ${usuarios.lista.length > 1 || usuarioActual().nombre !== 'Usuario 1' ? avatarHTML(usuarioActual(), 'enorme') : '<div class="logo">🏋️</div>'}
-      <h1>${usuarios.lista.length > 1 ? `Programa de ${esc(usuarioActual().nombre)}` : 'MiEntrenamiento'}</h1>
+      ${logoDantal({ conEslogan: true })}
+      ${primerUsuario ? '' : `<div class="usuario-prev">${avatarHTML(usuarioActual(), 'enorme')}</div>`}
+      <h1>${primerUsuario ? 'Entrenamiento y nutrición' : `Programa de ${esc(usuarioActual().nombre)}`}</h1>
       <p class="tenue">${estado.perfil ? 'Revisa tus respuestas para crear tu programa.' : '8 preguntas y tendrás tu programa personalizado.'}</p>
       <div class="pasos-barra"><i style="width:${100 / PASOS.length}%"></i></div>
       <p class="tenue centro" id="pasoTxt">Paso 1 de ${PASOS.length}</p>
@@ -1927,11 +2648,16 @@ function imprimir(titulo, subtitulo, filas) {
   w.document.close();
 }
 
-const filasPlan = ejs => ejs.map(e => ({
-  nombre: nombreEj(e.id), musculos: porId[e.id].musculos.map(m => MUSCULOS[m]).join(', '),
-  series: e.metodo === 'tabata' ? '8 × 20 s / 10 s' : `${e.series} × ${objetivoTxt(e)}${e.metodo !== 'normal' ? ` (${METODOS[e.metodo].nombre})` : ''}`,
-  descanso: e.metodo === 'tabata' ? '—' : `${e.descanso} s`, notas: porId[e.id].desc,
-}));
+const filasPlan = ejs => ejs.map(e => {
+  const base = porId[e.id];
+  return {
+    nombre: nombreEj(e.id),
+    musculos: base ? base.musculos.map(m => MUSCULOS[m]).join(', ') : '',
+    series: e.metodo === 'tabata' ? '8 × 20 s / 10 s' : `${e.series} × ${objetivoTxt(e)}${e.metodo && e.metodo !== 'normal' ? ` (${METODOS[e.metodo]?.nombre || e.metodo})` : ''}`,
+    descanso: e.metodo === 'tabata' ? '—' : `${e.descanso} s`,
+    notas: base?.desc || '',
+  };
+});
 
 function pdfHist(i) {
   const h = estado.historial[i];
@@ -2140,7 +2866,84 @@ document.addEventListener('click', ev => {
     case 'pdfMia': { const s = estado.misSesiones[i]; imprimir(s.nombre, `Sesión a la carta · ~${duracionEstimada(s.ejercicios)} min`, filasPlan(s.ejercicios)); break; }
     case 'pdfCurso': { const s = estado.enCurso; imprimir(s.nombre, 'Sesión en curso', filasPlan(s.ejercicios.map(e => ({ ...e, series: e.series.length })))); break; }
     case 'pdfHist': pdfHist(i); break;
-    case 'filtro': ui.filtro = d.m; render(); break;
+    case 'filtro': ui.filtro = d.m; ui.soloPropios = false; render(); break;
+    case 'soloPropios': ui.soloPropios = !ui.soloPropios; ui.filtro = ''; render(); break;
+    case 'borrarEjPropio': borrarEjPropio(d.id); break;
+    case 'restRec': {
+      const s = estado.plan?.sesiones[Number(d.i)];
+      if (s?.ejercicios[Number(d.j)]) { s.ejercicios[Number(d.j)].descanso = Number(d.d); guardar(); render(); }
+      break;
+    }
+    // ---- Nutrición: diario, alimentos, recetas y agua ----
+    case 'nutriDia': ui.diaNutri = sumarDias(diaNutri(), Number(d.d)); render(); break;
+    case 'addAlimento': elegirAlimento(d.comida); break;
+    case 'addReceta': elegirReceta(d.comida); break;
+    case 'ponerAlimento': {
+      const a = alimentoPorId(d.id);
+      if (!a) break;
+      cerrarModal();
+      anadirEntrada(ui.comidaSel, { id: a.id, gramos: a.porcion });
+      toast(`${a.nombre} añadido`);
+      break;
+    }
+    case 'ponerReceta': {
+      const r = RECETAS.find(x => x.id === d.id);
+      if (!r) break;
+      cerrarModal();
+      anadirEntrada(ui.comidaSel, { tipo: 'receta', id: r.id, racion: 1 });
+      toast(`${r.nombre} añadida`);
+      break;
+    }
+    case 'recetaA': {
+      const r = RECETAS.find(x => x.id === d.receta);
+      if (!r) break;
+      anadirEntrada(d.comida, { tipo: 'receta', id: r.id, racion: 1 });
+      toast(`${r.nombre} añadida a ${COMIDAS[d.comida].nombre}`);
+      break;
+    }
+    case 'quitarComida': quitarEntrada(d.comida, Number(d.i)); break;
+    case 'editCantidad': {
+      const entrada = (estado.comidas[diaNutri()]?.[d.comida] || [])[Number(d.i)];
+      if (!entrada) break;
+      const esReceta = entrada.tipo === 'receta';
+      const rec = esReceta ? RECETAS.find(r => r.id === entrada.id) : null;
+      const al = esReceta ? null : alimentoPorId(entrada.id);
+      modal(`<h2>Cambiar cantidad</h2><p class="tenue">${esc((esReceta ? rec?.nombre : al?.nombre) || entrada.id)}</p>
+        <form id="formCantidad" data-comida="${d.comida}" data-i="${d.i}">
+          ${esReceta
+            ? `<label class="campo">Raciones<input type="number" name="racion" inputmode="decimal" step="0.25" min="0.25" value="${entrada.racion || 1}" required></label>`
+            : `<label class="campo">Gramos<input type="number" name="gramos" inputmode="numeric" step="1" min="1" value="${entrada.gramos}" required></label>`}
+          <button class="btn" type="submit">Guardar</button>
+        </form>`);
+      setTimeout(() => $('#formCantidad input')?.focus(), 50);
+      break;
+    }
+    case 'nutriCat': ui.nutriCat = d.m; refrescarListaAlimentos(); break;
+    case 'vaso': estado.agua[diaNutri()] = Number(d.n); guardar(); render(); break;
+    case 'aguaMas': estado.agua[diaNutri()] = vasosDia() + 1; guardar(); render(); break;
+    case 'aguaMenos': estado.agua[diaNutri()] = Math.max(0, vasosDia() - 1); guardar(); render(); break;
+    // ---- Acceso y seguridad ----
+    case 'bloquearUsuario': ir('usuarios'); break;
+    case 'recMetodo': ui.recMetodo = d.m; render(); break;
+    case 'recVolver': ui.recMetodo = null; recuperacionProc.ok = false; recuperacionProc.codigo = null; render(); break;
+    case 'enviarCodigo': enviarCodigo(); break;
+    case 'verClave': {
+      const inp = document.querySelector(`#${b.closest('form')?.id || 'vista'} input[name="${d.f}"]`) || b.parentElement.querySelector('input');
+      if (inp) { inp.type = inp.type === 'password' ? 'text' : 'password'; b.textContent = inp.type === 'password' ? '👁️' : '🙈'; }
+      break;
+    }
+    case 'bloquearAhora': desbloqueado = false; ui.recMetodo = null; recuperacionProc.ok = false; ir('login'); toast('App bloqueada 🔒'); break;
+    case 'cambiarClaveBtn': modalCambiarClave(); break;
+    case 'cambiarPreguntaBtn': modalCambiarPregunta(); break;
+    case 'verMaestro': ui.verMaestro = !ui.verMaestro; render(); break;
+    case 'copiarMaestro':
+      navigator.clipboard?.writeText(estado.seguridad?.maestro || '')
+        .then(() => toast('Código copiado'), () => toast('No he podido copiarlo. Anótalo a mano.'));
+      break;
+    case 'desactivarSeg':
+      confirmar('La app se abrirá sin pedir contraseña. Podrás volver a activarla cuando quieras.', { titulo: '¿Desactivar el bloqueo?', ok: 'Desactivar', peligro: true })
+        .then(ok => { if (ok) { estado.seguridad = null; desbloqueado = true; ui.verMaestro = false; guardar(); render(); toast('Bloqueo desactivado'); } });
+      break;
     case 'borrarHist':
       if (ruta().startsWith('historial/')) ir('seguimiento/historial');
       conDeshacer('Sesión borrada del historial', () => {
@@ -2235,6 +3038,13 @@ document.addEventListener('input', ev => {
   } else if (d.a === 'nutricion') {
     guardarNutricion();
     actualizarNutricion();
+  } else if (d.a === 'nutriBuscar') {
+    ui.nutriQ = t.value;
+    refrescarListaAlimentos();
+  } else if (d.a === 'rest') {
+    const s = estado.plan?.sesiones[Number(d.i)];
+    const item = s?.ejercicios[Number(d.j)];
+    if (item) { item.descanso = Math.max(0, Math.min(600, Math.round((Number(t.value) || 0) / 5) * 5)); guardar(); }
   } else if (t.name === 'diasSemana') {
     const n = document.querySelectorAll('[name=diasSemana]:checked').length;
     $('#avisoDias').classList.remove('error');
@@ -2274,6 +3084,129 @@ document.addEventListener('change', async ev => {
 document.addEventListener('submit', async ev => {
   ev.preventDefault();
   const f = new FormData(ev.target);
+  // ---- Acceso y recuperación ----
+  if (ev.target.id === 'formLogin') {
+    if (await verificarClave(f.get('clave'))) {
+      desbloqueado = true;
+      ir(estado.plan ? 'hoy' : 'bienvenida');
+      toast(`Hola, ${usuarioActual().nombre} 👋`);
+    } else {
+      $('#avisoLogin').textContent = 'Contraseña incorrecta. Inténtalo de nuevo.';
+      $('#formLogin input[name=clave]')?.select();
+    }
+    return;
+  }
+  if (ev.target.id === 'formPregunta') {
+    if (await verificarRespuesta(f.get('respuesta'))) { recuperacionProc.ok = true; render(); }
+    else $('#avisoRec').textContent = 'Esa respuesta no es correcta.';
+    return;
+  }
+  if (ev.target.id === 'formCodigo') {
+    const c = String(f.get('codigo') || '').trim();
+    if (recuperacionProc.codigo && c === recuperacionProc.codigo && Date.now() < recuperacionProc.expira) { recuperacionProc.ok = true; render(); }
+    else $('#avisoRec').textContent = 'Código incorrecto o caducado. Genera uno nuevo.';
+    return;
+  }
+  if (ev.target.id === 'formMaestro') {
+    const c = String(f.get('maestro') || '').trim().toUpperCase();
+    if (c && c === String(estado.seguridad?.maestro || '').toUpperCase()) { recuperacionProc.ok = true; render(); }
+    else $('#avisoRec').textContent = 'Ese código maestro no es correcto.';
+    return;
+  }
+  if (ev.target.id === 'formNuevaClave') {
+    const clave = String(f.get('clave') || ''), clave2 = String(f.get('clave2') || '');
+    if (clave.length < 4) { $('#avisoRec').textContent = 'Usa al menos 4 caracteres.'; return; }
+    if (clave !== clave2) { $('#avisoRec').textContent = 'Las dos contraseñas no coinciden.'; return; }
+    const salt = nuevoSalt();
+    estado.seguridad = { ...estado.seguridad, salt, hash: await hashClave(clave, salt), actualizado: new Date().toISOString() };
+    desbloqueado = true; recuperacionProc.ok = false; recuperacionProc.codigo = null; ui.recMetodo = null;
+    guardar();
+    ir(estado.plan ? 'hoy' : 'bienvenida');
+    toast('Contraseña actualizada. ¡Dentro! 🔓');
+    return;
+  }
+  if (ev.target.id === 'formSeguridad') {
+    const clave = String(f.get('clave') || ''), clave2 = String(f.get('clave2') || '');
+    if (clave.length < 4) { avisoCampo('#avisoSeg', 'Usa al menos 4 caracteres.'); return; }
+    if (clave !== clave2) { avisoCampo('#avisoSeg', 'Las dos contraseñas no coinciden.'); return; }
+    if (!String(f.get('respuesta') || '').trim()) { avisoCampo('#avisoSeg', 'Escribe una respuesta a la pregunta.'); return; }
+    await crearSeguridad({ clave, pregunta: f.get('pregunta'), respuesta: f.get('respuesta'), correo: f.get('correo') });
+    desbloqueado = true; guardar(); render();
+    toast('Contraseña activada 🔒');
+    return;
+  }
+  if (ev.target.id === 'formCambiarClave') {
+    if (!await verificarClave(f.get('actual'))) { toast('La contraseña actual no es correcta'); return; }
+    const clave = String(f.get('clave') || ''), clave2 = String(f.get('clave2') || '');
+    if (clave.length < 4) { toast('Usa al menos 4 caracteres'); return; }
+    if (clave !== clave2) { toast('Las dos contraseñas no coinciden'); return; }
+    const salt = nuevoSalt();
+    estado.seguridad = { ...estado.seguridad, salt, hash: await hashClave(clave, salt), actualizado: new Date().toISOString() };
+    guardar(); cerrarModal(); render();
+    toast('Contraseña cambiada');
+    return;
+  }
+  if (ev.target.id === 'formCambiarPregunta') {
+    const respuesta = String(f.get('respuesta') || '').trim();
+    if (!respuesta) { toast('Escribe una respuesta'); return; }
+    estado.seguridad = {
+      ...estado.seguridad,
+      pregunta: Number(f.get('pregunta')) || 0,
+      respuesta: await hashClave(normalizarResp(respuesta), estado.seguridad.salt),
+      correo: String(f.get('correo') || '').trim(),
+    };
+    guardar(); cerrarModal(); render();
+    toast('Datos de recuperación actualizados');
+    return;
+  }
+  // ---- Ejercicios propios ----
+  if (ev.target.id === 'formEjercicio') {
+    const nombre = String(f.get('nombre') || '').trim();
+    if (!nombre) { toast('Ponle un nombre al ejercicio'); return; }
+    const musculos = f.getAll('musculos');
+    if (!musculos.length) { toast('Elige al menos un músculo'); return; }
+    const equipo = f.getAll('equipo');
+    const datos = {
+      nombre, patron: String(f.get('patron') || 'empuje_h'), musculos,
+      equipo: equipo.length ? equipo : ['corporal'],
+      compuesto: f.get('compuesto') === 'si',
+      tipo: f.get('tipo') === 'tiempo' ? 'tiempo' : 'reps',
+      desc: String(f.get('desc') || '').trim().slice(0, 300),
+      maquinaCustom: String(f.get('maquinaCustom') || '').trim(),
+      lineaCustom: String(f.get('lineaCustom') || '').trim(),
+      musculoCustom: String(f.get('musculoCustom') || '').trim(),
+      ajusteCustom: String(f.get('ajusteCustom') || '').trim(),
+      videoCustom: idYouTube(f.get('videoCustom')) || String(f.get('videoCustom') || '').trim(),
+    };
+    const idEdit = ev.target.dataset.id;
+    if (idEdit) {
+      const e = (estado.ejerciciosPropios || []).find(x => x.id === idEdit);
+      if (e) Object.assign(e, datos);
+    } else {
+      let id = slugEjercicio(nombre) || ('propio-' + Date.now().toString(36));
+      if (porId[id]) id += '-' + Math.random().toString(36).slice(2, 5);
+      estado.ejerciciosPropios = estado.ejerciciosPropios || [];
+      estado.ejerciciosPropios.push({ id, ...datos, propio: true });
+    }
+    sincronizarPropios();
+    guardar();
+    ir('ejercicios/mios');
+    toast(idEdit ? 'Ejercicio actualizado' : 'Ejercicio creado 🧩');
+    return;
+  }
+  // ---- Cantidad de una entrada del diario ----
+  if (ev.target.id === 'formCantidad') {
+    const comida = ev.target.dataset.comida;
+    const entrada = (estado.comidas[diaNutri()]?.[comida] || [])[Number(ev.target.dataset.i)];
+    if (entrada) {
+      if (entrada.tipo === 'receta') entrada.racion = Math.max(0.25, Number(f.get('racion')) || 1);
+      else entrada.gramos = Math.max(1, Math.round(Number(f.get('gramos')) || 0));
+      guardar();
+    }
+    cerrarModal(); render();
+    toast('Cantidad actualizada');
+    return;
+  }
   if (ev.target.id === 'formUsuario') {
     const nombre = String(f.get('nombre') || '').trim();
     if (!nombre) { toast('Escribe un nombre'); return; }
@@ -2447,7 +3380,7 @@ document.addEventListener('visibilitychange', pantallaEncendida);
 
 // La primera vez que se usa la app explica cómo ver las ayudas.
 function consejoAyudas(tab) {
-  if (estado.ajustes.consejoVisto || tab === 'bienvenida' || !estado.plan) return;
+  if (estado.ajustes.consejoVisto || tab === 'bienvenida' || tab === 'login' || tab === 'recuperar' || !estado.plan) return;
   estado.ajustes.consejoVisto = true; guardar();
   const tactil = matchMedia('(pointer: coarse)').matches;
   setTimeout(() => toast(`Consejo: ${tactil ? 'mantén pulsado' : 'pasa el ratón por'} un botón para ver qué hace, y toca ⓘ para saber cómo funciona cada parte.`, { ms: 8000 }), 1200);

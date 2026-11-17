@@ -1,37 +1,40 @@
 /* =====================================================================
-   MiEntrenamiento · estilos
+   DANTAL · estilos
+   Paleta petróleo / turquesa inspirada en el Atlántico.
    ===================================================================== */
 :root {
-  --fondo: #0a0f1e;
-  --fondo2: #10172b;
-  --tarjeta: #141c33;
-  --tarjeta2: #1a2440;
-  --borde: #232e50;
-  --texto: #eef2ff;
-  --tenue: #8d9bc2;
-  --acento: #4ade80;
-  --acento2: #38bdf8;
-  --amarillo: #fbbf24;
-  --naranja: #fb923c;
-  --peligro: #f87171;
-  --violeta: #a78bfa;
-  --sobre-acento: #052e16;
-  --cuerpo: #2a3558;
-  --cuerpo-base: #1d2644;
+  --fondo: #f4f7f8;
+  --fondo2: #e7eef0;
+  --tarjeta: #ffffff;
+  --tarjeta2: #f2f7f8;
+  --borde: #dce6e9;
+  --texto: #0e2733;
+  --tenue: #5c7480;
+  --acento: #087f91;
+  --acento2: #42c4c5;
+  --amarillo: #d99a1f;
+  --naranja: #e07a2f;
+  --peligro: #d64545;
+  --violeta: #7c6bd8;
+  --sobre-acento: #ffffff;
+  --cuerpo: #cfe0e4;
+  --cuerpo-base: #e4eef0;
   --cuerpo-ok: color-mix(in srgb, var(--acento) 45%, var(--cuerpo));
+  --petroleo: #123c50;
   --radio: 20px;
   --radio-s: 14px;
-  --sombra: 0 12px 32px rgba(0, 0, 0, .35);
-  --grad: linear-gradient(135deg, #2563eb 0%, #0891b2 50%, #16a34a 100%);
+  --sombra: 0 10px 26px rgba(18, 60, 80, .1);
+  --grad: linear-gradient(135deg, #123c50 0%, #087f91 55%, #42c4c5 100%);
   --fuente: "Inter", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
-  color-scheme: dark;
+  color-scheme: light;
 }
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme: dark) {
   :root {
-    --fondo: #f3f5fb; --fondo2: #e9edf7; --tarjeta: #ffffff; --tarjeta2: #f6f8fd; --borde: #e1e6f2; --texto: #0f172a; --tenue: #5d6888;
-    --acento: #16a34a; --acento2: #0284c7; --amarillo: #d97706; --naranja: #ea580c; --peligro: #dc2626; --violeta: #7c3aed;
-    --sobre-acento: #fff; --cuerpo: #dbe2f1; --cuerpo-base: #eef1f8;
-    --sombra: 0 8px 24px rgba(15, 23, 42, .08); color-scheme: light;
+    --fondo: #0b1e27; --fondo2: #0f2833; --tarjeta: #12303b; --tarjeta2: #173a47; --borde: #21485a;
+    --texto: #eaf4f6; --tenue: #8fb0ba;
+    --acento: #2fb3c4; --acento2: #5fd3d4; --amarillo: #f4b446; --naranja: #f0954a; --peligro: #f07a7a; --violeta: #a99bf0;
+    --sobre-acento: #05242b; --cuerpo: #1e4653; --cuerpo-base: #153742;
+    --sombra: 0 12px 32px rgba(0, 0, 0, .45); color-scheme: dark;
   }
 }
 
@@ -318,9 +321,11 @@ legend { font-weight: 800; margin-bottom: 6px; font-size: 1.08rem; }
 .op-ic { font-size: 1.8rem; line-height: 1; }
 .op-num { font-size: 1.5rem; }
 .dias-sel .chip { min-width: 60px; justify-content: center; }
-input[type=number], input[type=text], input[type=search], input[type=date], input[type=time], select {
+input[type=number], input[type=text], input[type=search], input[type=date], input[type=time], input[type=password], input[type=email], select, textarea {
   width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--borde); background: var(--fondo2); color: var(--texto); font: inherit;
 }
+textarea { resize: vertical; min-height: 68px; }
+.campo textarea { margin-top: 6px; font-weight: 400; }
 .tenue.error { color: var(--peligro); font-weight: 700; }
 
 /* Asistente de bienvenida */
@@ -527,3 +532,97 @@ input[type=url] { width: 100%; padding: 12px; border-radius: 12px; border: 1px s
 .usuarios-link { position: absolute; left: 0; top: calc(16px + env(safe-area-inset-top)); }
 .bienvenida { position: relative; }
 .usuario-card.con-info > .info { top: 26px; right: 62px; }
+
+/* =====================================================================
+   DANTAL · marca, nutrición, Technogym, acceso y ayudas
+   ===================================================================== */
+
+/* ---------- Marca ---------- */
+.marca-logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--texto); }
+.marca-isotipo { display: block; flex: none; }
+.marca-logo-t { display: flex; flex-direction: column; line-height: 1.05; }
+.marca-logo-t b { font-size: 1.35rem; letter-spacing: .16em; font-weight: 800; }
+.marca-logo-t small { font-size: .58rem; letter-spacing: .18em; color: var(--tenue); font-weight: 600; }
+.marca-logo.compacto .marca-logo-t b { font-size: 1.05rem; letter-spacing: .12em; }
+.marca-logo.claro .marca-logo-t b { color: #fff; }
+.marca-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 12px; }
+.marca-cabecera .frase-marca { margin: 0; font-size: .78rem; color: var(--tenue); text-align: right; }
+.bienvenida .marca-logo { justify-content: center; }
+.bienvenida .marca-logo-t b { font-size: 2.1rem; }
+
+/* ---------- Subnavegación por pestañas ---------- */
+.subnav { display: flex; gap: 6px; overflow-x: auto; margin: 0 -4px 14px; padding: 4px; scrollbar-width: none; }
+.subnav::-webkit-scrollbar { display: none; }
+.subnav a { flex: none; padding: 8px 14px; border-radius: 99px; background: var(--tarjeta); border: 1px solid var(--borde);
+  text-decoration: none; color: var(--tenue); font-weight: 700; font-size: .84rem; white-space: nowrap; }
+.subnav a.on { background: var(--acento); color: var(--sobre-acento); border-color: transparent; }
+
+/* ---------- Nutrición: macros y agua ---------- */
+.macro-barras { display: grid; gap: 10px; margin: 12px 0 4px; }
+.macro-barra { display: grid; grid-template-columns: 84px 1fr 74px; align-items: center; gap: 10px; font-size: .85rem; }
+.macro-pista { height: 12px; border-radius: 99px; background: color-mix(in srgb, var(--texto) 8%, transparent); overflow: hidden; }
+.macro-pista i { display: block; height: 100%; border-radius: 99px; background: var(--acento); transition: width .3s; }
+.macro-barra b { text-align: right; font-variant-numeric: tabular-nums; }
+.macro-barra.p-prot .macro-pista i { background: var(--acento); }
+.macro-barra.p-carbs .macro-pista i { background: var(--acento2); }
+.macro-barra.p-grasa .macro-pista i { background: var(--amarillo); }
+.macro-barra.p-fibra .macro-pista i { background: var(--violeta); }
+.agua-vasos { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.vaso-btn { width: 44px; height: 56px; border-radius: 8px 8px 14px 14px; border: 2px solid var(--borde); background: var(--tarjeta2);
+  cursor: pointer; padding: 0; position: relative; overflow: hidden; transition: transform .1s; }
+.vaso-btn::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: var(--acento2); opacity: .85; transition: height .15s; }
+.vaso-btn.lleno { border-color: var(--acento2); }
+.vaso-btn.lleno::after { height: 100%; }
+.vaso-btn:active { transform: scale(.94); }
+.comida-bloque { border: 1px solid var(--borde); border-radius: var(--radio-s); padding: 12px; margin: 0 0 10px; background: var(--tarjeta2); }
+.comida-bloque > .fila h3 { margin: 0; }
+.comida-bloque .kcal-comida { font-weight: 800; font-variant-numeric: tabular-nums; }
+.alimento-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--borde); font-size: .88rem; }
+.alimento-item:first-of-type { border-top: 0; }
+.alimento-item .ai-t { flex: 1; min-width: 0; }
+.alimento-item .ai-t small { color: var(--tenue); display: block; font-size: .74rem; }
+.alimento-item .ai-m { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.alimento-item .ai-m small { color: var(--tenue); display: block; font-size: .72rem; }
+.receta-card h2 { margin-bottom: 2px; }
+.receta-macros { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.receta-macros span { background: color-mix(in srgb, var(--texto) 8%, transparent); border-radius: 99px; padding: 3px 10px; font-size: .76rem; font-weight: 600; }
+
+/* ---------- Avisos de la IA ---------- */
+.insight { display: flex; gap: 12px; padding: 12px 14px; border-radius: var(--radio-s); background: var(--tarjeta2); border: 1px solid var(--borde); margin: 0 0 10px; }
+.insight .ins-ic { font-size: 1.5rem; flex: none; }
+.insight .ins-t { flex: 1; min-width: 0; }
+.insight .ins-t b { display: block; }
+.insight .ins-t p { margin: 2px 0 0; font-size: .88rem; color: var(--tenue); }
+.insight .ins-tipo { font-size: .64rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 800; color: var(--acento); }
+.insight.estimacion { background: color-mix(in srgb, var(--violeta) 8%, var(--tarjeta2)); }
+.insight.estimacion .ins-tipo { color: var(--violeta); }
+
+/* ---------- Technogym ---------- */
+.tg-ilus { display: block; margin: 0 auto; background: var(--tarjeta2); border-radius: var(--radio-s); }
+.tg-ficha { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start; }
+.tg-ficha .tg-ilus { width: 150px; }
+.tg-maquina { font-weight: 800; }
+.tg-linea { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--acento); font-weight: 800; }
+.tg-ajuste { font-size: .86rem; color: var(--tenue); }
+@media (max-width: 420px) { .tg-ficha { grid-template-columns: 1fr; } .tg-ficha .tg-ilus { width: 100%; max-width: 240px; } }
+
+/* ---------- Acceso y seguridad ---------- */
+.login { max-width: 420px; margin: 6vh auto 0; text-align: center; }
+.login .marca-logo { justify-content: center; margin-bottom: 6px; }
+.login .marca-logo-t b { font-size: 2rem; }
+.login form { text-align: left; }
+.login .btn { margin-top: 14px; }
+.login-logo { margin: 0 auto 10px; }
+.seg-aviso { background: color-mix(in srgb, var(--amarillo) 14%, var(--tarjeta)); border: 1px solid color-mix(in srgb, var(--amarillo) 45%, transparent);
+  border-radius: var(--radio-s); padding: 10px 12px; font-size: .85rem; margin: 0 0 12px; }
+.codigo-maestro { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 1.2rem; letter-spacing: .12em; font-weight: 800;
+  background: var(--fondo2); border: 1px dashed var(--borde); border-radius: 12px; padding: 10px; text-align: center; }
+.clave-fila { display: flex; align-items: center; gap: 8px; }
+.clave-fila input { flex: 1; }
+.campo-fila select, .campo-fila input { width: auto; }
+
+/* ---------- Descanso editable y ejercicios propios ---------- */
+.rest-edit { display: flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--tenue); }
+.rest-edit input { width: 64px; padding: 6px 8px; border-radius: 10px; border: 1px solid var(--borde); background: var(--fondo2); color: var(--texto); font: inherit; text-align: center; }
+.ej-propio { border-color: var(--acento2); }
+@media (max-width: 420px) { .nav a { padding: 5px 7px; font-size: .6rem; } .nav a span { font-size: 1.15rem; } }
