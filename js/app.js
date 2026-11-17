@@ -93,7 +93,7 @@ function cambiarUsuario(id) {
   desbloqueado = false;
   recuperacionProc.ok = false; recuperacionProc.codigo = null;
   sincronizarPropios();
-  Object.assign(ui, { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, verMaestro: false, recMetodo: null });
+  Object.assign(ui, { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, videoAbierto: null, verMaestro: false, recMetodo: null });
   cerrarModal();
   ir(estado.plan ? 'hoy' : 'bienvenida');
   toast(`Usuario activo: ${usuarioActual().nombre}`);
@@ -194,7 +194,7 @@ function seriesObjetivo(item) {
 // =====================================================================
 // Navegación: cada parte es una página con su propia dirección (#seguimiento/historial…)
 // =====================================================================
-const ui = { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, verMaestro: false, recMetodo: null };
+const ui = { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, videoAbierto: null, verMaestro: false, recMetodo: null };
 
 // [patrón de la dirección, página, pestaña de la barra inferior]
 const RUTAS = [
@@ -622,9 +622,12 @@ function restControl(e, i, j) {
 }
 
 function listaEjercicios(ejs, { editable = false, i = null } = {}) {
-  return `<ul class="lista">${ejs.map((e, j) => `
-    <li>
-      <span class="ic-ej">${ICONO_PATRON[porId[e.id]?.patron] || '🏋️'}</span>
+  return `<ul class="lista">${ejs.map((e, j) => {
+    const ej = porId[e.id];
+    const abierto = videoAbierto(ej);
+    return `
+    <li class="${abierto ? 'con-video' : ''}">
+      ${iconoEjercicio(ej)}
       <div class="li-t">
         <a class="enlace fuerte" href="#ejercicio/${e.id}">${esc(nombreEj(e.id))}</a>
         ${e.foco ? '<span class="chip-mini">foco</span>' : ''}
@@ -636,7 +639,9 @@ function listaEjercicios(ejs, { editable = false, i = null } = {}) {
         <button class="icono" title="Método de intensificación" data-a="metodo" data-i="${i}" data-j="${j}">⚡</button>
         <button class="icono" title="Cambiar ejercicio" data-a="cambiar" data-i="${i}" data-j="${j}">⇄</button>
       </div>` : ''}
-    </li>`).join('')}</ul>`;
+      ${abierto ? playerMaquina(ej) : ''}
+    </li>`;
+  }).join('')}</ul>`;
 }
 
 function tarjetaResumenSesion(s, href, extra = '') {
@@ -774,9 +779,13 @@ function sesion() {
     ${pos && !s.pausado ? guiado(pos) : ''}
     ${!pos ? `<div class="hero ok"><h2>¡Todas las series hechas! 💪</h2><button class="btn" data-a="terminar">Terminar sesión</button></div>` : ''}
     <div class="fila"><h2>Ejercicios</h2><button class="enlace" data-a="verLista">${ui.listaSesion ? 'Ocultar series' : 'Ver y editar series'}</button></div>
-    ${s.ejercicios.map((e, i) => `
+    ${s.ejercicios.map((e, i) => {
+      const ej = porId[e.id];
+      const abierto = videoAbierto(ej);
+      return `
       <div class="tarjeta ${pos?.i === i ? 'activo' : ''} ${e.series.every(r => r.hecho) ? 'completo' : ''}">
         <div class="fila">
+          ${iconoEjercicio(ej)}
           <div><button class="enlace fuerte" data-a="detalle" data-id="${e.id}">${esc(nombreEj(e.id))}</button>
             ${e.metodo !== 'normal' ? `<span class="chip-mini alt">${METODOS[e.metodo].nombre}</span>` : ''}<br>
             <span class="tenue">${e.series.filter(r => r.hecho).length}/${e.series.length} series · ${e.metodo === 'tabata' ? 'Tabata' : objetivoTxt(e)}</span></div>
@@ -785,8 +794,10 @@ function sesion() {
             ${e.series.some(r => r.hecho) ? '' : `<button class="icono" title="Cambiar ejercicio" data-a="cambiarSes" data-i="${i}">⇄</button>`}
           </div>
         </div>
+        ${abierto ? playerMaquina(ej) : ''}
         ${ui.listaSesion ? tablaSeries(e, i) : ''}
-      </div>`).join('')}
+      </div>`;
+    }).join('')}
     <button class="btn" data-a="terminar">Terminar sesión</button>
     <button class="btn sec" data-a="pdfCurso">📄 Resumen PDF</button>
     <button class="btn peligro" data-a="descartar">Descartar sesión</button>
@@ -1764,6 +1775,33 @@ function technogymHTML(e) {
   </div>`;
 }
 
+// ---- Vídeo de la máquina (Technogym) reutilizable en listas y sesión ----
+// Identificador de YouTube incrustable del vídeo de la máquina, o null.
+const idVideoMaquina = e => {
+  const v = infoTechnogym(e)?.video || '';
+  return /^[A-Za-z0-9_-]{11}$/.test(v) ? v : null;
+};
+
+// Reproductor incrustado (16:9) del vídeo de la máquina.
+function playerMaquina(e, clase = '') {
+  const vid = idVideoMaquina(e);
+  if (!vid) return '';
+  return `<div class="tg-video ${clase}"><iframe src="${urlVideoTechnogym(vid)}" title="Vídeo de técnica: ${esc(nombreEj(e.id))}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen></iframe></div>`;
+}
+
+// Cuadrado de cada ejercicio: miniatura del vídeo de la máquina (representa la
+// máquina real) que abre el reproductor; si no hay vídeo, el icono de siempre.
+function iconoEjercicio(e) {
+  const vid = idVideoMaquina(e);
+  if (!vid) return `<span class="ic-ej">${ICONO_PATRON[e?.patron] || '🏋️'}</span>`;
+  const abierto = ui.videoAbierto === e.id;
+  return `<button class="ic-ej ic-video ${abierto ? 'on' : ''}" data-a="videoMaquina" data-id="${e.id}"
+    title="${abierto ? 'Ocultar' : 'Ver'} el vídeo de la máquina" aria-label="Vídeo de la máquina" aria-expanded="${abierto}">
+    <img src="https://i.ytimg.com/vi/${vid}/mqdefault.jpg" alt="" loading="lazy"><span class="play">▶</span></button>`;
+}
+
+const videoAbierto = e => Boolean(idVideoMaquina(e)) && ui.videoAbierto === e.id;
+
 function ejercicioDetalle(id) {
   const e = porId[id];
   if (!e) return null;
@@ -2452,8 +2490,9 @@ function detalle(id) {
     <div class="badges">${e.musculos.map((m, i) => `<span class="badge ${i ? '' : 'prim'}">${MUSCULOS[m]}</span>`).join('')}</div>
     <p class="tenue">Material: ${equipoTxt(e)}</p>
     ${ult ? `<p>Última vez: <b>${ult.series.map(s => s.kg ? `${s.kg}×${s.reps}` : s.reps).join(' · ')}</b>${rec ? ` · récord ${rec}` : ''}</p>` : ''}
+    ${technogymHTML(e)}
     ${tecnicaHTML(e, { compacta: true })}
-    ${(estado.videos || {})[e.id] ? videoHTML(e) : `<a class="btn sec" href="${urlBusqueda(e, 'videos')}" target="_blank" rel="noopener">▶ Ver vídeos de técnica</a>`}
+    ${idVideoMaquina(e) ? '' : ((estado.videos || {})[e.id] ? videoHTML(e) : `<a class="btn sec" href="${urlBusqueda(e, 'videos')}" target="_blank" rel="noopener">▶ Ver vídeos de técnica</a>`)}
   `);
 }
 
@@ -2877,6 +2916,7 @@ document.addEventListener('click', ev => {
     case 'filtro': ui.filtro = d.m; ui.soloPropios = false; ui.soloTG = false; render(); break;
     case 'soloPropios': ui.soloPropios = !ui.soloPropios; ui.filtro = ''; ui.soloTG = false; render(); break;
     case 'soloTG': ui.soloTG = !ui.soloTG; ui.filtro = ''; ui.soloPropios = false; render(); break;
+    case 'videoMaquina': ui.videoAbierto = ui.videoAbierto === d.id ? null : d.id; render(); break;
     case 'borrarEjPropio': borrarEjPropio(d.id); break;
     case 'restRec': {
       const s = estado.plan?.sesiones[Number(d.i)];
