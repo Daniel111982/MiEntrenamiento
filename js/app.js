@@ -17,6 +17,10 @@ import {
 } from './incidencias.js';
 import { interpretarSalud, fusionarMedidas, fusionarActividad } from './salud.js';
 import { htmlCiencia } from './ciencia.js';
+import {
+  construirContextoCoach, resumenParaIA, explicarEjercicio, sugerenciaEnVivo, sugerenciasSesion, sugerenciasSemana, preguntasSugeridas, responder,
+} from './coach.js';
+import { PROVEEDORES, leerConfig, guardarConfig, borrarConfig, chatear, probar, detectarNano, nanoActivo, nanoEstadoSync, activarNano, probarNano } from './llm.js';
 
 // =====================================================================
 // Estado
@@ -108,7 +112,7 @@ const soyDueno = () => esDueno(usuarioActual());
 const dueno = () => usuarios.lista.find(esDueno) || null;
 
 // Estado de interfaz que se reinicia al cambiar de usuario.
-const UI_INICIAL = { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, pasoEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, videoAbierto: null, verMaestro: false, recMetodo: null, incFiltro: 'nuevas' };
+const UI_INICIAL = { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, pasoEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, videoAbierto: null, verMaestro: false, recMetodo: null, incFiltro: 'nuevas', coachChat: [], coachPensando: false, coachIgnorados: [], coachIAOk: null, coachNanoOk: null, coachNanoDescargando: false };
 
 // Cambia de usuario. Sin `entrar`, la sesión queda bloqueada y se pide la contraseña.
 function cambiarUsuario(id, { entrar: entrarYa = false } = {}) {
@@ -247,6 +251,7 @@ const RUTAS = [
   [/^programa\/carta$/, programaCarta, 'programa'],
   [/^sesion$/, sesion, 'sesion'],
   [/^sesion\/ciencia$/, sesionCiencia, 'sesion'],
+  [/^coach$/, coach, 'coach'],
   [/^seguimiento$/, seguimiento, 'seguimiento'],
   [/^seguimiento\/actividad$/, segActividad, 'seguimiento'],
   [/^seguimiento\/recuperacion$/, segRecuperacion, 'seguimiento'],
@@ -280,6 +285,7 @@ const RUTAS = [
   [/^ajustes\/idea$/, ajIdea, 'ajustes'],
   [/^ajustes\/incidencias$/, ajIncidencias, 'ajustes'],
   [/^ajustes\/salud$/, ajSalud, 'ajustes'],
+  [/^ajustes\/coach$/, ajCoach, 'ajustes'],
   [/^bienvenida$/, bienvenida, 'bienvenida'],
   [/^login$/, login, 'login'],
   [/^recuperar$/, recuperar, 'recuperar'],
@@ -328,10 +334,13 @@ function render() {
     } else if (b) b.remove();
   }
   $('.nav').hidden = !estado.plan || tab === 'sesion' || tab === 'bienvenida' || tab === 'login' || tab === 'recuperar';
+  coachFab(tab);
   if ($('#grafica')) dibujarGrafica();
   if ($('#graficaMedidas')) dibujarGraficaMedidas();
   if ($('#graficaPasos')) dibujarGraficaPasos();
   if ($('#nutriResultados')) actualizarNutricion();
+  const chat = $('#coachChat');
+  if (chat) chat.scrollTop = chat.scrollHeight;
   if (tab === 'sesion') actualizarCrono();
   document.body.classList.toggle('sin-ayudas', estado.ajustes.ayudas === false);
   esconderAyuda();
@@ -579,6 +588,7 @@ function inicio() {
           ${tile('💧', `${(vasos * VASO_ML / 1000).toFixed(2)} L`, metas ? `de ${(metas.aguaMl / 1000).toFixed(1)} L` : 'agua', 'azul')}
         </div></a>`;
     })()}
+    ${tarjetaCoach()}
     <a class="tarjeta enlace-tarjeta" href="#seguimiento/recuperacion">
       <div class="fila"><h2>Recuperación muscular</h2><span class="chev">›</span></div>
       ${cuerpoSVG(coloresRecuperacion(rec), { mini: true })}
@@ -817,6 +827,352 @@ function sesionCiencia() {
   });
 }
 
+// =====================================================================
+// Coach DANTAL: explicaciones, adaptación en tiempo real y chat
+// ---------------------------------------------------------------------
+// El motor (js/coach.js) funciona siempre, sin conexión. Si el usuario
+// conecta un modelo de lenguaje real (js/llm.js), el chat lo usa; si falla,
+// se responde con el motor local para que nunca te quedes sin respuesta.
+// =====================================================================
+
+// Contexto del coach a partir del estado actual (y de la sesión en curso, si la hay).
+function coachContexto(extras = {}) {
+  return construirContextoCoach(estado, metasNutricion() || {}, {
+    semana: extras.semana || estado.enCurso?.fase?.semana || semanaDe(),
+    ...extras,
+  });
+}
+
+// Qué motor de conversación está disponible ahora mismo:
+// 'clave' (modelo real con tu clave) > 'navegador' (IA integrada gratis) > 'local'.
+function motorCoach() {
+  const cfg = leerConfig();
+  if (cfg.proveedor && cfg.clave) return { tipo: 'clave', nombre: PROVEEDORES[cfg.proveedor]?.nombre || 'IA real' };
+  if (nanoActivo()) return { tipo: 'navegador' };
+  return { tipo: 'local' };
+}
+
+// Renderizador seguro de un texto del modelo: negritas, código y listas.
+function markdownSeguro(texto) {
+  const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`(.+?)`/g, '<code>$1</code>');
+  const out = [];
+  let enLista = false;
+  for (const cruda of String(texto ?? '').split('\n')) {
+    const l = cruda.trim();
+    if (!l) { if (enLista) { out.push('</ul>'); enLista = false; } continue; }
+    if (/^[-*•]\s+/.test(l)) {
+      if (!enLista) { out.push('<ul class="ciencia-puntos">'); enLista = true; }
+      out.push(`<li>${inline(l.replace(/^[-*•]\s+/, ''))}</li>`);
+    } else {
+      if (enLista) { out.push('</ul>'); enLista = false; }
+      out.push(`<p>${inline(l)}</p>`);
+    }
+  }
+  if (enLista) out.push('</ul>');
+  return out.join('');
+}
+
+const soloTexto = html => String(html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+
+// Una sugerencia del coach, con su acción para confirmar o descartar.
+function tarjetaSugerencia(sug, { i = null } = {}) {
+  const conAccion = sug.accion && sug.accion.tipo && sug.accion.tipo !== 'nada';
+  return `<div class="coach-sug" data-sug="${esc(sug.id)}">
+    <span class="cs-ic">${sug.icono}</span>
+    <div class="cs-t">
+      <b>${esc(sug.titulo)}</b>
+      <p>${esc(sug.texto)}</p>
+      <details class="cs-por"><summary>¿Por qué?</summary><p>${esc(sug.motivo)}</p></details>
+    </div>
+    <div class="cs-acc">
+      <button class="btn ${conAccion ? '' : 'sec'} peq" ${conAccion
+        ? `data-a="coachAccion" data-acc="${esc(JSON.stringify(sug.accion))}"`
+        : `data-a="coachIgnorar"`} data-sug="${esc(sug.id)}" ${i != null ? `data-i="${i}"` : ''}>${esc(sug.label || 'Vale')}</button>
+      ${conAccion ? `<button class="enlace cs-x" data-a="coachIgnorar" data-sug="${esc(sug.id)}">Ignorar</button>` : ''}
+    </div>
+  </div>`;
+}
+
+// Panel que aparece dentro de la sesión, sobre el ejercicio en curso.
+function panelCoach(pos) {
+  const s = estado.enCurso;
+  if (!s) return '';
+  const ctx = coachContexto();
+  const minutos = Math.round(tiempoSesion() / 60);
+  const lista = [];
+  let expl = '';
+  if (pos) {
+    const item = s.ejercicios[pos.i];
+    const viva = sugerenciaEnVivo(item, estado.perfil, ctx);
+    if (viva) lista.push({ ...viva, i: pos.i });
+    // Explicación «cuánto y por qué» del ejercicio actual. En la sesión las
+    // series son filas, así que se le pasa el número de series efectivas.
+    const nSeries = (item.series || []).filter(r => !r.drop).length;
+    const e = explicarEjercicio({ ...item, series: nSeries }, estado.perfil, ctx.semana, ctx);
+    expl = `<details class="coach-expl"><summary>¿Cuánto y por qué este ejercicio?</summary>${e.html}</details>`;
+  }
+  lista.push(...sugerenciasSesion(s, estado.perfil, ctx, { minutos }));
+  const visibles = lista.filter(x => !ui.coachIgnorados.includes(x.id));
+  if (!visibles.length && !expl) return '';
+  return `<div class="coach-panel">
+    <p class="coach-panel-t"><span aria-hidden="true">🧠</span> Coach DANTAL</p>
+    ${expl}
+    ${visibles.map(x => tarjetaSugerencia(x, { i: x.i ?? null })).join('')}
+  </div>`;
+}
+
+// Aplica la acción de una sugerencia. Solo se ejecuta si el usuario la confirma.
+function coachAplicar(d) {
+  let accion = { tipo: 'nada' };
+  try { accion = JSON.parse(d.acc || '{}'); } catch { /* descriptor ilegible: se ignora */ }
+  const i = Number(d.i);
+  const s = estado.enCurso;
+  const e = Number.isInteger(i) ? s?.ejercicios?.[i] : null;
+  const descartar = () => { if (d.sug && !ui.coachIgnorados.includes(d.sug)) ui.coachIgnorados.push(d.sug); };
+  switch (accion.tipo) {
+    case 'carga': case 'cargaFija': {
+      if (!e) break;
+      e.series.filter(r => !r.hecho && !r.tabata).forEach(r => {
+        if (accion.tipo === 'cargaFija') { r.kgSug = accion.kg; if (r.kg != null) r.kg = accion.kg; }
+        else {
+          r.kgSug = Math.max(0, Math.round(((Number(r.kgSug) || 0) + accion.delta) * 2) / 2);
+          if (r.kg != null) r.kg = Math.max(0, Math.round((Number(r.kg) + accion.delta) * 2) / 2);
+        }
+      });
+      descartar(); guardar(); render();
+      toast(`Carga ajustada en ${nombreEj(e.id)}`);
+      return;
+    }
+    case 'descanso': {
+      if (!e) break;
+      e.descanso = Math.max(0, Math.round(((Number(e.descanso) || 0) + accion.delta) / 5) * 5);
+      descartar(); guardar(); render();
+      toast(`Descanso de ${nombreEj(e.id)}: ${e.descanso} s`);
+      return;
+    }
+    case 'objetivoTiempo': {
+      if (!e) break;
+      const nuevo = Math.max(5, (Number(e.repsMax) || 30) + accion.delta);
+      e.repsMax = nuevo; e.repsMin = Math.max(5, (Number(e.repsMin) || nuevo) + accion.delta);
+      e.series.filter(r => !r.hecho).forEach(r => { r.objetivo = nuevo; });
+      descartar(); guardar(); render();
+      toast(`Objetivo: ${nuevo} s`);
+      return;
+    }
+    case 'saltarFinal': {
+      if (!s) break;
+      s.ejercicios = s.ejercicios.filter(x => !((x.final || x.metodo === 'tabata') && x.series.some(r => !r.hecho)));
+      descartar(); guardar(); render();
+      toast('Bloque final quitado de esta sesión');
+      return;
+    }
+    case 'perfil': ir('ajustes/perfil'); return;
+    case 'nutricion': ir('nutricion/objetivos'); return;
+    default: descartar(); render(); return;
+  }
+}
+
+function coachIgnorar(id) {
+  if (id && !ui.coachIgnorados.includes(id)) ui.coachIgnorados.push(id);
+  render();
+}
+
+function burbujaChat(m) {
+  if (m.rol === 'usuario') return `<div class="chat-b usuario"><p>${esc(m.texto)}</p></div>`;
+  let cuerpo;
+  if (m.error) cuerpo = `<p class="chat-error">⚠️ ${esc(m.texto)}</p>`;
+  else if (m.html) cuerpo = m.html;
+  else cuerpo = markdownSeguro(m.texto);
+  const etiqueta = m.local ? 'Motor local · funciona sin conexión'
+    : m.fuente === 'navegador' ? 'IA del navegador · gratis y sin clave'
+      : m.fuente === 'clave' ? 'IA real · modelo conectado' : '';
+  return `<div class="chat-b coach">${cuerpo}${etiqueta ? `<span class="chat-fuente">${etiqueta}</span>` : ''}</div>`;
+}
+
+function mensajeBienvenidaCoach(ctx) {
+  return `<div class="chat-b coach">
+    <p>¡Hola! Soy tu coach. Te explico <b>cuánto</b> y <b>por qué</b> de tu programa, y lo adapto a cómo vas. Nada cambia sin tu permiso.</p>
+    <p class="tenue">${ctx.sesiones ? `Llevas ${ctx.sesiones} sesiones y una racha de ${ctx.racha} semanas.` : 'Cuando registres tus primeras sesiones tendré más que decirte.'}</p>
+  </div>`;
+}
+
+// Envía una pregunta al coach: usa el modelo real si está conectado y, si falla,
+// responde siempre el motor local.
+async function coachEnviar(texto) {
+  const q = String(texto || '').trim();
+  if (!q || ui.coachPensando) return;
+  ui.coachChat.push({ rol: 'usuario', texto: q });
+  const ctx = coachContexto();
+  const local = () => {
+    const r = responder(q, ctx);
+    return { rol: 'coach', texto: `${r.titulo}. ${soloTexto(r.html)}`, html: `<b class="chat-titulo">${esc(r.titulo)}</b>${r.html}`, local: true };
+  };
+  if (motorCoach().tipo === 'local') {
+    ui.coachChat.push(local());
+    render();
+    return;
+  }
+  const mensajes = ui.coachChat.filter(m => m.texto).map(m => ({ rol: m.rol, texto: m.texto }));
+  ui.coachPensando = true;
+  render();
+  const res = await chatear({ mensajes, contexto: resumenParaIA(ctx) });
+  ui.coachPensando = false;
+  if (res.ok) ui.coachChat.push({ rol: 'coach', texto: res.texto, fuente: res.fuente });
+  else { ui.coachChat.push({ rol: 'coach', error: true, texto: `${res.error} Te respondo con el motor local.` }); ui.coachChat.push(local()); }
+  render();
+}
+
+function coach() {
+  const ctx = coachContexto();
+  const motor = motorCoach();
+  const nano = nanoEstadoSync();
+  const semana = sugerenciasSemana(ctx).filter(x => !ui.coachIgnorados.includes(x.id));
+  const chips = preguntasSugeridas(ctx).filter(q => !ui.coachChat.some(m => m.rol === 'usuario' && m.texto === q));
+  const sub = motor.tipo === 'clave' ? `IA real conectada · ${esc(motor.nombre)}`
+    : motor.tipo === 'navegador' ? 'IA del navegador · gratis y sin clave'
+      : 'Tu entrenador, siempre disponible';
+  const cta = motor.tipo !== 'local' ? ''
+    : nano === 'downloadable' || nano === 'downloading'
+      ? `<a class="tarjeta enlace-tarjeta coach-cta" href="#ajustes/coach">
+        <span class="celda-t"><b>Activa la IA gratis de tu navegador ✨</b><small>Sin clave y sin salir del dispositivo. Solo hay que descargarla una vez.</small></span><span class="chev">›</span></a>`
+      : `<a class="tarjeta enlace-tarjeta coach-cta" href="#ajustes/coach">
+        <span class="celda-t"><b>¿Quieres conversar con un modelo real?</b><small>Conecta tu clave de OpenAI, Gemini o Claude. Es opcional.</small></span><span class="chev">›</span></a>`;
+  return pagina({
+    titulo: 'Coach DANTAL',
+    sub,
+    extra: `<button class="icono" data-a="ir" data-v="ajustes/coach" title="Configurar el coach" aria-label="Configurar el coach">⚙️</button>`,
+    cuerpo: `
+      <div class="coach-chat" id="coachChat">
+        ${ui.coachChat.length ? ui.coachChat.map(burbujaChat).join('') : mensajeBienvenidaCoach(ctx)}
+        ${ui.coachPensando ? '<div class="chat-b coach pensando"><span></span><span></span><span></span></div>' : ''}
+      </div>
+      <form id="formCoach" class="coach-entrada">
+        <input type="text" name="q" placeholder="Pregúntame el cuánto y el porqué…" autocomplete="off" enterkeyhint="send" aria-label="Escribe tu pregunta">
+        <button class="btn" type="submit" aria-label="Enviar">➤</button>
+      </form>
+      ${chips.length ? `<div class="chips coach-chips">${chips.map(q => `<button class="chip" data-a="coachPreg" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>` : ''}
+      ${semana.length ? `<h2 class="coach-h">Sugerencias para tu semana</h2>${semana.map(x => tarjetaSugerencia(x)).join('')}` : ''}
+      ${ui.coachChat.length ? '<button class="enlace centro bloque" data-a="coachLimpiar">🗑 Empezar una conversación nueva</button>' : ''}
+      ${cta}
+      <p class="tenue">DANTAL no es un servicio médico. Ante cualquier duda de salud, consulta con un profesional.</p>
+    `,
+  });
+}
+
+// Tarjeta de la IA integrada del navegador (Gemini Nano): gratis y sin clave.
+function tarjetaNano() {
+  const est = nanoEstadoSync();
+  const activo = nanoActivo();
+  const descargando = ui.coachNanoDescargando || est === 'downloading';
+  const ok = ui.coachNanoOk;
+  let cuerpo;
+  if (activo) {
+    cuerpo = `<p class="tenue">✅ Activada. El chat usará la IA del propio navegador: <b>gratis, sin clave</b> y sin enviar tus datos a ningún servidor.</p>`;
+  } else if (descargando) {
+    cuerpo = `<p class="tenue">Descargando el modelo… puede tardar unos minutos y solo ocurre una vez.</p>
+      <div class="nano-barra" id="nanoProg"><i style="width:2%"></i></div>`;
+  } else if (est === 'downloadable') {
+    cuerpo = `<p class="tenue">Tu navegador puede usar su <b>IA integrada</b> (Gemini Nano): gratis, sin clave y sin salir del dispositivo. Hay que descargarla una vez.</p>
+      <button class="btn" type="button" data-a="coachNanoActivar">Descargar y activar</button>`;
+  } else if (est === 'desconocido') {
+    cuerpo = `<p class="tenue">Comprobando si tu navegador tiene IA integrada…</p>`;
+  } else {
+    cuerpo = `<p class="tenue">Tu navegador no ofrece IA integrada. Está disponible en <b>Chrome de escritorio</b> (versión 148 o superior); en el móvil, el coach sigue funcionando en local sin problema.</p>`;
+  }
+  return `<div class="tarjeta">
+    <div class="fila"><h2>✨ IA gratis del navegador</h2><span class="chip-mini ${activo ? 'ok' : 'mudo'}">${activo ? 'Activa' : 'Opcional'}</span></div>
+    ${cuerpo}
+    ${activo ? '<div class="botones"><button class="btn sec" type="button" data-a="coachNanoProbar">Probar la IA del navegador</button></div>' : ''}
+    ${ok ? `<p class="aviso-ia ${ok.ok ? 'ok' : 'mal'}">${ok.ok ? `✅ Responde: «${esc(ok.texto)}»` : `⚠️ ${esc(ok.error)}`}</p>` : ''}
+  </div>`;
+}
+
+function ajCoach() {
+  const cfg = leerConfig();
+  const prov = PROVEEDORES[cfg.proveedor];
+  const ok = ui.coachIAOk;
+  const motor = motorCoach();
+  return pagina({
+    titulo: 'Coach IA', padre: 'ajustes', sub: 'Opcional: mejora el chat con IA real',
+    cuerpo: `
+      <div class="tarjeta">
+        <h2>🧠 Cómo funciona</h2>
+        <p>El coach de DANTAL <b>ya funciona sin configurar nada</b>: te explica el cuánto y el porqué y adapta tus cargas con reglas basadas en tus datos.</p>
+        <p>Además, puedes <b>conversar en lenguaje natural</b>. Hay dos formas de mejorar el chat, de más sencilla a más potente:</p>
+        <ol class="ciencia-puntos">
+          <li><b>IA del navegador</b> (abajo): gratis, sin clave y sin salir del dispositivo. Solo en Chrome de escritorio.</li>
+          <li><b>Tu propia clave</b> de OpenAI, Gemini, Claude… Funciona en cualquier dispositivo, pero tiene coste por uso.</li>
+        </ol>
+        <p class="tenue">Si configuras una clave, esa manda; si no, se usa la IA del navegador cuando existe; y si no, el motor local. En cualquier caso, nada cambia en tu programa sin tu permiso.</p>
+      </div>
+      ${tarjetaNano()}
+      <form id="formCoachIA" class="tarjeta">
+        <h2>🔑 Tu clave de API</h2>
+        <label class="campo">Proveedor
+          <select name="proveedor">
+            <option value="">— Sin clave (usa la IA del navegador o el motor local) —</option>
+            ${Object.entries(PROVEEDORES).map(([k, p]) => `<option value="${k}" ${cfg.proveedor === k ? 'selected' : ''}>${p.icono} ${esc(p.nombre)}</option>`).join('')}
+          </select>
+        </label>
+        <label class="campo">Clave de la API
+          <span class="clave-fila">
+            <input type="password" name="clave" value="${esc(cfg.clave)}" placeholder="${prov ? esc(prov.claveEjemplo) : 'Pega aquí tu clave'}" autocomplete="off" spellcheck="false">
+            <button type="button" class="icono" data-a="verClave" data-f="clave" aria-label="Mostrar u ocultar la clave">👁️</button>
+          </span>
+        </label>
+        <label class="campo">Modelo
+          <input type="text" name="modelo" list="modelosIA" value="${esc(cfg.modelo)}" placeholder="${prov ? esc(prov.defecto) : 'modelo'}" autocomplete="off" spellcheck="false">
+          <datalist id="modelosIA">${prov ? prov.modelos.map(m => `<option value="${esc(m)}"></option>`).join('') : ''}</datalist>
+        </label>
+        ${prov ? `<p class="tenue">Consigue tu clave en <a href="${prov.claveUrl}" target="_blank" rel="noopener">${esc(prov.nombre)}</a>. El modelo se puede escribir a mano.</p>` : ''}
+        <div class="botones">
+          <button class="btn" type="submit">Guardar</button>
+          ${cfg.proveedor && cfg.clave ? '<button class="btn sec" type="button" data-a="coachIAProbar">Probar conexión</button>' : ''}
+          ${cfg.proveedor ? '<button class="btn peligro" type="button" data-a="coachIABorrar">Quitar la clave</button>' : ''}
+        </div>
+        ${ok ? `<p class="aviso-ia ${ok.ok ? 'ok' : 'mal'}">${ok.ok ? '✅ Funciona: el modelo ha respondido.' : `⚠️ ${esc(ok.error)}`}</p>` : ''}
+      </form>
+      <p class="tenue">Tu clave se guarda <b>solo en este navegador</b>. No forma parte de tus datos, no se exporta y no se comparte. DANTAL no tiene servidor propio: tus preguntas van directamente del navegador al proveedor que elijas. Las claves son personales y pueden tener coste por uso.</p>
+      <p class="tenue">Estado actual: <b>${motor.tipo === 'clave' ? `IA real (${esc(motor.nombre)})` : motor.tipo === 'navegador' ? 'IA del navegador' : 'motor local'}</b>.</p>
+    `,
+  });
+}
+
+// Botón flotante para abrir el coach desde cualquier pantalla principal.
+function coachFab(tab) {
+  const oculto = !estado.plan || ['sesion', 'bienvenida', 'login', 'recuperar', 'coach'].includes(tab);
+  let fab = $('#coachFab');
+  if (oculto) { if (fab) fab.remove(); return; }
+  if (!fab) {
+    fab = document.createElement('button');
+    fab.id = 'coachFab';
+    fab.className = 'coach-fab';
+    fab.dataset.a = 'ir';
+    fab.dataset.v = 'coach';
+    fab.title = 'Coach DANTAL';
+    fab.setAttribute('aria-label', 'Abrir el coach DANTAL');
+    fab.innerHTML = '<span aria-hidden="true">🧠</span>';
+    document.body.appendChild(fab);
+  }
+}
+
+// Tarjeta resumen del coach para la pantalla de Hoy.
+function tarjetaCoach() {
+  const ctx = coachContexto();
+  const sug = sugerenciasSemana(ctx).find(x => !ui.coachIgnorados.includes(x.id));
+  const motor = motorCoach();
+  const texto = sug ? `${sug.icono} ${esc(sug.texto)}`
+    : ctx.sesiones ? `Llevas ${ctx.sesiones} sesiones y ${ctx.racha} semanas de racha. Pregúntame el cuánto y el porqué.`
+      : 'Te explico cuánto entrenar y por qué, y adapto tus cargas según cómo vas.';
+  const chip = motor.tipo === 'clave' ? 'IA real conectada'
+    : motor.tipo === 'navegador' ? 'IA del navegador · gratis' : 'Siempre disponible';
+  return `<a class="tarjeta enlace-tarjeta" href="#coach">
+    <div class="fila"><h2>🧠 Coach DANTAL</h2><span class="chev">›</span></div>
+    <p class="tenue">${texto}</p>
+    <span class="chip-mini ${motor.tipo === 'local' ? 'mudo' : 'ok'}">${chip}</span>
+  </a>`;
+}
+
 function programaCarta() {
   const p = estado.perfil;
   const prev = ui.cartaPrev;
@@ -874,6 +1230,7 @@ function sesion() {
     <div class="progreso-ses"><i style="width:${total ? hechas / total * 100 : 0}%"></i></div>
     <p class="tenue centro">${hechas} de ${total} series${s.fase ? ` · Semana ${s.fase.semana} · ${s.fase.nombre}${s.fase.descarga ? ' (descarga)' : ''}` : ''}</p>
     ${s.pausado ? '<div class="alerta centro"><b>Sesión en pausa</b><br><button class="btn" data-a="pausa">Reanudar</button></div>' : ''}
+    ${!s.pausado ? panelCoach(pos) : ''}
     ${pos && !s.pausado ? guiado(pos) : ''}
     ${!pos ? `<div class="hero ok"><h2>¡Todas las series hechas! 💪</h2><button class="btn" data-a="terminar">Terminar sesión</button></div>` : ''}
     <div class="fila"><h2>Ejercicios</h2><button class="enlace" data-a="verLista">${ui.listaSesion ? 'Ocultar series' : 'Ver y editar series'}</button></div>
@@ -2202,6 +2559,7 @@ function ajustes() {
       </a>
       ${grupo('Usuarios', celda('usuarios', '👥', 'Gestor de usuarios', `Activo: ${esc(usuarioActual().nombre)}`, 'azul', usuarios.lista.length))}
       ${grupo('Programa', celda('ajustes/perfil', '🎯', 'Perfil y programa', 'Objetivo, días, frecuencia, duración, material y enfoque', 'verde'))}
+      ${grupo('Coach', celda('ajustes/coach', '🧠', 'Coach IA', motorCoach().tipo === 'clave' ? 'IA real conectada' : motorCoach().tipo === 'navegador' ? 'IA del navegador · gratis' : 'Motor local siempre activo', 'violeta', motorCoach().tipo === 'local' ? '' : 'IA'))}
       ${grupo('Aplicación',
         celda('ajustes/recordatorios', '🔔', 'Recordatorios', 'Aviso los días de entrenamiento', 'naranja', estado.ajustes.recordatorio ? estado.ajustes.hora : 'No') +
         celda('ajustes/seguridad', '🔒', 'Seguridad', estado.seguridad?.activa ? 'Bloqueo activo con contraseña' : 'Protege la app con una contraseña', 'violeta') +
@@ -3311,7 +3669,7 @@ function regenerar(perfil) {
 // =====================================================================
 // Eventos
 // =====================================================================
-document.addEventListener('click', ev => {
+document.addEventListener('click', async ev => {
   const b = ev.target.closest('[data-a]');
   if (!b || b.tagName === 'INPUT' || b.tagName === 'SELECT') return;
   const d = b.dataset;
@@ -3630,6 +3988,44 @@ document.addEventListener('click', ev => {
     case 'videoQuitar': conDeshacer('Vídeo quitado', () => { delete estado.videos[d.id]; }); break;
     case 'fotoQuitar': conDeshacer('Foto quitada', () => { delete estado.fotos[d.id]; }); break;
     case 'descDeshacer': { const f = temporizador.deshacer; pararDescanso(); f?.(); break; }
+    // ---- Coach DANTAL ----
+    case 'coachAccion': coachAplicar(d); break;
+    case 'coachIgnorar': coachIgnorar(d.sug); break;
+    case 'coachPreg': coachEnviar(d.q); break;
+    case 'coachLimpiar': ui.coachChat = []; ui.coachIgnorados = []; render(); break;
+    case 'coachIAProbar': {
+      ui.coachIAOk = null; render();
+      toast('Probando la conexión…');
+      const r = await probar();
+      ui.coachIAOk = r; render();
+      toast(r.ok ? 'El modelo responde ✅' : 'No ha funcionado. Revisa la clave.');
+      break;
+    }
+    case 'coachIABorrar':
+      confirmar('El coach seguirá funcionando con el motor local, sin modelo de lenguaje.', { titulo: '¿Quitar la clave de IA?', ok: 'Quitar', peligro: true })
+        .then(ok => { if (ok) { borrarConfig(); ui.coachIAOk = null; render(); toast('Clave eliminada'); } });
+      break;
+    case 'coachNanoActivar': {
+      if (ui.coachNanoDescargando) break;
+      ui.coachNanoDescargando = true; ui.coachNanoOk = null; render();
+      const r = await activarNano(({ loaded, total }) => {
+        const i = $('#nanoProg i');
+        if (i && total) i.style.width = `${Math.max(2, Math.round(loaded / total * 100))}%`;
+      });
+      ui.coachNanoDescargando = false;
+      if (!r.ok) ui.coachNanoOk = { ok: false, error: r.error };
+      render();
+      toast(r.ok ? 'IA del navegador lista ✅' : 'No he podido activar la IA del navegador');
+      break;
+    }
+    case 'coachNanoProbar': {
+      ui.coachNanoOk = null; render();
+      toast('Probando la IA del navegador…');
+      const r = await probarNano();
+      ui.coachNanoOk = r; render();
+      toast(r.ok ? 'La IA del navegador responde ✅' : 'No ha funcionado');
+      break;
+    }
   }
 });
 
@@ -3937,6 +4333,22 @@ document.addEventListener('submit', async ev => {
     toast(estado.saludUrl ? 'Dirección guardada. Traeré los datos solo, cada vez que abras la app.' : 'Sincronización automática desactivada');
     return;
   }
+  if (ev.target.id === 'formCoach') {
+    const q = String(f.get('q') || '');
+    ev.target.reset();
+    await coachEnviar(q);
+    return;
+  }
+  if (ev.target.id === 'formCoachIA') {
+    const proveedor = String(f.get('proveedor') || '');
+    if (!proveedor) { borrarConfig(); ui.coachIAOk = null; render(); toast('Coach en modo local'); return; }
+    const clave = String(f.get('clave') || '').trim();
+    if (!clave) { toast('Pega tu clave de la API'); return; }
+    guardarConfig({ proveedor, clave, modelo: String(f.get('modelo') || '') });
+    ui.coachIAOk = null; render();
+    toast('Clave guardada. Prueba la conexión 👇');
+    return;
+  }
   if (ev.target.id === 'formPerfil') {
     const diasSemana = f.getAll('diasSemana').map(Number);
     if (!diasSemana.length) { avisoCampo('#avisoDias', 'Elige al menos un día de entrenamiento.'); return; }
@@ -4096,3 +4508,9 @@ function consejoAyudas(tab) {
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
 render();
 comprobarRecordatorio();
+// La IA integrada del navegador (Gemini Nano) tarda un instante en responder:
+// cuando sepamos si está disponible, refresco las pantallas donde se muestra.
+detectarNano().then(est => {
+  if (est !== 'available' && est !== 'downloadable') return;
+  if (['', 'hoy', 'inicio', 'coach', 'ajustes', 'ajustes/coach'].includes(ruta())) render();
+});
