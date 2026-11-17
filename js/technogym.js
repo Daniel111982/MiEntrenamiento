@@ -2,10 +2,10 @@
 // Relaciona los ejercicios con máquinas reales (líneas Selection 900, Pure Strength
 // y Kinesis One) y genera una ilustración biomecánica en SVG.
 //
-// IMPORTANTE: los identificadores de vídeo son marcadores de posición
-// (no se han podido verificar). Sustitúyelos por los enlaces reales de cada
-// máquina cuando los tengas: basta cambiar el valor en VIDEOS_TECHNOGYM por el
-// identificador de 11 caracteres del vídeo de YouTube.
+// Los vídeos de técnica de VIDEOS_TECHNOGYM son reales y se verificaron
+// (existencia e incrustación) el 17/11/2026. Si alguno deja de estar
+// disponible, basta cambiar su valor por el identificador de 11 caracteres
+// del vídeo de YouTube (la parte de la URL tras "v=").
 
 import { COLORES_MARCA } from './marca.js';
 
@@ -40,24 +40,24 @@ export const EQUIPO_TECHNOGYM = {
   'crunch-polea': { linea: 'Kinesis One', maquina: 'Cable Crunch', musculo: 'Abdomen', ajuste: 'De rodillas con la cuerda junto a la cabeza. Flexiona el tronco llevando los codos a los muslos.' },
 };
 
-// Vídeos oficiales de técnica (marcadores de posición: sustitúyelos por los reales).
+// Vídeos de técnica por máquina (verificados el 17/11/2026).
 export const VIDEOS_TECHNOGYM = {
-  'prensa': 'TgLegPress9',
-  'extension-cuadriceps': 'TgLegExt900',
-  'curl-femoral': 'TgLegCurl90',
-  'gemelos-maquina': 'TgCalf90000',
-  'hip-thrust': 'TgHipThrust',
-  'press-maquina': 'TgChestPres',
-  'press-hombro-maquina': 'TgShldrPres',
-  'cruce-poleas': 'TgCrossOver',
-  'remo-maquina': 'TgLowRow900',
-  'jalon': 'TgLatMachin',
-  'remo-polea': 'TgSeatedRow',
-  'face-pull': 'TgFacePull9',
-  'curl-polea': 'TgCableCurl',
-  'extension-triceps-polea': 'TgPushdown9',
-  'laterales-polea': 'TgCblLatRai',
-  'crunch-polea': 'TgCblCrunch',
+  'prensa': 'uTeqMaWQLL8',                  // Point Loma Sports Club · Technogym Leg Press
+  'extension-cuadriceps': '2z4ofQJawDg',    // Point Loma Sports Club · Technogym Leg Extension
+  'curl-femoral': '6aFuzQMYE00',            // Charlie Cuthbert · Technogym Seated Leg Curl
+  'gemelos-maquina': 'paSkfNotQis',         // Mudo Gym Sandnes · Seated Calf Raise Technogym
+  'hip-thrust': 'y50EcGQku58',              // Charlie Cuthbert · Technogym Pure Strength Hip Thrust
+  'press-maquina': 'n1Dyy3De1Rc',           // Travis Tarrant · Technogym Chest Press
+  'press-hombro-maquina': 'c3Z8NXdcvEs',    // Travis Tarrant · Technogym Shoulder Press
+  'cruce-poleas': '3wO7Mo4uJH0',            // Energie Fitness Hayes · Dual Adjustable Pulley
+  'remo-maquina': 'rADR-qRgx2A',            // Travis Tarrant · Technogym Row / Low Row
+  'jalon': 'N_kTW-coueo',                   // Travis Tarrant · Technogym Lat Pulldown
+  'remo-polea': 'pKlHNKFGpXw',              // Point Loma Sports Club · Technogym Back Row
+  'face-pull': '0Po47vvj9g4',               // PureGym · How To Do Cable Face Pulls
+  'curl-polea': 'VV8Q9kb5dPw',              // Charlie Cuthbert · Technogym Arm Curl
+  'extension-triceps-polea': 'oKfuWNkJYuQ', // ErgoComical · Arm Extension Triceps TechnoGym
+  'laterales-polea': 'Z5FA9aq3L6A',         // PureGym · How To Do Cable Lateral Raises
+  'crunch-polea': 'mkE_gNDQN8o',            // Anabolic Aliens · How To Seated Cable Crunch
 };
 
 // URL lista para incrustar (sin cookies de seguimiento).
