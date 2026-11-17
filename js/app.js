@@ -11,6 +11,10 @@ import { COMIDAS, CATEGORIAS_ALIMENTO, ALIMENTOS, alimentoPorId, macrosDe, sumar
 import { generarInsightsDantal } from './ia.js';
 import { EQUIPO_TECHNOGYM, urlVideoTechnogym, infoTechnogym, esTechnogym, ilustracionTechnogymSVG } from './technogym.js';
 import { videoEjercicio } from './videos.js';
+import {
+  CLAVE_INCIDENCIAS, TIPOS_INCIDENCIA, CATEGORIAS_INCIDENCIA, ESTADOS_INCIDENCIA, cargarIncidencias, guardarIncidencias,
+  contarNuevas, nuevaIncidencia, nombreCategoria, textoIncidencia,
+} from './incidencias.js';
 
 // =====================================================================
 // Estado
@@ -91,8 +95,16 @@ function guardar() { localStorage.setItem(claveDe(usuarios.activo), JSON.stringi
 const usuarioActual = () => usuarios.lista.find(u => u.id === usuarios.activo) || usuarios.lista[0];
 const avatarHTML = (u, clase = '') => `<span class="avatar-u ${clase}" style="background:${COLORES[u.color % COLORES.length]}">${u.avatar}</span>`;
 
+// El «dueño» es la cuenta marcada como administradora: es la única que ve la
+// bandeja de ideas e incidencias. Si todavía no hay ninguna, la primera cuenta
+// que se cree pasa a serlo.
+const esDueno = u => Boolean(u?.admin);
+const hayDueno = () => usuarios.lista.some(esDueno);
+const soyDueno = () => esDueno(usuarioActual());
+const dueno = () => usuarios.lista.find(esDueno) || null;
+
 // Estado de interfaz que se reinicia al cambiar de usuario.
-const UI_INICIAL = { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, videoAbierto: null, verMaestro: false, recMetodo: null };
+const UI_INICIAL = { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, videoAbierto: null, verMaestro: false, recMetodo: null, incFiltro: 'nuevas' };
 
 // Cambia de usuario. Sin `entrar`, la sesión queda bloqueada y se pide la contraseña.
 function cambiarUsuario(id, { entrar: entrarYa = false } = {}) {
@@ -257,6 +269,8 @@ const RUTAS = [
   [/^ajustes\/seguridad$/, ajSeguridad, 'ajustes'],
   [/^ajustes\/datos$/, ajDatos, 'ajustes'],
   [/^ajustes\/acerca$/, ajAcerca, 'ajustes'],
+  [/^ajustes\/idea$/, ajIdea, 'ajustes'],
+  [/^ajustes\/incidencias$/, ajIncidencias, 'ajustes'],
   [/^bienvenida$/, bienvenida, 'bienvenida'],
   [/^login$/, login, 'login'],
   [/^recuperar$/, recuperar, 'recuperar'],
@@ -1958,7 +1972,10 @@ function ajustes() {
       ${grupo('Ayuda',
         `<label class="celda"><span class="ic violeta">💡</span><span class="celda-t"><b>Iconos de ayuda ⓘ</b><small>Explicaciones en las zonas importantes</small></span>
           <span class="interruptor solo"><input type="checkbox" role="switch" data-a="ayudas" ${estado.ajustes.ayudas !== false ? 'checked' : ''} aria-label="Mostrar iconos de ayuda"></span></label>` +
+        celda('ajustes/idea', '💡', '¿Una idea o un problema?', 'Cuéntame qué mejorar o qué no funciona', 'amarillo') +
         celda('ajustes/acerca', 'ℹ️', 'Cómo funciona', 'Ciclos, fases y cargas sugeridas', 'violeta'))}
+      ${soyDueno() ? grupo('Administración',
+        celda('ajustes/incidencias', '📥', 'Ideas e incidencias', 'Lo que envían los usuarios de este dispositivo', 'rojo', contarNuevas() ? `${contarNuevas()} sin leer` : '')) : ''}
     `,
   });
 }
@@ -2009,6 +2026,134 @@ function ajAcerca() {
       <div class="tarjeta"><h2>🔒 Seguridad</h2>
         <p>Puedes proteger la app con una contraseña que se guarda cifrada (SHA-256 con salt) en este dispositivo. Si la olvidas, tienes tres formas de recuperar el acceso: la pregunta de seguridad, un código por correo o el código maestro.</p></div>
       <p class="tenue centro">${MARCA.nombre} · versión ${APP_VERSION} · funciona sin conexión · tus datos no salen de tu dispositivo</p>
+    `,
+  });
+}
+
+// =====================================================================
+// Páginas: ideas e incidencias («¿Una idea o un problema?»)
+// =====================================================================
+function cambiarEstadoInc(id, estado) {
+  const inc = cargarIncidencias();
+  const item = inc.items.find(i => i.id === id);
+  if (item) item.estado = estado;
+  guardarIncidencias(inc);
+}
+
+// Tras enviar: agradecimiento y, si el dueño dejó contacto, botones de envío.
+function abrirEnvio(item) {
+  const d = cargarIncidencias();
+  const cuerpo = textoIncidencia(item);
+  const num = String(d.whatsapp || '').replace(/[^\d]/g, '');
+  const enlaces = [];
+  if (d.correo) enlaces.push(`<a class="btn sec" href="mailto:${encodeURIComponent(d.correo)}?subject=${encodeURIComponent('[DANTAL] ' + item.titulo)}&body=${encodeURIComponent(cuerpo)}">✉️ Enviar por correo</a>`);
+  if (num) enlaces.push(`<a class="btn sec" href="https://wa.me/${num}?text=${encodeURIComponent(cuerpo)}" target="_blank" rel="noopener">💬 Enviar por WhatsApp</a>`);
+  render();
+  modal(`<h2>¡Gracias! 🙌</h2>
+    <p>${enlaces.length ? 'He guardado tu mensaje. Si quieres, mándamelo también con un toque:' : 'He guardado tu mensaje. Llegará a quien administra la app.'}</p>
+    ${enlaces.join('')}
+    <div class="botones"><button class="btn" data-a="cerrar">Cerrar</button></div>`);
+}
+
+async function borrarIncidencia(id) {
+  const item = cargarIncidencias().items.find(i => i.id === id);
+  if (!item) return;
+  if (!await confirmar(`Se borrará «${item.titulo}». No se puede deshacer.`, { titulo: '¿Borrar el mensaje?', ok: 'Borrar', peligro: true })) return;
+  conDeshacerInc('Mensaje borrado', () => { const inc = cargarIncidencias(); inc.items = inc.items.filter(i => i.id !== id); guardarIncidencias(inc); });
+}
+
+function incCard(i) {
+  const nuevo = i.estado === 'nueva';
+  return `<div class="tarjeta ${nuevo ? 'activo' : ''}">
+    <div class="fila"><b>${TIPOS_INCIDENCIA[i.tipo]?.icono || '📝'} ${esc(i.titulo)}</b><span class="badge ${nuevo ? 'prim' : ''}">${ESTADOS_INCIDENCIA[i.estado]?.nombre || i.estado}</span></div>
+    <div class="badges"><span class="badge">${esc(nombreCategoria(i.categoria))}</span><span class="badge">${esc(i.autorNombre)}</span><span class="badge">${fmtCorta(i.fecha)}</span></div>
+    <p style="white-space:pre-wrap">${esc(i.texto)}</p>
+    <div class="botones">
+      ${nuevo ? `<button class="btn sec" data-a="incLeida" data-id="${i.id}">👀 Leída</button>` : ''}
+      ${i.estado !== 'hecha' ? `<button class="btn sec" data-a="incHecha" data-id="${i.id}">✅ Hecha</button>` : ''}
+      ${i.estado !== 'archivada' ? `<button class="btn sec" data-a="incArchivar" data-id="${i.id}">📦 Archivar</button>` : ''}
+      <button class="btn sec" data-a="incCopiar" data-id="${i.id}">📋 Copiar</button>
+      <button class="btn peligro" data-a="incBorrar" data-id="${i.id}">🗑️ Borrar</button>
+    </div>
+  </div>`;
+}
+
+// Formulario para que cualquier usuario cuente una idea o un problema.
+function ajIdea() {
+  const yo = usuarioActual();
+  const d = cargarIncidencias();
+  const mios = d.items.filter(i => i.autorId === yo.id);
+  const destino = dueno()?.nombre || 'quien administra la app';
+  return pagina({
+    titulo: '¿Una idea o un problema?',
+    padre: 'ajustes',
+    sub: 'Cuéntame qué mejorarías o qué no funciona',
+    cuerpo: `
+      <form id="formIncidencia" class="tarjeta">
+        <fieldset><legend>¿Qué quieres contarme?</legend>
+          <div class="chips">
+            <label class="chip grande"><input type="radio" name="tipo" value="idea" checked>💡<span>Una idea</span></label>
+            <label class="chip grande"><input type="radio" name="tipo" value="problema">⚠️<span>Un problema</span></label>
+          </div>
+        </fieldset>
+        <label class="campo">Sobre qué es
+          <select name="categoria">${Object.entries(CATEGORIAS_INCIDENCIA).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select>
+        </label>
+        <label class="campo">Título<input type="search" name="titulo" maxlength="70" required autocomplete="off" placeholder="Resúmelo en una frase"></label>
+        <label class="campo">Cuéntame más<textarea name="texto" rows="5" maxlength="1500" required placeholder="¿Qué te gustaría que hiciera la app? ¿Qué pasó exactamente?"></textarea></label>
+        <button class="btn" type="submit">Enviar a ${esc(destino)}</button>
+      </form>
+      <p class="tenue">Tu mensaje se guarda en este dispositivo y solo lo ve la cuenta de administrador. Nadie más lo lee.</p>
+      ${mios.length ? `<h3 class="sub-leg">Tus mensajes</h3>` + mios.map(i => `<div class="tarjeta">
+        <div class="fila"><b>${TIPOS_INCIDENCIA[i.tipo]?.icono || '📝'} ${esc(i.titulo)}</b><span class="badge">${ESTADOS_INCIDENCIA[i.estado]?.nombre || i.estado}</span></div>
+        <div class="badges"><span class="badge">${esc(nombreCategoria(i.categoria))}</span><span class="badge">${fmtCorta(i.fecha)}</span></div>
+      </div>`).join('') : ''}
+    `,
+  });
+}
+
+// Bandeja privada del dueño: solo la ve la cuenta administradora.
+function ajIncidencias() {
+  if (!soyDueno()) {
+    return pagina({
+      titulo: 'Ideas e incidencias', padre: 'ajustes',
+      cuerpo: vacioMsg('🔒', 'Sección privada', 'Solo la cuenta marcada como administradora puede ver las ideas y los problemas que envían los usuarios.',
+        !hayDueno() ? '<button class="btn" data-a="incSerDueno">👑 Marcar mi cuenta como dueño</button>' : ''),
+    });
+  }
+  const d = cargarIncidencias();
+  const filtro = ui.incFiltro || 'nuevas';
+  const leidas = d.items.filter(i => i.estado === 'leida').length;
+  const cuenta = {
+    nuevas: d.items.filter(i => i.estado === 'nueva').length,
+    hechas: d.items.filter(i => i.estado === 'hecha').length,
+    archivadas: d.items.filter(i => i.estado === 'archivada').length,
+    todas: d.items.length,
+  };
+  const lista = d.items.filter(i => filtro === 'todas' ? true
+    : filtro === 'nuevas' ? (i.estado === 'nueva' || i.estado === 'leida') : i.estado === filtro);
+  const chipFiltro = (f, txt) => `<button class="chip ${filtro === f ? 'on' : ''}" data-a="incFiltro" data-f="${f}">${txt}</button>`;
+  return pagina({
+    titulo: 'Ideas e incidencias', padre: 'ajustes',
+    sub: `${cuenta.todas} ${cuenta.todas === 1 ? 'mensaje' : 'mensajes'} · ${cuenta.nuevas} sin leer`,
+    cuerpo: `
+      <div class="chips">
+        ${chipFiltro('nuevas', `Pendientes (${cuenta.nuevas + leidas})`)}
+        ${chipFiltro('todas', `Todas (${cuenta.todas})`)}
+        ${chipFiltro('hecha', `Hechas (${cuenta.hechas})`)}
+        ${chipFiltro('archivada', `Archivadas (${cuenta.archivadas})`)}
+      </div>
+      ${lista.length ? lista.map(incCard).join('') : vacioMsg('📭', 'Nada por aquí', filtro === 'todas' ? 'Todavía no te han enviado ideas ni problemas.' : 'No hay mensajes en este apartado.')}
+      <h3 class="sub-leg">Datos de contacto (opcional)</h3>
+      <div class="tarjeta">
+        <p class="tenue">Si los rellenas, quien envíe una idea o un problema podrá mandártela también con un botón de correo o WhatsApp.</p>
+        <label class="campo">Correo<input type="email" name="correo" data-a="incContacto" data-c="correo" value="${esc(d.correo)}" placeholder="tucorreo@ejemplo.com" autocomplete="off"></label>
+        <label class="campo">WhatsApp<input type="tel" name="whatsapp" data-a="incContacto" data-c="whatsapp" value="${esc(d.whatsapp)}" placeholder="+34 600 000 000" autocomplete="off"></label>
+      </div>
+      ${grupo('Acciones', `
+        ${cuenta.nuevas ? `<button class="celda" data-a="incTodasLeidas"><span class="ic verde">👀</span><span class="celda-t"><b>Marcar todo como leído</b><small>${cuenta.nuevas} sin leer</small></span></button>` : ''}
+        <button class="celda" data-a="incExportar"><span class="ic azul">⬇️</span><span class="celda-t"><b>Exportar todo</b><small>Archivo JSON con las ideas y los problemas</small></span></button>
+        ${cuenta.archivadas ? `<button class="celda peligro-c" data-a="incBorrarArchivadas"><span class="ic rojo">🗑️</span><span class="celda-t"><b>Borrar las archivadas</b><small>${cuenta.archivadas} archivadas</small></span></button>` : ''}`)}
     `,
   });
 }
@@ -2324,6 +2469,8 @@ function formUsuario(u, nuevo) {
     <fieldset><legend>Avatar</legend><div class="chips avatares">${AVATARES.map(a => `<label class="chip"><input type="radio" name="avatar" value="${a}" ${a === u.avatar ? 'checked' : ''}>${a}</label>`).join('')}</div></fieldset>
     <fieldset><legend>Color</legend><div class="chips colores">${COLORES.map((c, i) => `<label class="chip color" style="background:${c}"><input type="radio" name="color" value="${i}" ${i === u.color ? 'checked' : ''} aria-label="Color ${i + 1}"></label>`).join('')}</div></fieldset>
     ${nuevo ? formMedidasHTML() : ''}
+    ${!nuevo && (soyDueno() || !hayDueno()) ? `<label class="interruptor"><span><b>Cuenta de administrador</b><br><small class="tenue">Podrá ver la bandeja de ideas e incidencias de la app</small></span>
+      <input type="checkbox" name="admin" value="si" ${esDueno(u) ? 'checked' : ''}></label>` : ''}
     <button class="btn" type="submit">${nuevo ? 'Crear cuenta y continuar' : 'Guardar cambios'}</button>
   </form>`;
 }
@@ -2385,9 +2532,9 @@ function menuUsuarios() {
     <div class="botones"><a class="btn sec" href="#usuarios/nuevo" data-a="cerrar">＋ Nuevo</a><a class="btn sec" href="#usuarios" data-a="cerrar">Gestionar</a></div>`);
 }
 
-function crearUsuario({ nombre, avatar, color, nutricion, medidas, seguridad }) {
+function crearUsuario({ nombre, avatar, color, nutricion, medidas, seguridad, admin = false }) {
   const id = nuevoId();
-  usuarios.lista.push({ id, nombre, avatar, color, creado: new Date().toISOString() });
+  usuarios.lista.push({ id, nombre, avatar, color, creado: new Date().toISOString(), ...(admin ? { admin: true } : {}) });
   const datos = vacio();
   if (nutricion) datos.nutricion = { ...NUTRICION_DEF, ...nutricion };
   if (Array.isArray(medidas) && medidas.length) datos.medidas = medidas;
@@ -2567,6 +2714,15 @@ function conDeshacer(texto, accion) {
   accion();
   guardar(); render();
   toast(texto, { accion: 'Deshacer', alPulsar: () => { estado = JSON.parse(antes); guardar(); render(); } });
+}
+
+// Igual que conDeshacer, pero para las incidencias: se guardan aparte y no
+// pertenecen a ningún usuario, así que se copia la clave entera.
+function conDeshacerInc(texto, accion) {
+  const antes = localStorage.getItem(CLAVE_INCIDENCIAS);
+  accion();
+  render();
+  toast(texto, { accion: 'Deshacer', alPulsar: () => { antes == null ? localStorage.removeItem(CLAVE_INCIDENCIAS) : localStorage.setItem(CLAVE_INCIDENCIAS, antes); render(); } });
 }
 
 function detalle(id) {
@@ -3109,6 +3265,35 @@ document.addEventListener('click', ev => {
       descargar(JSON.stringify(cargar(d.id), null, 2), 'application/json', `${u.nombre.replace(/[^\wáéíóúñ-]+/gi, '_')}.json`);
       toast(`Datos de ${u.nombre} descargados`); break;
     }
+    // ---- Ideas e incidencias ----
+    case 'incFiltro': ui.incFiltro = d.f; render(); break;
+    case 'incLeida': conDeshacerInc('Marcada como leída', () => cambiarEstadoInc(d.id, 'leida')); break;
+    case 'incHecha': conDeshacerInc('Marcada como hecha ✅', () => cambiarEstadoInc(d.id, 'hecha')); break;
+    case 'incArchivar': conDeshacerInc('Archivada', () => cambiarEstadoInc(d.id, 'archivada')); break;
+    case 'incTodasLeidas':
+      conDeshacerInc('Todo marcado como leído', () => { const inc = cargarIncidencias(); inc.items.forEach(i => { if (i.estado === 'nueva') i.estado = 'leida'; }); guardarIncidencias(inc); });
+      break;
+    case 'incBorrar': borrarIncidencia(d.id); break;
+    case 'incBorrarArchivadas':
+      confirmar('Se borrarán las ideas y los problemas que hayas archivado. No se puede deshacer.', { titulo: '¿Borrar las archivadas?', ok: 'Borrar', peligro: true })
+        .then(ok => { if (ok) conDeshacerInc('Archivadas borradas', () => { const inc = cargarIncidencias(); inc.items = inc.items.filter(i => i.estado !== 'archivada'); guardarIncidencias(inc); }); });
+      break;
+    case 'incExportar': {
+      const inc = cargarIncidencias();
+      descargar(JSON.stringify({ app: 'DANTAL', tipo: 'incidencias', exportado: new Date().toISOString(), ...inc }, null, 2), 'application/json', 'incidencias');
+      toast('Ideas e incidencias descargadas'); break;
+    }
+    case 'incCopiar': {
+      const item = cargarIncidencias().items.find(i => i.id === d.id);
+      navigator.clipboard?.writeText(textoIncidencia(item || {})).then(() => toast('Copiado'), () => toast('No he podido copiarlo'));
+      break;
+    }
+    case 'incSerDueno':
+      usuarios.lista.forEach(u => delete u.admin);
+      usuarioActual().admin = true;
+      guardarUsuarios(); render();
+      toast(`Ahora ${usuarioActual().nombre} es el dueño de la app 👑`);
+      break;
     case 'videoAdd':
       modal(`<h2>Guardar un vídeo</h2>
         <p class="tenue">Abre el vídeo en YouTube, copia su enlace (Compartir → Copiar enlace) y pégalo aquí.</p>
@@ -3184,6 +3369,10 @@ document.addEventListener('input', ev => {
     const s = estado.plan?.sesiones[Number(d.i)];
     const item = s?.ejercicios[Number(d.j)];
     if (item) { item.descanso = Math.max(0, Math.min(600, Math.round((Number(t.value) || 0) / 5) * 5)); guardar(); }
+  } else if (d.a === 'incContacto') {
+    const inc = cargarIncidencias();
+    inc[d.c] = t.value.trim();
+    guardarIncidencias(inc);
   } else if (t.name === 'diasSemana') {
     const n = document.querySelectorAll('[name=diasSemana]:checked').length;
     $('#avisoDias').classList.remove('error');
@@ -3367,7 +3556,9 @@ document.addEventListener('submit', async ev => {
     const id = ev.target.dataset.id;
     if (usuarios.lista.some(u => u.id !== id && u.nombre.toLowerCase() === nombre.toLowerCase())) { toast('Ya hay un usuario con ese nombre'); return; }
     if (id) {
-      Object.assign(usuarios.lista.find(u => u.id === id), { nombre, avatar, color });
+      const u = usuarios.lista.find(x => x.id === id);
+      Object.assign(u, { nombre, avatar, color });
+      if (u && ev.target.querySelector('[name=admin]')) u.admin = f.get('admin') === 'si';
       guardarUsuarios(); ir('usuarios'); toast('Usuario actualizado');
       return;
     }
@@ -3381,9 +3572,24 @@ document.addEventListener('submit', async ev => {
     const nuevoId = crearUsuario({
       nombre, avatar, color, nutricion, seguridad,
       medidas: [{ fecha: hoy(), peso: nutricion.peso, nota: 'Peso inicial' }],
+      admin: !hayDueno(),
     });
     entrarComo(nuevoId);
     toast(`Cuenta de ${nombre} creada. Vamos a preparar su programa.`, { ms: 6000 });
+    return;
+  }
+  if (ev.target.id === 'formIncidencia') {
+    const titulo = String(f.get('titulo') || '').trim();
+    const texto = String(f.get('texto') || '').trim();
+    if (!titulo) { toast('Ponle un título'); return; }
+    if (!texto) { toast('Cuéntame un poco más'); return; }
+    const item = nuevaIncidencia({
+      tipo: f.get('tipo') === 'problema' ? 'problema' : 'idea',
+      categoria: String(f.get('categoria') || 'otro'),
+      titulo, texto, autorId: usuarioActual().id, autorNombre: usuarioActual().nombre,
+    });
+    ev.target.reset();
+    abrirEnvio(item);
     return;
   }
   if (ev.target.id === 'formVideo') {
