@@ -1,10 +1,10 @@
 // Service worker: guarda la app en caché para que funcione sin conexión.
 // Estrategia: primero la red (siempre la versión más reciente) y, sin conexión, la caché.
-const VERSION = 'dantal-v2.7';
+const VERSION = 'dantal-v2.8';
 const ARCHIVOS = [
   './', './index.html', './css/estilos.css', './manifest.webmanifest',
   './js/app.js', './js/ejercicios.js', './js/generador.js', './js/stats.js', './js/ayudas.js', './js/tecnica.js',
-  './js/marca.js', './js/alimentos.js', './js/technogym.js', './js/videos.js', './js/ia.js', './js/incidencias.js',
+  './js/marca.js', './js/alimentos.js', './js/technogym.js', './js/videos.js', './js/ia.js', './js/incidencias.js', './js/salud.js',
   './icons/icono.svg', './icons/icono.ico', './icons/icono-192.png', './icons/icono-512.png',
 ];
 

@@ -15,6 +15,7 @@ import {
   CLAVE_INCIDENCIAS, TIPOS_INCIDENCIA, CATEGORIAS_INCIDENCIA, ESTADOS_INCIDENCIA, cargarIncidencias, guardarIncidencias,
   contarNuevas, nuevaIncidencia, nombreCategoria, textoIncidencia,
 } from './incidencias.js';
+import { interpretarSalud, fusionarMedidas } from './salud.js';
 
 // =====================================================================
 // Estado
@@ -271,6 +272,7 @@ const RUTAS = [
   [/^ajustes\/acerca$/, ajAcerca, 'ajustes'],
   [/^ajustes\/idea$/, ajIdea, 'ajustes'],
   [/^ajustes\/incidencias$/, ajIncidencias, 'ajustes'],
+  [/^ajustes\/salud$/, ajSalud, 'ajustes'],
   [/^bienvenida$/, bienvenida, 'bienvenida'],
   [/^login$/, login, 'login'],
   [/^recuperar$/, recuperar, 'recuperar'],
@@ -1141,6 +1143,9 @@ function segMedidas() {
       </div>` : ''}
       <a class="tarjeta enlace-tarjeta" href="#seguimiento/nutricion">
         <div class="fila"><div><h2>🍎 Calorías y proteína</h2><p class="tenue">Calcula tu gasto diario y los macros con tu peso actual.</p></div><span class="chev">›</span></div>
+      </a>
+      <a class="tarjeta enlace-tarjeta" href="#ajustes/salud">
+        <div class="fila"><div><h2>📥 Importar datos de salud</h2><p class="tenue">Trae tu peso y medidas desde otra app (CSV o JSON).</p></div><span class="chev">›</span></div>
       </a>
       <p class="tenue">Consejo: mide siempre en las mismas condiciones (por la mañana, en ayunas y con la misma cinta) para que la tendencia sea fiable.</p>
     `,
@@ -2017,6 +2022,7 @@ function ajDatos() {
         <button class="celda" data-a="exportar"><span class="ic azul">⬇️</span><span class="celda-t"><b>Exportar copia</b><small>Archivo JSON con todo: perfil, programa e historial</small></span></button>
         <label class="celda"><span class="ic verde">⬆️</span><span class="celda-t"><b>Importar copia</b><small>Recupera los datos desde un archivo exportado</small></span><input type="file" accept="application/json" data-a="importar" hidden></label>
         <button class="celda" data-a="csv"><span class="ic violeta">📊</span><span class="celda-t"><b>Exportar historial (CSV)</b><small>Para abrirlo en Excel o Google Sheets</small></span></button>`)}
+      ${grupo('Datos de salud', celda('ajustes/salud', '❤️', 'Importar datos de salud', 'Peso, grasa y perímetros desde un archivo CSV o JSON', 'rojo'))}
       ${grupo('Zona peligrosa', `<button class="celda peligro-c" data-a="borrarTodo"><span class="ic rojo">🗑️</span><span class="celda-t"><b>Borrar los datos de ${esc(usuarioActual().nombre)}</b><small>Perfil, programa e historial. No se puede deshacer</small></span></button>`)}
       <p class="tenue">${estado.historial.length} sesiones · ${estado.misSesiones.length} sesiones propias · ${(JSON.stringify(estado).length / 1024).toFixed(1)} KB</p>
     `,
@@ -2042,6 +2048,51 @@ function ajAcerca() {
       <p class="tenue centro">${MARCA.nombre} · versión ${APP_VERSION} · funciona sin conexión · tus datos no salen de tu dispositivo</p>
     `,
   });
+}
+
+// =====================================================================
+// Páginas: importar datos de salud
+// =====================================================================
+function ajSalud() {
+  return pagina({
+    titulo: 'Datos de salud', padre: 'ajustes', sub: 'Peso, grasa y perímetros desde un archivo',
+    cuerpo: `
+      <div class="tarjeta">
+        <h2>📥 Trae tus datos desde otra app</h2>
+        <p>Exporta de <b>Google Fit</b>, <b>Health Connect</b>, tu báscula o cualquier app de salud un archivo <b>CSV</b> o <b>JSON</b>, y DANTAL leerá el <b>peso</b>, la <b>grasa</b> y los <b>perímetros</b> que encuentre.</p>
+        <p class="tenue">Los días que ya tenías se completan sin borrar nada; los días nuevos se añaden. Tus datos actuales nunca se sobrescriben.</p>
+        <label class="btn" for="archivoSalud">📄 Elegir archivo CSV o JSON</label>
+        <input id="archivoSalud" type="file" accept=".csv,text/csv,.json,application/json" data-a="importarSalud" hidden>
+      </div>
+      <div class="tarjeta">
+        <h2>🧭 Qué columnas reconozco</h2>
+        <p class="tenue">Fecha: <b>fecha · date · day</b>. Peso: <b>peso · weight</b>. Grasa: <b>grasa · body fat</b>. Perímetros: <b>cintura/waist</b>, <b>pecho/chest</b>, <b>cadera/hip</b>, <b>brazo/arm</b>, <b>muslo/thigh</b>.</p>
+        <p class="tenue">Admite decimales con coma o punto, fechas como <b>2026-11-17</b> o <b>17/11/2026</b>, y pesos en libras (los convierto a kilos).</p>
+      </div>
+      <p class="tenue">🔒 El archivo se lee aquí mismo, en tu dispositivo. No se sube a ningún sitio.</p>
+    `,
+  });
+}
+
+async function importarSalud(file) {
+  try {
+    const r = interpretarSalud(await file.text(), file.name);
+    if (!r.ok) { toast(r.error, { ms: 7000 }); return; }
+    const n = r.filas.length;
+    const campos = r.campos.map(k => MEDIDAS_CAMPOS[k].nombre).join(', ');
+    const primero = r.filas[0].fecha, ultimo = r.filas[n - 1].fecha;
+    const rango = primero === ultimo ? `el ${fmtCorta(primero)}` : `del ${fmtCorta(primero)} al ${fmtCorta(ultimo)}`;
+    const copia = (estado.medidas || []).map(m => ({ ...m }));
+    const prev = fusionarMedidas(copia, r.filas);
+    if (!await confirmar(`He leído ${n} ${n === 1 ? 'día' : 'días'} ${rango} con ${campos}. Se añadirán ${prev.nuevas} ${prev.nuevas === 1 ? 'día nuevo' : 'días nuevos'} y se completarán ${prev.completadas} que ya tenías. Tus datos no se borran.`,
+      { titulo: '¿Importar estos datos?', ok: 'Importar' })) return;
+    conDeshacer(`Importados ${prev.nuevas} ${prev.nuevas === 1 ? 'día' : 'días'} de datos de salud`, () => {
+      fusionarMedidas(estado.medidas || (estado.medidas = []), r.filas);
+    });
+    ir('seguimiento/medidas');
+  } catch {
+    toast('No he podido leer ese archivo.');
+  }
 }
 
 // =====================================================================
@@ -3413,6 +3464,7 @@ document.addEventListener('change', async ev => {
   if (t.dataset.a === 'metrica') { ui.metricaMedida = MEDIDAS_CAMPOS[t.value] ? t.value : 'peso'; dibujarGraficaMedidas(); }
   if (t.dataset.a === 'nutricion') { guardarNutricion(); actualizarNutricion(); }
   if ((t.dataset.a === 'importar' || t.dataset.a === 'importarTodos') && t.files[0]) { importar(t.files[0]); t.value = ''; }
+  if (t.dataset.a === 'importarSalud' && t.files[0]) { importarSalud(t.files[0]); t.value = ''; }
   if (t.dataset.a === 'foto' && t.files[0]) guardarFoto(t.dataset.id, t.files[0]).catch(() => toast('No he podido leer esa imagen.'));
   if (t.name === 'lugar' && $('#fsEquipo')) $('#fsEquipo').hidden = t.value === 'gimnasio';
   if (t.form?.id === 'formUsuario' && (t.name === 'avatar' || t.name === 'color')) {
