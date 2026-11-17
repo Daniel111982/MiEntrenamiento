@@ -8,6 +8,7 @@
 // del vídeo de YouTube (la parte de la URL tras "v=").
 
 import { COLORES_MARCA } from './marca.js';
+import { VIDEOS_TECNICA } from './videos.js';
 
 // ---------------------------------------------------------------------
 // Máquinas: id del ejercicio -> línea, máquina y ajuste recomendado.
@@ -40,25 +41,11 @@ export const EQUIPO_TECHNOGYM = {
   'crunch-polea': { linea: 'Kinesis One', maquina: 'Cable Crunch', musculo: 'Abdomen', ajuste: 'De rodillas con la cuerda junto a la cabeza. Flexiona el tronco llevando los codos a los muslos.' },
 };
 
-// Vídeos de técnica por máquina (verificados el 17/11/2026).
-export const VIDEOS_TECHNOGYM = {
-  'prensa': 'uTeqMaWQLL8',                  // Point Loma Sports Club · Technogym Leg Press
-  'extension-cuadriceps': '2z4ofQJawDg',    // Point Loma Sports Club · Technogym Leg Extension
-  'curl-femoral': '6aFuzQMYE00',            // Charlie Cuthbert · Technogym Seated Leg Curl
-  'gemelos-maquina': 'paSkfNotQis',         // Mudo Gym Sandnes · Seated Calf Raise Technogym
-  'hip-thrust': 'y50EcGQku58',              // Charlie Cuthbert · Technogym Pure Strength Hip Thrust
-  'press-maquina': 'n1Dyy3De1Rc',           // Travis Tarrant · Technogym Chest Press
-  'press-hombro-maquina': 'c3Z8NXdcvEs',    // Travis Tarrant · Technogym Shoulder Press
-  'cruce-poleas': '3wO7Mo4uJH0',            // Energie Fitness Hayes · Dual Adjustable Pulley
-  'remo-maquina': 'rADR-qRgx2A',            // Travis Tarrant · Technogym Row / Low Row
-  'jalon': 'N_kTW-coueo',                   // Travis Tarrant · Technogym Lat Pulldown
-  'remo-polea': 'pKlHNKFGpXw',              // Point Loma Sports Club · Technogym Back Row
-  'face-pull': '0Po47vvj9g4',               // PureGym · How To Do Cable Face Pulls
-  'curl-polea': 'VV8Q9kb5dPw',              // Charlie Cuthbert · Technogym Arm Curl
-  'extension-triceps-polea': 'oKfuWNkJYuQ', // ErgoComical · Arm Extension Triceps TechnoGym
-  'laterales-polea': 'Z5FA9aq3L6A',         // PureGym · How To Do Cable Lateral Raises
-  'crunch-polea': 'mkE_gNDQN8o',            // Anabolic Aliens · How To Seated Cable Crunch
-};
+// Vídeos de técnica por máquina. Salen del catálogo general (js/videos.js), que
+// reúne un vídeo en español por ejercicio (verificado el 17/11/2026).
+export const VIDEOS_TECHNOGYM = Object.fromEntries(
+  Object.keys(EQUIPO_TECHNOGYM).map(id => [id, VIDEOS_TECNICA[id]]).filter(([, v]) => v),
+);
 
 // URL lista para incrustar (sin cookies de seguimiento).
 export const urlVideoTechnogym = id => id ? `https://www.youtube-nocookie.com/embed/${id}?rel=0` : null;
