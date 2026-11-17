@@ -15,7 +15,7 @@ import {
   CLAVE_INCIDENCIAS, TIPOS_INCIDENCIA, CATEGORIAS_INCIDENCIA, ESTADOS_INCIDENCIA, cargarIncidencias, guardarIncidencias,
   contarNuevas, nuevaIncidencia, nombreCategoria, textoIncidencia,
 } from './incidencias.js';
-import { interpretarSalud, fusionarMedidas } from './salud.js';
+import { interpretarSalud, fusionarMedidas, fusionarActividad } from './salud.js';
 
 // =====================================================================
 // Estado
@@ -30,6 +30,7 @@ const NUTRICION_DEF = { sexo: 'hombre', edad: 30, altura: 175, peso: null, activ
 const VASO_ML = 250; // capacidad de un vaso de agua
 const vacio = () => ({
   perfil: null, plan: null, historial: [], enCurso: null, misSesiones: [], videos: {}, fotos: {}, medidas: [],
+  actividad: [], saludUrl: '', saludSync: '',
   nutricion: { ...NUTRICION_DEF }, ajustes: { recordatorio: false, hora: '18:00', avisado: '', ayudas: true, consejoVisto: false },
   comidas: {}, agua: {}, ejerciciosPropios: [], seguridad: null,
 });
@@ -81,6 +82,7 @@ function cargar(id = usuarios.activo) {
     if (d) return {
       ...vacio(), ...d,
       medidas: Array.isArray(d.medidas) ? d.medidas : [],
+      actividad: Array.isArray(d.actividad) ? d.actividad : [],
       nutricion: { ...NUTRICION_DEF, ...(d.nutricion || {}) },
       ajustes: { ...vacio().ajustes, ...d.ajustes },
       comidas: d.comidas && typeof d.comidas === 'object' ? d.comidas : {},
@@ -105,7 +107,7 @@ const soyDueno = () => esDueno(usuarioActual());
 const dueno = () => usuarios.lista.find(esDueno) || null;
 
 // Estado de interfaz que se reinicia al cambiar de usuario.
-const UI_INICIAL = { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, videoAbierto: null, verMaestro: false, recMetodo: null, incFiltro: 'nuevas' };
+const UI_INICIAL = { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, pasoEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, videoAbierto: null, verMaestro: false, recMetodo: null, incFiltro: 'nuevas' };
 
 // Cambia de usuario. Sin `entrar`, la sesión queda bloqueada y se pide la contraseña.
 function cambiarUsuario(id, { entrar: entrarYa = false } = {}) {
@@ -246,6 +248,7 @@ const RUTAS = [
   [/^seguimiento\/recuperacion$/, segRecuperacion, 'seguimiento'],
   [/^seguimiento\/equilibrio$/, segEquilibrio, 'seguimiento'],
   [/^seguimiento\/medidas$/, segMedidas, 'seguimiento'],
+  [/^seguimiento\/pasos$/, segPasos, 'seguimiento'],
   [/^seguimiento\/nutricion$/, segNutricion, 'seguimiento'],
   [/^seguimiento\/progreso$/, segProgreso, 'seguimiento'],
   [/^seguimiento\/records$/, segRecords, 'seguimiento'],
@@ -323,6 +326,7 @@ function render() {
   $('.nav').hidden = !estado.plan || tab === 'sesion' || tab === 'bienvenida' || tab === 'login' || tab === 'recuperar';
   if ($('#grafica')) dibujarGrafica();
   if ($('#graficaMedidas')) dibujarGraficaMedidas();
+  if ($('#graficaPasos')) dibujarGraficaPasos();
   if ($('#nutriResultados')) actualizarNutricion();
   if (tab === 'sesion') actualizarCrono();
   document.body.classList.toggle('sin-ayudas', estado.ajustes.ayudas === false);
@@ -968,6 +972,7 @@ function seguimiento() {
         celda('seguimiento/progreso', '📈', 'Progreso por ejercicio', 'Evolución del 1RM y mejores series', 'verde', ids.length || '') +
         celda('seguimiento/records', '🏆', 'Récords personales', 'Tus mejores marcas', 'amarillo', recs || ''))}
       ${grupo('Cuerpo y nutrición',
+        celda('seguimiento/pasos', '👟', 'Actividad diaria', 'Pasos, distancia y calorías del día', 'azul', (estado.actividad || []).length || '') +
         celda('seguimiento/medidas', '⚖️', 'Peso y medidas', 'Peso, grasa y perímetros en el tiempo', 'verde', (estado.medidas || []).length || '') +
         celda('seguimiento/nutricion', '🍎', 'Calorías y proteína', 'Gasto diario, macros, fibra y agua', 'naranja'))}
       ${grupo('Registro',
@@ -1150,6 +1155,177 @@ function segMedidas() {
       <p class="tenue">Consejo: mide siempre en las mismas condiciones (por la mañana, en ayunas y con la misma cinta) para que la tendencia sea fiable.</p>
     `,
   });
+}
+
+// =====================================================================
+// Páginas: actividad diaria (pasos, distancia y calorías)
+// =====================================================================
+const ACTIVIDAD_CAMPOS = {
+  pasos: { nombre: 'Pasos', unidad: 'pasos', min: 0, max: 200000, paso: 1 },
+  distancia: { nombre: 'Distancia', unidad: 'km', min: 0, max: 500, paso: 0.1 },
+  calorias: { nombre: 'Calorías', unidad: 'kcal', min: 0, max: 20000, paso: 1 },
+  minutos: { nombre: 'Minutos activos', unidad: 'min', min: 0, max: 1440, paso: 1 },
+};
+
+const actividadDe = () => (estado.actividad || []).slice().sort((a, b) => a.fecha.localeCompare(b.fecha));
+const diaActividad = f => (estado.actividad || []).find(a => a.fecha === f) || null;
+const ultimosDias = n => Array.from({ length: n }, (_, i) => sumarDias(hoy(), i - (n - 1)));
+const fmtFechaHora = iso => { const d = new Date(iso); return isNaN(d) ? '' : `${d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} · ${d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`; };
+const esEntero = k => k === 'pasos' || k === 'calorias' || k === 'minutos';
+const fmtActividad = (k, v) => esEntero(k) ? fmtNum(v) : fmtDec(v);
+
+function segPasos() {
+  intentarSyncAutomatico();
+  const hoyF = hoy();
+  const lista = actividadDe();
+  const hoyD = diaActividad(hoyF);
+  const conDatos = ultimosDias(7).map(diaActividad).filter(Boolean);
+  const media = conDatos.length ? Math.round(conDatos.reduce((t, d) => t + (d.pasos || 0), 0) / conDatos.length) : 0;
+  const mejor = lista.reduce((m, d) => Math.max(m, d.pasos || 0), 0);
+  const total = lista.reduce((t, d) => t + (d.pasos || 0), 0);
+  let edit = ui.pasoEdit ? lista.find(d => d.fecha === ui.pasoEdit) : null;
+  if (ui.pasoEdit && !edit) ui.pasoEdit = null;
+  const v = k => edit && edit[k] != null ? edit[k] : '';
+  const recientes = lista.slice().reverse().slice(0, 30);
+  return pagina({
+    titulo: 'Actividad diaria', padre: 'seguimiento', sub: 'Pasos, distancia y calorías, día a día',
+    cuerpo: `
+      <div class="tiles cuatro">
+        ${tile('👟', hoyD && hoyD.pasos != null ? fmtNum(hoyD.pasos) : '—', 'pasos hoy', 'azul')}
+        ${tile('📊', media ? fmtNum(media) : '—', 'media 7 días', 'violeta')}
+        ${tile('🏅', mejor ? fmtNum(mejor) : '—', 'mejor día', 'amarillo')}
+        ${tile('🗓️', lista.length, lista.length === 1 ? 'día registrado' : 'días registrados', 'verde')}
+      </div>
+      <div class="tarjeta">
+        <div class="fila"><h2>📈 Últimos 14 días</h2><span class="tenue">${total ? `${fmtNum(total)} pasos en total` : ''}</span></div>
+        <div id="graficaPasos"></div>
+      </div>
+      ${estado.saludUrl ? `<div class="tarjeta">
+        <div class="fila"><div><h2>🔁 Sincronización automática</h2><p class="tenue">${estado.saludSync ? `Última vez: ${fmtFechaHora(estado.saludSync)}` : 'Todavía no se ha sincronizado'}</p></div>
+        <button class="btn sec" data-a="syncSalud">🔄 Sincronizar</button></div>
+      </div>` : `<a class="tarjeta enlace-tarjeta" href="#ajustes/salud">
+        <div class="fila"><div><h2>🔁 Traer los pasos desde otra app</h2><p class="tenue">Conecta una hoja de Google y DANTAL los leerá solo.</p></div><span class="chev">›</span></div>
+      </a>`}
+      <form id="formPasos" class="tarjeta" novalidate>
+        <div class="fila"><h2>${edit ? '✏️ Editar día' : '➕ Añadir día'}</h2>${edit ? '<button type="button" class="enlace" data-a="cancelarPaso">Cancelar</button>' : ''}</div>
+        <p class="tenue">${edit ? `Editando el ${fmtCorta(edit.fecha)}.` : 'Anota lo que te marque el reloj o el móvil. Solo hacen falta los pasos.'}</p>
+        <label class="campo">Fecha<input type="date" name="fecha" value="${edit?.fecha || hoyF}" max="${hoyF}" ${edit ? 'disabled' : ''} required></label>
+        <div class="medida-grid">
+          ${Object.entries(ACTIVIDAD_CAMPOS).map(([k, c]) => `<label class="campo"><span>${c.nombre} <small class="tenue">(${c.unidad})</small></span>
+            <input type="number" name="${k}" inputmode="numeric" step="${c.paso}" min="${c.min}" max="${c.max}" value="${v(k)}" placeholder="—"></label>`).join('')}
+        </div>
+        <button class="btn" type="submit">${edit ? 'Guardar cambios' : 'Guardar día'}</button>
+      </form>
+      ${recientes.length ? `<div class="tarjeta">
+        <div class="fila"><h2>🗂️ Días registrados</h2><span class="tenue">${lista.length} en total</span></div>
+        ${recientes.map(d => `<div class="medida-item">
+          <div class="fila"><b>${fmtCorta(d.fecha)}</b><div class="acciones">
+            <button class="icono peq" data-a="editarPaso" data-f="${d.fecha}" title="Editar este día">✎</button>
+            <button class="icono peq" data-a="borrarPaso" data-f="${d.fecha}" title="Borrar este día">🗑️</button>
+          </div></div>
+          <div class="series-chips">${Object.entries(ACTIVIDAD_CAMPOS).filter(([k]) => d[k] != null && d[k] !== '').map(([k, c]) => `<span><small>${c.nombre}</small>${fmtActividad(k, d[k])} ${c.unidad}</span>`).join('')}</div>
+        </div>`).join('')}
+      </div>` : ''}
+      <p class="tenue">🔒 Estos datos se guardan solo en tu dispositivo. Una web no puede leer Google Health directamente, así que los pasos se traen importando un archivo o conectando una hoja publicada.</p>
+    `,
+  });
+}
+
+function guardarPasos(f) {
+  const fecha = ui.pasoEdit || String(f.get('fecha') || hoy());
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha) || fecha > hoy()) { toast('Elige una fecha válida que no sea futura.'); return; }
+  const datos = { fecha };
+  let alguno = false;
+  for (const [k, c] of Object.entries(ACTIVIDAD_CAMPOS)) {
+    const raw = String(f.get(k) ?? '').trim();
+    if (raw === '') { datos[k] = null; continue; }
+    const num = Number(raw);
+    if (!Number.isFinite(num)) { toast(`Revisa el campo ${c.nombre.toLowerCase()}.`); return; }
+    if (num < c.min || num > c.max) { toast(`${c.nombre}: usa un valor entre ${c.min} y ${c.max} ${c.unidad}.`); return; }
+    datos[k] = esEntero(k) ? Math.round(num) : Math.round(num * 10) / 10;
+    alguno = true;
+  }
+  if (!alguno) { toast('Anota al menos los pasos del día.'); return; }
+  const lista = estado.actividad || (estado.actividad = []);
+  const idx = lista.findIndex(a => a.fecha === fecha);
+  const actualizada = idx !== -1;
+  if (actualizada) lista[idx] = { ...lista[idx], ...datos };
+  else lista.push(datos);
+  lista.sort((a, b) => a.fecha.localeCompare(b.fecha));
+  ui.pasoEdit = null;
+  guardar(); render();
+  toast(actualizada ? 'Día actualizado' : 'Día guardado');
+}
+
+function dibujarGraficaPasos() {
+  const cont = $('#graficaPasos');
+  if (!cont) return;
+  const dias = ultimosDias(14);
+  const mapa = new Map(actividadDe().map(d => [d.fecha, d]));
+  const vals = dias.map(f => Number(mapa.get(f)?.pasos || 0));
+  if (!vals.some(v => v > 0)) {
+    cont.innerHTML = `<p class="tenue centro">Aún no hay pasos. Añádelos a mano o conecta una hoja para verlos aquí.</p>`;
+    return;
+  }
+  const W = 320, H = 150, P = 28, base = H - P;
+  const max = Math.max(1000, ...vals);
+  const n = dias.length;
+  const ancho = (W - 2 * P) / n;
+  const hoyF = hoy();
+  cont.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" class="svg-graf" role="img" aria-label="Pasos de los últimos 14 días">
+      <line x1="${P}" y1="${base}" x2="${W - P}" y2="${base}" class="eje"/>
+      <text x="${P - 4}" y="26" text-anchor="end" class="etq">${fmtNum(max)}</text>
+      ${vals.map((v, i) => {
+        const h = v ? Math.max(2, (base - 16) * (v / max)) : 0;
+        const x = P + i * ancho + ancho * 0.16, w = ancho * 0.68;
+        return `<rect class="barra ${dias[i] === hoyF ? 'hoy' : ''}" x="${x.toFixed(1)}" y="${(base - h).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="2"><title>${fmtCorta(dias[i])}: ${fmtNum(v)} pasos</title></rect>`;
+      }).join('')}
+      <text x="${P}" y="${H - 6}" class="etq">${fmtDia(dias[0])}</text>
+      <text x="${W - P}" y="${H - 6}" text-anchor="end" class="etq">${fmtDia(dias[n - 1])}</text>
+    </svg>`;
+}
+
+// ------------------ Sincronización automática ------------------------
+let syncEnCurso = false;
+let saludIntento = 0;
+
+// Intenta traer datos de la dirección guardada, como mucho una vez por hora.
+function intentarSyncAutomatico() {
+  if (!estado.saludUrl) return;
+  const ahora = Date.now();
+  const ultima = Date.parse(estado.saludSync || '') || 0;
+  if (ahora - saludIntento < 3600000 || ahora - ultima < 3600000) return;
+  saludIntento = ahora;
+  sincronizarSalud({ silencioso: true });
+}
+
+async function sincronizarSalud({ silencioso = false } = {}) {
+  const url = String(estado.saludUrl || '').trim();
+  if (!url) { if (!silencioso) toast('Primero pega la dirección de tu hoja o archivo.'); return; }
+  if (syncEnCurso) return;
+  syncEnCurso = true;
+  try {
+    const resp = await fetch(url, { cache: 'no-store' });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const r = interpretarSalud(await resp.text(), url);
+    if (!r.ok) { if (!silencioso) toast(r.error, { ms: 7000 }); return; }
+    const antes = JSON.stringify(estado);
+    const m = fusionarMedidas(estado.medidas || (estado.medidas = []), r.filas || []);
+    const a = fusionarActividad(estado.actividad || (estado.actividad = []), r.actividad || []);
+    estado.saludSync = new Date().toISOString();
+    guardar();
+    const cambios = m.nuevas + m.completadas + a.nuevas + a.actualizadas;
+    if (!silencioso || cambios) {
+      render();
+      toast(cambios
+        ? `Sincronizado: ${a.nuevas} ${a.nuevas === 1 ? 'día nuevo' : 'días nuevos'} de actividad y ${m.nuevas} de medidas`
+        : 'Todo estaba al día',
+        { accion: 'Deshacer', alPulsar: () => { estado = JSON.parse(antes); guardar(); render(); } });
+    }
+  } catch {
+    if (!silencioso) toast('No he podido leer esa dirección. Comprueba que la hoja esté publicada y que tengas internet.', { ms: 7000 });
+  } finally { syncEnCurso = false; }
 }
 
 function dibujarGraficaMedidas() {
@@ -2022,7 +2198,7 @@ function ajDatos() {
         <button class="celda" data-a="exportar"><span class="ic azul">⬇️</span><span class="celda-t"><b>Exportar copia</b><small>Archivo JSON con todo: perfil, programa e historial</small></span></button>
         <label class="celda"><span class="ic verde">⬆️</span><span class="celda-t"><b>Importar copia</b><small>Recupera los datos desde un archivo exportado</small></span><input type="file" accept="application/json" data-a="importar" hidden></label>
         <button class="celda" data-a="csv"><span class="ic violeta">📊</span><span class="celda-t"><b>Exportar historial (CSV)</b><small>Para abrirlo en Excel o Google Sheets</small></span></button>`)}
-      ${grupo('Datos de salud', celda('ajustes/salud', '❤️', 'Importar datos de salud', 'Peso, grasa y perímetros desde un archivo CSV o JSON', 'rojo'))}
+      ${grupo('Datos de salud', celda('ajustes/salud', '❤️', 'Datos de salud', 'Importar peso, medidas y actividad, o sincronizar una hoja', 'rojo'))}
       ${grupo('Zona peligrosa', `<button class="celda peligro-c" data-a="borrarTodo"><span class="ic rojo">🗑️</span><span class="celda-t"><b>Borrar los datos de ${esc(usuarioActual().nombre)}</b><small>Perfil, programa e historial. No se puede deshacer</small></span></button>`)}
       <p class="tenue">${estado.historial.length} sesiones · ${estado.misSesiones.length} sesiones propias · ${(JSON.stringify(estado).length / 1024).toFixed(1)} KB</p>
     `,
@@ -2055,18 +2231,31 @@ function ajAcerca() {
 // =====================================================================
 function ajSalud() {
   return pagina({
-    titulo: 'Datos de salud', padre: 'ajustes', sub: 'Peso, grasa y perímetros desde un archivo',
+    titulo: 'Datos de salud', padre: 'ajustes', sub: 'Peso, medidas y actividad desde otra app',
     cuerpo: `
       <div class="tarjeta">
         <h2>📥 Trae tus datos desde otra app</h2>
-        <p>Exporta de <b>Google Fit</b>, <b>Health Connect</b>, tu báscula o cualquier app de salud un archivo <b>CSV</b> o <b>JSON</b>, y DANTAL leerá el <b>peso</b>, la <b>grasa</b> y los <b>perímetros</b> que encuentre.</p>
-        <p class="tenue">Los días que ya tenías se completan sin borrar nada; los días nuevos se añaden. Tus datos actuales nunca se sobrescriben.</p>
+        <p>Exporta de <b>Google Fit</b>, <b>Health Connect</b>, tu reloj o cualquier app de salud un archivo <b>CSV</b> o <b>JSON</b>, y DANTAL leerá el <b>peso</b>, la <b>grasa</b>, los <b>perímetros</b> y la <b>actividad diaria</b> (pasos, distancia y calorías) que encuentre.</p>
+        <p class="tenue">Los días que ya tenías se completan sin borrar nada; los días nuevos se añaden. La actividad de un día se actualiza con el valor más reciente.</p>
         <label class="btn" for="archivoSalud">📄 Elegir archivo CSV o JSON</label>
         <input id="archivoSalud" type="file" accept=".csv,text/csv,.json,application/json" data-a="importarSalud" hidden>
       </div>
       <div class="tarjeta">
+        <h2>🔁 Sincronizar automáticamente</h2>
+        <p>Si prefieres no importar a mano, pega aquí la dirección de una <b>hoja de Google publicada como CSV</b> (o de cualquier archivo CSV/JSON en internet). DANTAL la leerá sola y traerá los datos nuevos.</p>
+        <form id="formSaludFuente">
+          <label class="campo">Dirección (URL)<input type="url" name="url" value="${esc(estado.saludUrl || '')}" placeholder="https://docs.google.com/spreadsheets/d/e/…/pub?output=csv" inputmode="url" autocomplete="off"></label>
+          <div class="botones">
+            <button class="btn" type="submit">Guardar dirección</button>
+            ${estado.saludUrl ? '<button class="btn sec" type="button" data-a="syncSalud">🔄 Sincronizar ahora</button>' : ''}
+          </div>
+        </form>
+        ${estado.saludUrl ? `<p class="tenue">Última sincronización: ${estado.saludSync ? fmtFechaHora(estado.saludSync) : 'todavía no'}. Se intenta sola al abrir la app, como mucho una vez por hora. Deja la dirección vacía para desactivarla.</p>` : ''}
+      </div>
+      <div class="tarjeta">
         <h2>🧭 Qué columnas reconozco</h2>
         <p class="tenue">Fecha: <b>fecha · date · day</b>. Peso: <b>peso · weight</b>. Grasa: <b>grasa · body fat</b>. Perímetros: <b>cintura/waist</b>, <b>pecho/chest</b>, <b>cadera/hip</b>, <b>brazo/arm</b>, <b>muslo/thigh</b>.</p>
+        <p class="tenue">Actividad: <b>pasos/steps</b>, <b>distancia/distance</b> (la paso a km), <b>calorías/calories</b> y <b>minutos activos/active minutes</b>.</p>
         <p class="tenue">Admite decimales con coma o punto, fechas como <b>2026-11-17</b> o <b>17/11/2026</b>, y pesos en libras (los convierto a kilos).</p>
       </div>
       <p class="tenue">🔒 El archivo se lee aquí mismo, en tu dispositivo. No se sube a ningún sitio.</p>
@@ -2078,18 +2267,24 @@ async function importarSalud(file) {
   try {
     const r = interpretarSalud(await file.text(), file.name);
     if (!r.ok) { toast(r.error, { ms: 7000 }); return; }
-    const n = r.filas.length;
-    const campos = r.campos.map(k => MEDIDAS_CAMPOS[k].nombre).join(', ');
-    const primero = r.filas[0].fecha, ultimo = r.filas[n - 1].fecha;
-    const rango = primero === ultimo ? `el ${fmtCorta(primero)}` : `del ${fmtCorta(primero)} al ${fmtCorta(ultimo)}`;
-    const copia = (estado.medidas || []).map(m => ({ ...m }));
-    const prev = fusionarMedidas(copia, r.filas);
-    if (!await confirmar(`He leído ${n} ${n === 1 ? 'día' : 'días'} ${rango} con ${campos}. Se añadirán ${prev.nuevas} ${prev.nuevas === 1 ? 'día nuevo' : 'días nuevos'} y se completarán ${prev.completadas} que ya tenías. Tus datos no se borran.`,
+    const hayM = (r.filas || []).length, hayA = (r.actividad || []).length;
+    const partes = [];
+    if (hayM) partes.push(`${hayM} ${hayM === 1 ? 'día' : 'días'} de peso y medidas (${r.campos.map(k => MEDIDAS_CAMPOS[k].nombre).join(', ')})`);
+    if (hayA) partes.push(`${hayA} ${hayA === 1 ? 'día' : 'días'} de actividad (${r.camposAct.map(k => ACTIVIDAD_CAMPOS[k].nombre).join(', ')})`);
+    const copiaM = (estado.medidas || []).map(m => ({ ...m }));
+    const copiaA = (estado.actividad || []).map(a => ({ ...a }));
+    const prevM = hayM ? fusionarMedidas(copiaM, r.filas) : { nuevas: 0, completadas: 0 };
+    const prevA = hayA ? fusionarActividad(copiaA, r.actividad) : { nuevas: 0, actualizadas: 0 };
+    const detalle = [];
+    if (hayM) detalle.push(`${prevM.nuevas} ${prevM.nuevas === 1 ? 'día nuevo' : 'días nuevos'} y ${prevM.completadas} completados de peso y medidas`);
+    if (hayA) detalle.push(`${prevA.nuevas} ${prevA.nuevas === 1 ? 'día nuevo' : 'días nuevos'} y ${prevA.actualizadas} actualizados de actividad`);
+    if (!await confirmar(`He leído ${partes.join(' y ')}. Se añadirán: ${detalle.join('; ')}. Tus datos no se borran.`,
       { titulo: '¿Importar estos datos?', ok: 'Importar' })) return;
-    conDeshacer(`Importados ${prev.nuevas} ${prev.nuevas === 1 ? 'día' : 'días'} de datos de salud`, () => {
-      fusionarMedidas(estado.medidas || (estado.medidas = []), r.filas);
+    conDeshacer('Datos de salud importados', () => {
+      if (hayM) fusionarMedidas(estado.medidas || (estado.medidas = []), r.filas);
+      if (hayA) fusionarActividad(estado.actividad || (estado.actividad = []), r.actividad);
     });
-    ir('seguimiento/medidas');
+    ir(hayM ? 'seguimiento/medidas' : 'seguimiento/pasos');
   } catch {
     toast('No he podido leer ese archivo.');
   }
@@ -3089,6 +3284,13 @@ document.addEventListener('click', ev => {
       estado.medidas = (estado.medidas || []).filter(m => m.fecha !== d.f);
       if (ui.medidaEdit === d.f) ui.medidaEdit = null;
     }); break;
+    case 'editarPaso': ui.pasoEdit = d.f; render(); $('#formPasos')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
+    case 'cancelarPaso': ui.pasoEdit = null; render(); break;
+    case 'borrarPaso': conDeshacer('Día borrado', () => {
+      estado.actividad = (estado.actividad || []).filter(a => a.fecha !== d.f);
+      if (ui.pasoEdit === d.f) ui.pasoEdit = null;
+    }); break;
+    case 'syncSalud': sincronizarSalud({}); break;
     case 'usarUltimoPeso': estado.nutricion.peso = null; guardar(); render(); toast('Usando tu último peso registrado'); break;
     case 'verDia': {
       const c = agenda().find(x => x.fecha === d.f);
@@ -3678,6 +3880,16 @@ document.addEventListener('submit', async ev => {
   }
   if (ev.target.id === 'formMedida') {
     guardarMedida(f);
+    return;
+  }
+  if (ev.target.id === 'formPasos') {
+    guardarPasos(f);
+    return;
+  }
+  if (ev.target.id === 'formSaludFuente') {
+    estado.saludUrl = String(f.get('url') || '').trim();
+    guardar(); render();
+    toast(estado.saludUrl ? 'Dirección guardada. Traeré los datos solo, cada vez que abras la app.' : 'Sincronización automática desactivada');
     return;
   }
   if (ev.target.id === 'formPerfil') {

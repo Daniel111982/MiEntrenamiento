@@ -240,6 +240,8 @@ button.tarjeta { cursor: pointer; }
 .svg-graf .trazo { fill: none; stroke: var(--acento); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
 .svg-graf .punto { fill: var(--acento); }
 .svg-graf .punto.rec { fill: var(--amarillo); }
+.svg-graf .barra { fill: var(--acento); opacity: .5; }
+.svg-graf .barra.hoy { fill: var(--acento2); opacity: 1; }
 .svg-graf .etq { fill: var(--tenue); font-size: 10px; }
 .mes { max-width: 380px; margin: 0 auto; display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
 .mes small { color: var(--tenue); font-size: .7rem; font-weight: 700; }
