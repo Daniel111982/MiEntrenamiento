@@ -49,10 +49,10 @@ const AVATARES = [
 const COLORES = [
   'linear-gradient(135deg,#2563eb,#16a34a)', 'linear-gradient(135deg,#7c3aed,#db2777)', 'linear-gradient(135deg,#ea580c,#facc15)',
   'linear-gradient(135deg,#0891b2,#22d3ee)', 'linear-gradient(135deg,#dc2626,#f97316)', 'linear-gradient(135deg,#334155,#64748b)',
-  'linear-gradient(135deg,#0ea5e9,#6366f1)', 'linear-gradient(135deg,#f43f5e,#f59e0b)', 'linear-gradient(135deg,#10b981,#84cc16)',
-  'linear-gradient(135deg,#8b5cf6,#ec4899)', 'linear-gradient(135deg,#f97316,#ef4444)', 'linear-gradient(135deg,#14b8a6,#0ea5e9)',
-  'linear-gradient(135deg,#eab308,#84cc16)', 'linear-gradient(135deg,#a855f7,#3b82f6)', 'linear-gradient(135deg,#f472b6,#a78bfa)',
-  'linear-gradient(135deg,#64748b,#0f172a)', 'linear-gradient(135deg,#059669,#065f46)', 'linear-gradient(135deg,#b45309,#78350f)',
+  'linear-gradient(135deg,#38bdf8,#6366f1)', 'linear-gradient(135deg,#fb7185,#f59e0b)', 'linear-gradient(135deg,#34d399,#a3e635)',
+  'linear-gradient(135deg,#a78bfa,#ec4899)', 'linear-gradient(135deg,#fb923c,#ef4444)', 'linear-gradient(135deg,#2dd4bf,#0ea5e9)',
+  'linear-gradient(135deg,#fde047,#f97316)', 'linear-gradient(135deg,#818cf8,#22d3ee)', 'linear-gradient(135deg,#6ee7b7,#14b8a6)',
+  'linear-gradient(135deg,#fb7185,#8b5cf6)', 'linear-gradient(135deg,#94a3b8,#475569)', 'linear-gradient(135deg,#fbbf24,#b45309)',
 ];
 // Iconos de ojo (mostrar/ocultar contraseña) en SVG para un aspecto más cuidado.
 const ICO_OJO = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -1811,6 +1811,11 @@ const OBJETIVOS_NUTRI = {
   ganar: { nombre: 'Ganar músculo', factor: 0.1, prot: [1.8, 2.2], desc: 'Superávit pequeño para ganar músculo sin grasa de más.' },
 };
 
+// El objetivo de entrenamiento y los días ya se preguntan en el asistente de bienvenida:
+// los reutilizo para la nutrición y no repetir preguntas.
+const NUTRI_DE_OBJETIVO = { musculo: 'ganar', recomp: 'recomp', fuerza: 'mantener', tonificar: 'recomp', perder: 'perder' };
+const actividadPorDias = d => d <= 3 ? 'ligero' : d <= 5 ? 'moderado' : d <= 6 ? 'alto' : 'muyalto';
+
 function nutricionDeForm(f) {
   const actividad = String(f.get('actividad') || '');
   const objetivo = String(f.get('objetivo') || '');
@@ -3258,7 +3263,6 @@ function formUsuario(u, nuevo) {
 
 // Medidas iniciales al crear la cuenta: alimentan la nutrición y el programa.
 function formMedidasHTML() {
-  const n = NUTRICION_DEF;
   return `
     <h3 class="sub-leg">Tus medidas</h3>
     <p class="tenue">Con estos datos calculo tus calorías, tu proteína y ajusto tus sesiones desde el primer día.</p>
@@ -3270,14 +3274,7 @@ function formMedidasHTML() {
       <label class="campo">Altura (cm)<input type="number" name="altura" inputmode="numeric" min="120" max="230" value="175" required></label>
       <label class="campo">Peso (kg)<input type="number" name="peso" inputmode="decimal" step="0.1" min="30" max="400" placeholder="—" required></label>
     </div>
-    <div class="nutri-grid">
-      <label class="campo">Actividad<select name="actividad">
-        ${Object.entries(ACTIVIDADES).map(([k, a]) => `<option value="${k}" ${k === n.actividad ? 'selected' : ''}>${a.nombre} · ${a.desc}</option>`).join('')}
-      </select></label>
-      <label class="campo">Objetivo<select name="objetivo">
-        ${Object.entries(OBJETIVOS_NUTRI).map(([k, o]) => `<option value="${k}" ${k === n.objetivo ? 'selected' : ''}>${o.nombre}</option>`).join('')}
-      </select></label>
-    </div>`;
+    <p class="tenue">La actividad y el objetivo los eliges en el siguiente paso, junto a tu nivel y tus días.</p>`;
 }
 
 function usuarioNuevo() {
@@ -4564,6 +4561,14 @@ document.addEventListener('submit', async ev => {
     const nuevo = !estado.plan;
     if (!nuevo && !await confirmar('Se creará un programa nuevo desde la fecha elegida. Tu historial y tus récords se conservan.', { titulo: '¿Regenerar el programa?', ok: 'Regenerar' })) return;
     regenerar(perfil);
+    if (nuevo) {
+      estado.nutricion = {
+        ...(estado.nutricion || NUTRICION_DEF),
+        objetivo: NUTRI_DE_OBJETIVO[perfil.objetivo] || 'mantener',
+        actividad: actividadPorDias(diasSemana.length),
+      };
+      guardar();
+    }
     ui.semanaVista = null;
     ir('inicio');
     toast(nuevo ? '¡Tu programa está listo! Aquí verás cada día qué te toca.' : 'Programa actualizado', { ms: 5000 });
