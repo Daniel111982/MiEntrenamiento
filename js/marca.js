@@ -4,7 +4,7 @@
 
 export const MARCA = {
   nombre: 'DanTal',
-  eslogan: 'TRAIN · NUTRITION · WELLNESS',
+  eslogan: 'Entrena · Nutre · Evoluciona',
   frase: 'Tu entrenamiento. Tu alimentación. Tu evolución.',
 };
 

@@ -195,6 +195,10 @@ button.tarjeta { cursor: pointer; }
 .alerta .fila { margin-top: 6px; }
 .aviso-inc { border-color: color-mix(in srgb, var(--amarillo) 55%, var(--borde)); }
 .aviso-inc b { color: var(--amarillo); }
+.aviso-nuevo { border-color: color-mix(in srgb, var(--acento2) 55%, var(--borde)); }
+.aviso-nuevo b { color: var(--acento2); }
+.respuesta-inc { margin: 6px 0 0; padding: 10px 12px; border-radius: 12px; font-size: .92rem;
+  background: color-mix(in srgb, var(--acento) 12%, transparent); border-left: 3px solid var(--acento); white-space: pre-wrap; }
 .sugerencia { margin: 0 0 10px; font-size: .9rem; color: var(--tenue); background: color-mix(in srgb, var(--acento2) 10%, transparent); padding: 8px 12px; border-radius: 12px; }
 .chip-mini { font-size: .66rem; background: var(--acento); color: var(--sobre-acento); border-radius: 99px; padding: 2px 8px; vertical-align: middle; font-weight: 800; margin-left: 4px; }
 .chip-mini.alt { background: var(--violeta); color: #fff; }
@@ -577,7 +581,7 @@ input[type=url] { width: 100%; padding: 12px; border-radius: 12px; border: 1px s
 .marca-isotipo { display: block; flex: none; }
 .marca-logo-t { display: flex; flex-direction: column; line-height: 1.05; }
 .marca-logo-t b { font-size: 1.35rem; letter-spacing: .06em; font-weight: 800; }
-.marca-logo-t small { font-size: .58rem; letter-spacing: .18em; color: var(--tenue); font-weight: 600; }
+.marca-logo-t small { font-size: .58rem; letter-spacing: .06em; color: var(--tenue); font-weight: 600; }
 .marca-logo.compacto .marca-logo-t b { font-size: 1.05rem; letter-spacing: .05em; }
 .marca-logo.claro .marca-logo-t b { color: #fff; }
 .marca-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 12px; }

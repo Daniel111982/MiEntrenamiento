@@ -13,8 +13,10 @@ import { EQUIPO_TECHNOGYM, urlVideoTechnogym, infoTechnogym, esTechnogym, ilustr
 import { videoEjercicio } from './videos.js';
 import {
   CLAVE_INCIDENCIAS, TIPOS_INCIDENCIA, CATEGORIAS_INCIDENCIA, ESTADOS_INCIDENCIA, cargarIncidencias, guardarIncidencias,
-  contarNuevas, nuevaIncidencia, nombreCategoria, textoIncidencia,
+  contarNuevas, contarEscaladas, contarPendientes, nuevaIncidencia, nombreCategoria, textoIncidencia,
+  actualizarIncidencia, resolverIncidencia, escalarIncidencia, decidirPermiso,
 } from './incidencias.js';
+import { analizar, promptClasificar, interpretarIA } from './asistente.js';
 import { interpretarSalud, fusionarMedidas, fusionarActividad } from './salud.js';
 import { htmlCiencia } from './ciencia.js';
 import {
@@ -38,7 +40,7 @@ const vacio = () => ({
   perfil: null, plan: null, historial: [], enCurso: null, misSesiones: [], videos: {}, fotos: {}, medidas: [],
   actividad: [], saludUrl: '', saludSync: '',
   nutricion: { ...NUTRICION_DEF }, ajustes: { recordatorio: false, hora: '18:00', avisado: '', ayudas: true, consejoVisto: false },
-  comidas: {}, agua: {}, ejerciciosPropios: [], seguridad: null,
+  comidas: {}, agua: {}, ejerciciosPropios: [], seguridad: null, avisos: [],
 });
 const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const AVATARES = [
@@ -107,6 +109,7 @@ function cargar(id = usuarios.activo) {
       agua: d.agua && typeof d.agua === 'object' ? d.agua : {},
       ejerciciosPropios: Array.isArray(d.ejerciciosPropios) ? d.ejerciciosPropios : [],
       seguridad: d.seguridad && typeof d.seguridad === 'object' ? d.seguridad : null,
+      avisos: Array.isArray(d.avisos) ? d.avisos : [],
     };
   } catch { /* datos corruptos */ }
   return vacio();
@@ -316,6 +319,7 @@ const RUTAS = [
   [/^ajustes\/acerca$/, ajAcerca, 'ajustes'],
   [/^ajustes\/idea$/, ajIdea, 'ajustes'],
   [/^ajustes\/incidencias$/, ajIncidencias, 'ajustes'],
+  [/^ajustes\/avisos$/, ajAvisos, 'ajustes'],
   [/^ajustes\/salud$/, ajSalud, 'ajustes'],
   [/^ajustes\/coach$/, ajCoach, 'ajustes'],
   [/^bienvenida$/, bienvenida, 'bienvenida'],
@@ -355,16 +359,7 @@ function render() {
   }
   render.ultima = r;
   document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('activo', a.dataset.v === tab));
-  // Aviso al dueño: puntito con los mensajes sin leer en la pestaña de Ajustes.
-  const navAjustes = document.querySelector('.nav a[data-v="ajustes"]');
-  if (navAjustes) {
-    const sinLeer = soyDueno() ? contarNuevas() : 0;
-    let b = navAjustes.querySelector('.nav-badge');
-    if (sinLeer) {
-      if (!b) { b = document.createElement('i'); b.className = 'nav-badge'; navAjustes.appendChild(b); }
-      b.textContent = sinLeer > 9 ? '9+' : String(sinLeer);
-    } else if (b) b.remove();
-  }
+  pintarBadges();
   $('.nav').hidden = !estado.plan || tab === 'sesion' || tab === 'bienvenida' || tab === 'login' || tab === 'recuperar';
   coachFab(tab);
   if ($('#grafica')) dibujarGrafica();
@@ -379,6 +374,20 @@ function render() {
   aplicarAyudas();
   pantallaEncendida();
   consejoAyudas(tab);
+}
+
+// Insignia roja sobre «Ajustes»: junta lo que el dueño tiene pendiente de
+// revisar con los avisos que este usuario todavía no ha leído.
+function pintarBadges() {
+  const navAjustes = document.querySelector('.nav a[data-v="ajustes"]');
+  if (!navAjustes) return;
+  const pendientes = soyDueno() ? contarPendientes() : 0;
+  const sinLeer = pendientes + avisosSinLeer();
+  let b = navAjustes.querySelector('.nav-badge');
+  if (sinLeer) {
+    if (!b) { b = document.createElement('i'); b.className = 'nav-badge'; navAjustes.appendChild(b); }
+    b.textContent = sinLeer > 9 ? '9+' : String(sinLeer);
+  } else if (b) b.remove();
 }
 
 // ---------- Piezas comunes de las páginas ----------
@@ -573,7 +582,7 @@ function inicio() {
     <button class="avatar-btn" data-a="menuUsuarios" title="Cambiar de usuario">${avatarHTML(usuarioActual())}</button>`;
   if (estado.enCurso) {
     return `${cabecera(rachaBtn)}
-      ${avisoIncidencias()}
+      ${avisoAvisos()}${avisoIncidencias()}
       <div class="hero"><p class="eyebrow">Sesión en curso</p><h2>${esc(estado.enCurso.nombre)}</h2>
       <p>${estado.enCurso.ejercicios.reduce((t, e) => t + e.series.filter(r => r.hecho).length, 0)} series hechas</p>
       <button class="btn" data-a="ir" data-v="sesion">Continuar entrenamiento</button></div>`;
@@ -595,7 +604,7 @@ function inicio() {
 
   return `
     ${cabecera(rachaBtn)}
-    ${avisoIncidencias()}
+    ${avisoAvisos()}${avisoIncidencias()}
     ${tiraSemana(lunes(hoy()), true)}
     ${perdidas.length ? `<div class="alerta">
       <b>Tienes ${perdidas.length === 1 ? 'una sesión perdida' : `${perdidas.length} sesiones perdidas`} esta semana</b>
@@ -2598,6 +2607,7 @@ function ajustes() {
       ${grupo('Programa', celda('ajustes/perfil', '🎯', 'Perfil y programa', 'Objetivo, días, frecuencia, duración, material y enfoque', 'verde'))}
       ${grupo('Coach', celda('ajustes/coach', '🧠', 'Coach IA', motorCoach().tipo === 'clave' ? 'IA real conectada' : motorCoach().tipo === 'navegador' ? 'IA del navegador · gratis' : 'Motor local siempre activo', 'violeta', motorCoach().tipo === 'local' ? '' : 'IA'))}
       ${grupo('Aplicación',
+        celda('ajustes/avisos', '📣', 'Avisos', 'Respuestas a tus ideas y problemas', 'rojo', avisosSinLeer() ? `${avisosSinLeer()} sin leer` : '') +
         celda('ajustes/recordatorios', '🔔', 'Recordatorios', 'Aviso los días de entrenamiento', 'naranja', estado.ajustes.recordatorio ? estado.ajustes.hora : 'No') +
         celda('ajustes/seguridad', '🔒', 'Seguridad', estado.seguridad?.activa ? 'Bloqueo activo con contraseña' : 'Protege la app con una contraseña', 'violeta') +
         celda('ajustes/datos', '💾', 'Tus datos', 'Copia de seguridad, CSV y borrado', 'azul'))}
@@ -2741,21 +2751,6 @@ function cambiarEstadoInc(id, estado) {
   guardarIncidencias(inc);
 }
 
-// Tras enviar: agradecimiento y, si el dueño dejó contacto, botones de envío.
-function abrirEnvio(item) {
-  const d = cargarIncidencias();
-  const cuerpo = textoIncidencia(item);
-  const num = String(d.whatsapp || '').replace(/[^\d]/g, '');
-  const enlaces = [];
-  if (d.correo) enlaces.push(`<a class="btn sec" href="mailto:${encodeURIComponent(d.correo)}?subject=${encodeURIComponent('[DanTal] ' + item.titulo)}&body=${encodeURIComponent(cuerpo)}">✉️ Enviar por correo</a>`);
-  if (num) enlaces.push(`<a class="btn sec" href="https://wa.me/${num}?text=${encodeURIComponent(cuerpo)}" target="_blank" rel="noopener">💬 Enviar por WhatsApp</a>`);
-  render();
-  modal(`<h2>¡Gracias! 🙌</h2>
-    <p>${enlaces.length ? 'He guardado tu mensaje. Si quieres, mándamelo también con un toque:' : 'He guardado tu mensaje. Llegará a quien administra la app.'}</p>
-    ${enlaces.join('')}
-    <div class="botones"><button class="btn" data-a="cerrar">Cerrar</button></div>`);
-}
-
 async function borrarIncidencia(id) {
   const item = cargarIncidencias().items.find(i => i.id === id);
   if (!item) return;
@@ -2765,13 +2760,20 @@ async function borrarIncidencia(id) {
 
 function incCard(i) {
   const nuevo = i.estado === 'nueva';
-  return `<div class="tarjeta ${nuevo ? 'activo' : ''}">
-    <div class="fila"><b>${TIPOS_INCIDENCIA[i.tipo]?.icono || '📝'} ${esc(i.titulo)}</b><span class="badge ${nuevo ? 'prim' : ''}">${ESTADOS_INCIDENCIA[i.estado]?.nombre || i.estado}</span></div>
+  const escalada = i.estado === 'escalada';
+  const resuelta = i.estado === 'resuelta';
+  const est = ESTADOS_INCIDENCIA[i.estado] || { nombre: i.estado, icono: '📝' };
+  return `<div class="tarjeta ${nuevo || escalada ? 'activo' : ''}">
+    <div class="fila"><b>${TIPOS_INCIDENCIA[i.tipo]?.icono || '📝'} ${esc(i.titulo)}</b><span class="badge ${nuevo || escalada ? 'prim' : ''}">${est.icono || ''} ${esc(est.nombre)}</span></div>
     <div class="badges"><span class="badge">${esc(nombreCategoria(i.categoria))}</span><span class="badge">${esc(i.autorNombre)}</span><span class="badge">${fmtCorta(i.fecha)}</span></div>
     <p style="white-space:pre-wrap">${esc(i.texto)}</p>
+    ${escalada ? `<p class="tenue">🙋 Pide tu permiso${i.triage?.motivo ? ` · ${esc(i.triage.motivo)}` : ''}${i.triage?.porIA ? ' · IA' : ''}</p>` : ''}
+    ${resuelta && i.respuesta ? `<p class="respuesta-inc">💬 ${esc(i.respuesta)}</p>` : ''}
     <div class="botones">
+      ${escalada ? `<button class="btn" data-a="incAprobar" data-id="${i.id}">✅ Aprobar y resolver</button>
+        <button class="btn sec" data-a="incRechazar" data-id="${i.id}">✋ No por ahora</button>` : ''}
       ${nuevo ? `<button class="btn sec" data-a="incLeida" data-id="${i.id}">👀 Leída</button>` : ''}
-      ${i.estado !== 'hecha' ? `<button class="btn sec" data-a="incHecha" data-id="${i.id}">✅ Hecha</button>` : ''}
+      ${i.estado !== 'hecha' && !escalada ? `<button class="btn sec" data-a="incHecha" data-id="${i.id}">✅ Hecha</button>` : ''}
       ${i.estado !== 'archivada' ? `<button class="btn sec" data-a="incArchivar" data-id="${i.id}">📦 Archivar</button>` : ''}
       <button class="btn sec" data-a="incCopiar" data-id="${i.id}">📋 Copiar</button>
       <button class="btn peligro" data-a="incBorrar" data-id="${i.id}">🗑️ Borrar</button>
@@ -2783,9 +2785,13 @@ function incCard(i) {
 function avisoIncidencias() {
   if (!soyDueno()) return '';
   const n = contarNuevas();
-  if (!n) return '';
+  const esc = contarEscaladas();
+  if (!n && !esc) return '';
+  const partes = [];
+  if (n) partes.push(n === 1 ? '1 mensaje nuevo' : `${n} mensajes nuevos`);
+  if (esc) partes.push(esc === 1 ? '1 pide tu permiso' : `${esc} piden tu permiso`);
   return `<a class="tarjeta enlace-tarjeta aviso-inc" href="#ajustes/incidencias">
-    <div class="fila"><b>📥 ${n === 1 ? 'Tienes 1 mensaje nuevo' : `Tienes ${n} mensajes nuevos`}</b><span class="chev">›</span></div>
+    <div class="fila"><b>📥 Tienes ${partes.join(' y ')}</b><span class="chev">›</span></div>
     <p class="tenue">Ideas y problemas enviados por los usuarios de este dispositivo.</p>
   </a>`;
 }
@@ -2815,10 +2821,11 @@ function ajIdea() {
         <label class="campo">Cuéntame más<textarea name="texto" rows="5" maxlength="1500" required placeholder="¿Qué te gustaría que hiciera la app? ¿Qué pasó exactamente?"></textarea></label>
         <button class="btn" type="submit">Enviar a ${esc(destino)}</button>
       </form>
-      <p class="tenue">Tu mensaje se guarda en este dispositivo y solo lo ve la cuenta de administrador. Nadie más lo lee.</p>
-      ${mios.length ? `<h3 class="sub-leg">Tus mensajes</h3>` + mios.map(i => `<div class="tarjeta">
-        <div class="fila"><b>${TIPOS_INCIDENCIA[i.tipo]?.icono || '📝'} ${esc(i.titulo)}</b><span class="badge">${ESTADOS_INCIDENCIA[i.estado]?.nombre || i.estado}</span></div>
+      <p class="tenue">Tu mensaje se guarda en este dispositivo y solo lo ve la cuenta de administrador. Nadie más lo lee. Si es algo sencillo, intentaré resolverlo al momento; si no, se lo paso para que lo revise.</p>
+      ${mios.length ? `<h3 class="sub-leg">Tus mensajes</h3>` + mios.map(i => `<div class="tarjeta ${i.estado === 'resuelta' ? 'activo' : ''}">
+        <div class="fila"><b>${TIPOS_INCIDENCIA[i.tipo]?.icono || '📝'} ${esc(i.titulo)}</b><span class="badge">${ESTADOS_INCIDENCIA[i.estado]?.icono || ''} ${ESTADOS_INCIDENCIA[i.estado]?.nombre || i.estado}</span></div>
         <div class="badges"><span class="badge">${esc(nombreCategoria(i.categoria))}</span><span class="badge">${fmtCorta(i.fecha)}</span></div>
+        ${i.estado === 'resuelta' && i.respuesta ? `<p class="respuesta-inc">💬 ${esc(i.respuesta)}</p>` : ''}
       </div>`).join('') : ''}
     `,
   });
@@ -2838,19 +2845,24 @@ function ajIncidencias() {
   const leidas = d.items.filter(i => i.estado === 'leida').length;
   const cuenta = {
     nuevas: d.items.filter(i => i.estado === 'nueva').length,
+    escaladas: d.items.filter(i => i.estado === 'escalada').length,
+    resueltas: d.items.filter(i => i.estado === 'resuelta').length,
     hechas: d.items.filter(i => i.estado === 'hecha').length,
     archivadas: d.items.filter(i => i.estado === 'archivada').length,
     todas: d.items.length,
   };
+  const pendientes = cuenta.nuevas + leidas + cuenta.escaladas;
   const lista = d.items.filter(i => filtro === 'todas' ? true
-    : filtro === 'nuevas' ? (i.estado === 'nueva' || i.estado === 'leida') : i.estado === filtro);
+    : filtro === 'nuevas' ? (i.estado === 'nueva' || i.estado === 'leida' || i.estado === 'escalada') : i.estado === filtro);
   const chipFiltro = (f, txt) => `<button class="chip ${filtro === f ? 'on' : ''}" data-a="incFiltro" data-f="${f}">${txt}</button>`;
   return pagina({
     titulo: 'Ideas e incidencias', padre: 'ajustes',
-    sub: `${cuenta.todas} ${cuenta.todas === 1 ? 'mensaje' : 'mensajes'} · ${cuenta.nuevas} sin leer`,
+    sub: `${cuenta.todas} ${cuenta.todas === 1 ? 'mensaje' : 'mensajes'} · ${cuenta.nuevas + cuenta.escaladas} por atender`,
     cuerpo: `
       <div class="chips">
-        ${chipFiltro('nuevas', `Pendientes (${cuenta.nuevas + leidas})`)}
+        ${chipFiltro('nuevas', `Pendientes (${pendientes})`)}
+        ${cuenta.escaladas ? chipFiltro('escalada', `🙋 Piden permiso (${cuenta.escaladas})`) : ''}
+        ${cuenta.resueltas ? chipFiltro('resuelta', `✨ Resueltas (${cuenta.resueltas})`) : ''}
         ${chipFiltro('todas', `Todas (${cuenta.todas})`)}
         ${chipFiltro('hecha', `Hechas (${cuenta.hechas})`)}
         ${chipFiltro('archivada', `Archivadas (${cuenta.archivadas})`)}
@@ -2868,6 +2880,200 @@ function ajIncidencias() {
         ${cuenta.archivadas ? `<button class="celda peligro-c" data-a="incBorrarArchivadas"><span class="ic rojo">🗑️</span><span class="celda-t"><b>Borrar las archivadas</b><small>${cuenta.archivadas} archivadas</small></span></button>` : ''}`)}
     `,
   });
+}
+
+// =====================================================================
+// Avisos al usuario (campana): respuestas a sus ideas y problemas
+// =====================================================================
+const avisosSinLeer = () => (estado.avisos || []).filter(a => !a.leido).length;
+
+// Guarda un aviso en la bandeja del usuario indicado (aunque no sea el activo).
+function avisarA(usuarioId, { tipo = 'info', icono = '🔔', titulo = '', texto = '', enlace = '' } = {}) {
+  const aviso = {
+    id: 'av' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+    tipo, icono, titulo, texto, enlace, fecha: new Date().toISOString(), leido: false,
+  };
+  if (usuarioId === usuarios.activo) {
+    estado.avisos = [aviso, ...(estado.avisos || [])].slice(0, 50);
+    guardar();
+  } else {
+    const d = cargar(usuarioId);
+    d.avisos = [aviso, ...(d.avisos || [])].slice(0, 50);
+    localStorage.setItem(claveDe(usuarioId), JSON.stringify(d));
+  }
+  return aviso;
+}
+const avisarAlUsuario = aviso => avisarA(usuarios.activo, aviso);
+
+function marcarAvisosLeidos() {
+  let cambio = false;
+  (estado.avisos || []).forEach(a => { if (!a.leido) { a.leido = true; cambio = true; } });
+  if (cambio) { guardar(); pintarBadges(); }
+}
+
+function avisoAvisos() {
+  const n = avisosSinLeer();
+  if (!n) return '';
+  const ultimo = (estado.avisos || []).find(a => !a.leido);
+  return `<a class="tarjeta enlace-tarjeta aviso-nuevo" href="#ajustes/avisos">
+    <div class="fila"><b>📣 ${n === 1 ? 'Tienes un aviso nuevo' : `Tienes ${n} avisos nuevos`}</b><span class="chev">›</span></div>
+    <p class="tenue">${esc(ultimo?.titulo || 'Respuestas a tus ideas y problemas.')}</p>
+  </a>`;
+}
+
+const avisoCard = a => `<div class="tarjeta ${a.leido ? '' : 'activo'}">
+    <div class="fila"><b>${a.icono || '🔔'} ${esc(a.titulo)}</b><span class="badge">${fmtCorta(a.fecha)}</span></div>
+    ${a.texto ? `<p style="white-space:pre-wrap">${esc(a.texto)}</p>` : ''}
+    ${a.enlace ? `<div class="botones"><a class="btn sec" href="${esc(a.enlace)}" data-a="cerrar">Ver ahora</a></div>` : ''}
+  </div>`;
+
+function ajAvisos() {
+  const lista = estado.avisos || [];
+  if (lista.some(a => !a.leido)) setTimeout(marcarAvisosLeidos, 700);
+  const cuerpo = lista.length
+    ? lista.map(avisoCard).join('') + grupo('Acciones', `<button class="celda peligro-c" data-a="avisosBorrar"><span class="ic rojo">🗑️</span><span class="celda-t"><b>Borrar todos los avisos</b><small>${lista.length} ${lista.length === 1 ? 'aviso' : 'avisos'}</small></span></button>`)
+    : vacioMsg('📭', 'Sin avisos', 'Cuando responda a una idea o a un problema que hayas enviado, aparecerá aquí.');
+  return pagina({
+    titulo: 'Avisos', padre: 'ajustes',
+    sub: lista.length ? `${lista.length} ${lista.length === 1 ? 'aviso' : 'avisos'}` : 'Aquí te responderé',
+    cuerpo,
+  });
+}
+
+// =====================================================================
+// Asistente: decide si un mensaje se resuelve solo o se escala
+// =====================================================================
+// Si el coach tiene IA conectada, le pregunto en qué caso encaja el mensaje.
+// Es opcional: sin IA (o si falla) mandan las reglas locales.
+async function clasificarConIA(item) {
+  if (motorCoach().tipo === 'local') return null;
+  try {
+    const res = await chatear({ mensajes: [{ rol: 'usuario', texto: promptClasificar(item) }] });
+    if (!res.ok) return null;
+    return interpretarIA(res.texto);
+  } catch { return null; }
+}
+
+// Vacía la copia guardada (service worker y cachés) para forzar la última versión.
+async function limpiarCopiaGuardada() {
+  try {
+    const regs = await (navigator.serviceWorker?.getRegistrations?.() || Promise.resolve([]));
+    await Promise.all(regs.map(r => r.unregister()));
+    const claves = await caches.keys();
+    await Promise.all(claves.map(k => caches.delete(k)));
+  } catch { /* si el navegador no lo permite, se sigue igual */ }
+}
+
+async function recargarApp() {
+  await limpiarCopiaGuardada();
+  location.reload();
+}
+
+// Aplica una acción segura. Devuelve { ok, recargar, motivo }.
+async function aplicarAccionIncidencia(accion) {
+  switch (accion) {
+    case 'actualizar_app':
+    case 'limpiar_cache':
+      await limpiarCopiaGuardada();
+      return { ok: true, recargar: true };
+    case 'activar_avisos': {
+      if ('Notification' in window && Notification.permission !== 'granted') {
+        const p = await Notification.requestPermission();
+        if (p !== 'granted') return { ok: false, motivo: 'El navegador no ha dado permiso para los avisos.' };
+      }
+      estado.ajustes.recordatorio = true;
+      guardar();
+      return { ok: true };
+    }
+    default:
+      return { ok: true };
+  }
+}
+
+// ¿Tiene sentido aplicar la acción en este momento?
+function accionAplicable(accion) {
+  if (accion === 'activar_avisos') {
+    if (!('Notification' in window)) return false;
+    if (estado.ajustes.recordatorio && Notification.permission === 'granted') return false;
+  }
+  return true;
+}
+
+// Enlaces de contacto del dueño (correo y WhatsApp), si los dejó.
+function enlacesContacto(item) {
+  const d = cargarIncidencias();
+  const cuerpo = textoIncidencia(item);
+  const num = String(d.whatsapp || '').replace(/[^\d]/g, '');
+  const enlaces = [];
+  if (d.correo) enlaces.push(`<a class="btn sec" href="mailto:${encodeURIComponent(d.correo)}?subject=${encodeURIComponent('[DanTal] ' + item.titulo)}&body=${encodeURIComponent(cuerpo)}">✉️ Enviar por correo</a>`);
+  if (num) enlaces.push(`<a class="btn sec" href="https://wa.me/${num}?text=${encodeURIComponent(cuerpo)}" target="_blank" rel="noopener">💬 Enviar por WhatsApp</a>`);
+  return enlaces.join('');
+}
+
+function modalResuelta(r, recargar) {
+  modal(`<h2>¡Resuelto! ✨</h2>
+    <p>${esc(r.respuesta)}</p>
+    ${r.enlace ? `<a class="btn sec" href="${esc(r.enlace)}" data-a="cerrar">Ir a la pantalla</a>` : ''}
+    ${recargar ? `<button class="btn" data-a="incRecargar">🔄 Recargar la app</button>` : ''}
+    <div class="botones"><button class="btn sec" data-a="cerrar">Cerrar</button></div>`);
+}
+
+function modalEscalada(item) {
+  const destino = dueno()?.nombre || 'quien administra la app';
+  const enlaces = enlacesContacto(item);
+  modal(`<h2>Gracias por avisar 🙌</h2>
+    <p>He guardado tu mensaje. Como no es algo que pueda arreglar sola con seguridad, se lo paso a <b>${esc(destino)}</b> para que lo revise.</p>
+    <p class="tenue">Te avisaré aquí dentro en cuanto esté resuelto.</p>
+    ${enlaces ? `<p class="tenue">Si quieres, mándamelo también con un toque:</p>${enlaces}` : ''}
+    <div class="botones"><button class="btn" data-a="cerrar">Vale</button></div>`);
+}
+
+// Triage de un mensaje recién enviado: resuelve o escala.
+async function tramitarIncidencia(item) {
+  let r = analizar(item);
+  if (!r.caso || !r.segura) {
+    const pista = await clasificarConIA(item);
+    if (pista) r = analizar(item, { pista });
+  }
+  const porIA = Boolean(r.motivo && r.motivo.startsWith('Lo ha reconocido la IA'));
+  if (r.segura && r.accion && accionAplicable(r.accion)) {
+    const res = await aplicarAccionIncidencia(r.accion);
+    if (res.ok) {
+      resolverIncidencia(item.id, { respuesta: r.respuesta, accion: r.accion, porIA });
+      avisarAlUsuario({ tipo: 'resuelta', icono: '✨', titulo: 'Tu mensaje ya está resuelto', texto: r.respuesta, enlace: r.enlace || '' });
+      render();
+      modalResuelta(r, res.recargar);
+      return;
+    }
+  }
+  escalarIncidencia(item.id, { motivo: r.motivo, accion: r.accion, caso: r.caso, confianza: r.puntos, porIA });
+  render();
+  modalEscalada(item);
+}
+
+// El dueño aprueba: se resuelve y se avisa al autor.
+function aprobarIncidencia(id) {
+  const item = cargarIncidencias().items.find(i => i.id === id);
+  if (!item) return;
+  modal(`<h2>Resolver y avisar</h2>
+    <p class="tenue">Se marcará como resuelta y ${esc(item.autorNombre)} recibirá un aviso dentro de la app.</p>
+    <form id="formIncAprobar" data-id="${id}">
+      <label class="campo">Respuesta para ${esc(item.autorNombre)}
+        <textarea name="respuesta" rows="4" maxlength="500" required>${esc('He revisado tu mensaje y ya está solucionado. ¡Gracias por avisar 🙌')}</textarea>
+      </label>
+      <button class="btn" type="submit">✅ Aprobar y resolver</button>
+    </form>
+    <div class="botones"><button class="btn sec" data-a="cerrar">Cancelar</button></div>`);
+  setTimeout(() => $('#formIncAprobar textarea')?.focus(), 60);
+}
+
+async function rechazarIncidencia(id) {
+  const item = cargarIncidencias().items.find(i => i.id === id);
+  if (!item) return;
+  if (!await confirmar(`El mensaje volverá a la bandeja como leído y ${item.autorNombre} no recibirá ningún aviso.`, { titulo: '¿No aplicarlo por ahora?', ok: 'No por ahora' })) return;
+  decidirPermiso(id, false, { nota: 'No aplicado por ahora' });
+  render();
+  toast('El mensaje se queda como leído');
 }
 
 // =====================================================================
@@ -4130,6 +4336,14 @@ document.addEventListener('click', async ev => {
       guardarUsuarios(); render();
       toast(`Ahora ${usuarioActual().nombre} es el dueño de la app 👑`);
       break;
+    case 'incAprobar': aprobarIncidencia(d.id); break;
+    case 'incRechazar': rechazarIncidencia(d.id); break;
+    case 'incRecargar': recargarApp(); break;
+    case 'avisosLeidos': marcarAvisosLeidos(); render(); break;
+    case 'avisosBorrar':
+      confirmar('Se borrarán todos los avisos de tu bandeja.', { titulo: '¿Borrar los avisos?', ok: 'Borrar', peligro: true })
+        .then(ok => { if (ok) conDeshacer('Avisos borrados', () => { estado.avisos = []; }); });
+      break;
     case 'videoAdd':
       modal(`<h2>Guardar un vídeo</h2>
         <p class="tenue">Abre el vídeo en YouTube, copia su enlace (Compartir → Copiar enlace) y pégalo aquí.</p>
@@ -4530,7 +4744,17 @@ document.addEventListener('submit', async ev => {
       titulo, texto, autorId: usuarioActual().id, autorNombre: usuarioActual().nombre,
     });
     ev.target.reset();
-    abrirEnvio(item);
+    await tramitarIncidencia(item);
+    return;
+  }
+  if (ev.target.id === 'formIncAprobar') {
+    const id = ev.target.dataset.id;
+    const respuesta = String(f.get('respuesta') || '').trim() || 'He revisado tu mensaje y ya está solucionado. ¡Gracias por avisar!';
+    const item = decidirPermiso(id, true, { respuesta });
+    cerrarModal();
+    if (item?.autorId) avisarA(item.autorId, { tipo: 'resuelta', icono: '✨', titulo: 'Tu mensaje ya está resuelto', texto: respuesta });
+    render();
+    toast('Resuelto y avisado ✅');
     return;
   }
   if (ev.target.id === 'formVideo') {
