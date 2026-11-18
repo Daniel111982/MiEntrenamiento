@@ -204,6 +204,11 @@ button.tarjeta { cursor: pointer; }
 .chip-mini.alt { background: var(--violeta); color: #fff; }
 .chip-mini.oro { background: var(--amarillo); color: #111; }
 
+/* ---------- Beta testers ---------- */
+.mono { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; letter-spacing: .05em; }
+.beta-codigo .celda-t b { font-size: .86rem; word-break: break-all; }
+.campo .fila input { flex: 1 1 auto; min-width: 0; }
+
 /* ---------- Barras por músculo ---------- */
 .barra-m { display: grid; grid-template-columns: 92px 1fr 46px; align-items: center; gap: 10px; margin: 10px 0; font-size: .88rem; }
 .barra-m > div { height: 10px; background: color-mix(in srgb, var(--texto) 8%, transparent); border-radius: 99px; overflow: hidden; position: relative; }

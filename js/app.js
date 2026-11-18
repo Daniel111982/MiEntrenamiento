@@ -29,6 +29,9 @@ import {
   generarPlanCarrera, progresoCarrera, sesionesSemana, proximaCarrera, semanaCarrera,
   resumenPlan, resumenHechas, ritmosDe, facilDesdeMarca, marcasDesde, leerTiempo, fmtRitmo, fmtTiempo, fmtKm,
 } from './carrera.js';
+import {
+  generarCodigo, leerCodigo, sumarDiasIso, estaCaducada, diasRestantes, etiquetaDuracion,
+} from './beta.js';
 
 // =====================================================================
 // Estado
@@ -47,6 +50,7 @@ const vacio = () => ({
   nutricion: { ...NUTRICION_DEF }, ajustes: { recordatorio: false, hora: '18:00', avisado: '', ayudas: true, consejoVisto: false },
   comidas: {}, agua: {}, ejerciciosPropios: [], seguridad: null, avisos: [],
   carrera: null, carreraEnCurso: null,
+  beta: { codigos: [] },
 });
 const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const AVATARES = [
@@ -118,6 +122,7 @@ function cargar(id = usuarios.activo) {
       avisos: Array.isArray(d.avisos) ? d.avisos : [],
       carrera: d.carrera && typeof d.carrera === 'object' ? d.carrera : null,
       carreraEnCurso: d.carreraEnCurso && typeof d.carreraEnCurso === 'object' ? d.carreraEnCurso : null,
+      beta: { codigos: Array.isArray(d.beta?.codigos) ? d.beta.codigos : [] },
     };
   } catch { /* datos corruptos */ }
   return vacio();
@@ -153,6 +158,30 @@ const esDueno = u => Boolean(u?.admin);
 const hayDueno = () => usuarios.lista.some(esDueno);
 const soyDueno = () => esDueno(usuarioActual());
 const dueno = () => usuarios.lista.find(esDueno) || null;
+
+// --- Beta testers ---------------------------------------------------
+// El dueño reparte códigos de invitación; cada cuenta beta tiene su propia
+// fecha de fin. El dueño nunca se bloquea. La información beta vive en el
+// registro del usuario (u.beta) y los códigos generados en estado.beta.
+const esBeta = u => Boolean(u?.beta);
+const betaCaducada = () => {
+  const b = usuarioActual()?.beta;
+  return Boolean(b?.expira) && estaCaducada(b.expira, hoy());
+};
+const betaDeUsuario = u => u?.beta || null;
+// Texto corto del estado beta de una cuenta (para listados).
+function textoBeta(u) {
+  const b = betaDeUsuario(u);
+  if (!b) return '';
+  if (!b.expira) return 'Beta · sin límite';
+  const d = diasRestantes(b.expira, hoy());
+  if (d < 0) return `Beta caducada el ${fmtDia(b.expira)}`;
+  if (d === 0) return 'Beta · termina hoy';
+  return `Beta · ${d} ${d === 1 ? 'día' : 'días'} restantes`;
+}
+const chipBeta = u => esBeta(u)
+  ? `<span class="chip-mini ${betaDeUsuario(u)?.expira && diasRestantes(betaDeUsuario(u).expira, hoy()) < 0 ? 'alt' : 'oro'}">beta</span>`
+  : '';
 
 // Estado de interfaz que se reinicia al cambiar de usuario.
 const UI_INICIAL = { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, pasoEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, videoAbierto: null, verMaestro: false, recMetodo: null, incFiltro: 'nuevas', coachChat: [], coachPensando: false, coachIgnorados: [], coachIAOk: null, coachNanoOk: null, coachNanoDescargando: false };
@@ -334,11 +363,14 @@ const RUTAS = [
   [/^ajustes\/acerca$/, ajAcerca, 'ajustes'],
   [/^ajustes\/idea$/, ajIdea, 'ajustes'],
   [/^ajustes\/incidencias$/, ajIncidencias, 'ajustes'],
+  [/^ajustes\/beta$/, ajBeta, 'ajustes'],
   [/^ajustes\/avisos$/, ajAvisos, 'ajustes'],
   [/^ajustes\/salud$/, ajSalud, 'ajustes'],
   [/^ajustes\/coach$/, ajCoach, 'ajustes'],
   [/^bienvenida$/, bienvenida, 'bienvenida'],
   [/^login$/, login, 'login'],
+  [/^beta$/, betaCodigo, 'login'],
+  [/^beta\/fin$/, betaFin, 'login'],
   [/^recuperar$/, recuperar, 'recuperar'],
   [/^usuarios$/, gestorUsuarios, 'ajustes'],
   [/^usuarios\/nuevo$/, usuarioNuevo, 'ajustes'],
@@ -352,8 +384,10 @@ window.addEventListener('hashchange', render);
 function render() {
   let r = ruta();
   if (estaBloqueado()) {
-    if (!/^(login|recuperar|usuarios|usuarios\/nuevo|usuario\/[\w-]+)$/.test(r)) r = 'login';
+    if (!/^(login|recuperar|beta|beta\/fin|usuarios|usuarios\/nuevo|usuario\/[\w-]+)$/.test(r)) r = 'login';
     if (esCuentaNueva() && r === 'login') r = 'usuarios/nuevo';
+  } else if (betaCaducada() && !soyDueno() && r !== 'beta/fin') {
+    r = 'beta/fin';
   } else if (!estado.plan && !/^usuario/.test(r)) {
     r = 'bienvenida';
   } else if (r === 'bienvenida') {
@@ -2638,9 +2672,10 @@ function ajustes() {
           <span class="interruptor solo"><input type="checkbox" role="switch" data-a="ayudas" ${estado.ajustes.ayudas !== false ? 'checked' : ''} aria-label="Mostrar iconos de ayuda"></span></label>` +
         celda('ajustes/idea', '💡', '¿Una idea o un problema?', 'Cuéntame qué mejorar o qué no funciona', 'amarillo') +
         celda('ajustes/acerca', 'ℹ️', 'Cómo funciona', 'Ciclos, fases y cargas sugeridas', 'violeta'))}
-      ${soyDueno() || !hayDueno() ? grupo('Administración',
+      ${soyDueno() || (!hayDueno() && !esBeta(usuarioActual())) ? grupo('Administración',
         soyDueno()
-          ? celda('ajustes/incidencias', '📥', 'Ideas e incidencias', 'Lo que envían los usuarios de este dispositivo', 'rojo', contarNuevas() ? `${contarNuevas()} sin leer` : '')
+          ? celda('ajustes/incidencias', '📥', 'Ideas e incidencias', 'Lo que envían los usuarios de este dispositivo', 'rojo', contarNuevas() ? `${contarNuevas()} sin leer` : '') +
+            celda('ajustes/beta', '🎟️', 'Beta testers', 'Reparte códigos de invitación con duración', 'violeta', usuarios.lista.filter(esBeta).length || '')
           : celda('ajustes/incidencias', '👑', 'Activar el modo dueño', 'Marca esta cuenta como administradora de la app', 'rojo')) : ''}
     `,
   });
@@ -2672,6 +2707,46 @@ function ajDatos() {
       ${grupo('Datos de salud', celda('ajustes/salud', '❤️', 'Datos de salud', 'Importar peso, medidas y actividad, o sincronizar una hoja', 'rojo'))}
       ${grupo('Zona peligrosa', `<button class="celda peligro-c" data-a="borrarTodo"><span class="ic rojo">🗑️</span><span class="celda-t"><b>Borrar los datos de ${esc(usuarioActual().nombre)}</b><small>Perfil, programa e historial. No se puede deshacer</small></span></button>`)}
       <p class="tenue">${estado.historial.length} sesiones · ${estado.misSesiones.length} sesiones propias · ${(JSON.stringify(estado).length / 1024).toFixed(1)} KB</p>
+    `,
+  });
+}
+
+function ajBeta() {
+  if (!soyDueno()) {
+    return pagina({
+      titulo: 'Beta testers', padre: 'ajustes',
+      cuerpo: vacioMsg('🔒', 'Sección privada', 'Solo la cuenta marcada como administradora puede repartir códigos beta.'),
+    });
+  }
+  const codigos = estado.beta?.codigos || [];
+  const betas = usuarios.lista.filter(esBeta);
+  const opciones = [[7, '1 semana'], [14, '2 semanas'], [30, '1 mes'], [90, '3 meses'], [180, '6 meses'], [365, '1 año'], [0, 'Sin límite']];
+  return pagina({
+    titulo: 'Beta testers', padre: 'ajustes', sub: 'Reparte códigos de invitación con su duración',
+    cuerpo: `
+      <div class="tarjeta">
+        <h2>🎟️ Crear un código</h2>
+        <p class="tenue">Elige cuánto durará el acceso y pasa el código a quien quieras. La persona lo canjea desde <b>Tengo un código beta</b> en la pantalla de acceso. Funciona sin conexión y sin servidor.</p>
+        <div class="chips">
+          ${opciones.map(([d, t]) => `<button class="chip" data-a="betaGenerar" data-d="${d}">${t}</button>`).join('')}
+        </div>
+        <label class="campo">Días personalizados
+          <span class="fila"><input type="number" name="betaDiasCustom" min="1" max="3650" placeholder="Por ejemplo: 45" data-a="betaDiasCustom" class="hora"><button class="btn sec" data-a="betaGenerarCustom">Crear</button></span></label>
+      </div>
+      ${codigos.length ? grupo('Códigos creados', codigos.map(c => `
+        <div class="celda beta-codigo">
+          <span class="ic violeta">🎟️</span>
+          <span class="celda-t"><b class="mono">${esc(c.codigo)}</b><small>${esc(etiquetaDuracion(c.dias))} · creado el ${fmtCorta(c.creado)}</small></span>
+          <button class="icono peq" data-a="betaCopiar" data-codigo="${esc(c.codigo)}" title="Copiar" aria-label="Copiar código">📋</button>
+          <button class="icono peq" data-a="betaBorrar" data-codigo="${esc(c.codigo)}" title="Borrar" aria-label="Borrar código">🗑️</button>
+        </div>`).join('')) : ''}
+      ${grupo('Cuentas beta en este dispositivo', betas.length ? betas.map(u => `
+        <a class="celda" href="#usuario/${u.id}">
+          ${avatarHTML(u)}
+          <span class="celda-t"><b>${esc(u.nombre)}</b><small>${esc(textoBeta(u))}</small></span>
+          <span class="chev">›</span>
+        </a>`).join('') : '<p class="tenue centro">Todavía no hay cuentas beta aquí. Cada tester canjea su código en su propio móvil y crea allí su cuenta.</p>')}
+      <p class="tenue">Las cuentas beta viven en el dispositivo de cada persona: aquí solo verás las que se hayan canjeado en este. Al terminar su tiempo, la cuenta se bloquea sola y sus datos se conservan.</p>
     `,
   });
 }
@@ -2859,7 +2934,7 @@ function ajIncidencias() {
     return pagina({
       titulo: 'Ideas e incidencias', padre: 'ajustes',
       cuerpo: vacioMsg('🔒', 'Sección privada', 'Solo la cuenta marcada como administradora puede ver las ideas y los problemas que envían los usuarios.',
-        !hayDueno() ? '<button class="btn" data-a="incSerDueno">👑 Marcar mi cuenta como dueño</button>' : ''),
+        !hayDueno() && !esBeta(usuarioActual()) ? '<button class="btn" data-a="incSerDueno">👑 Marcar mi cuenta como dueño</button>' : ''),
     });
   }
   const d = cargarIncidencias();
@@ -3213,8 +3288,55 @@ function login() {
     <h1>${MARCA.nombre}</h1>
     <p class="tenue">${lista.length > 1 ? 'Escribe tu usuario y tu contraseña para entrar.' : (tieneClave ? 'Entra con tu contraseña.' : 'Crea tu contraseña de acceso.')}</p>
     ${formulario}
+    <a class="btn sec" href="#beta">🎟️ Tengo un código beta</a>
     <a class="btn sec" href="#usuarios/nuevo">＋ Crear cuenta nueva</a>
     <p class="tenue centro">Tus datos se guardan solo en este dispositivo.</p>
+  </div>`;
+}
+
+// =====================================================================
+// Beta testers: canjear un código de invitación y pantalla de fin de beta
+// =====================================================================
+function betaCodigo() {
+  return `<div class="login">
+    ${isotipoCuadrado({ tam: 64, clase: 'login-logo' })}
+    <h1>Acceso beta</h1>
+    <p class="tenue">Pega el código de invitación que te han dado. Si es válido, crearás tu cuenta y podrás probar ${esc(MARCA.nombre)} durante el tiempo de la invitación.</p>
+    <form id="formBeta" class="tarjeta" novalidate>
+      <label class="campo">Código de invitación
+        <input type="text" name="codigo" placeholder="DTB-030-XXXXXXXX-XXXX" autocomplete="off" spellcheck="false" autocapitalize="characters" required autofocus></label>
+      <label class="campo">Tu nombre<input type="search" name="nombre" maxlength="24" placeholder="Por ejemplo: Ana" autocomplete="off" required></label>
+      <label class="campo">Correo (para recuperar la contraseña)<input type="email" name="correo" autocomplete="email" placeholder="tucorreo@ejemplo.com" spellcheck="false" required></label>
+      <label class="campo">Contraseña
+        <span class="clave-fila"><input type="password" name="clave" minlength="4" autocomplete="new-password" required placeholder="Al menos 4 caracteres">
+          <button type="button" class="icono peq" data-a="verClave" data-f="clave" aria-label="Mostrar u ocultar la contraseña" title="Mostrar u ocultar">${ICO_OJO}</button></span></label>
+      <label class="campo">Repite la contraseña
+        <span class="clave-fila"><input type="password" name="clave2" minlength="4" autocomplete="new-password" required>
+          <button type="button" class="icono peq" data-a="verClave" data-f="clave2" aria-label="Mostrar u ocultar la contraseña" title="Mostrar u ocultar">${ICO_OJO}</button></span></label>
+      <p class="tenue error" id="avisoBeta"></p>
+      <button class="btn" type="submit">🎟️ Canjear código y entrar</button>
+    </form>
+    <a class="btn sec" href="#login">Volver al acceso</a>
+  </div>`;
+}
+
+// Pantalla que ve una cuenta beta cuando su tiempo ha terminado.
+function betaFin() {
+  const u = usuarioActual();
+  const b = betaDeUsuario(u) || {};
+  return `<div class="login">
+    ${isotipoCuadrado({ tam: 72, clase: 'login-logo' })}
+    <h1>Tu beta ha terminado</h1>
+    <p class="tenue">El acceso de prueba de <b>${esc(u.nombre)}</b>${b.expira ? ` terminó el ${fmtDia(b.expira)}` : ''}. Tus datos siguen guardados en este dispositivo, no se ha borrado nada.</p>
+    <form id="formBetaRenovar" class="tarjeta" novalidate>
+      <p>¿Tienes un código nuevo? Canjéalo aquí y tu cuenta se reactiva conservando todo tu progreso.</p>
+      <label class="campo">Código de invitación
+        <input type="text" name="codigo" placeholder="DTB-030-XXXXXXXX-XXXX" autocomplete="off" spellcheck="false" autocapitalize="characters" required></label>
+      <p class="tenue error" id="avisoBeta"></p>
+      <button class="btn" type="submit">🎟️ Reactivar con este código</button>
+    </form>
+    <button class="btn sec" data-a="betaSalir">Cambiar de usuario</button>
+    <p class="tenue centro">${esc(MARCA.nombre)} · ${esc(MARCA.eslogan || '')}</p>
   </div>`;
 }
 
@@ -3441,8 +3563,8 @@ function gestorUsuarios() {
         return `<div class="tarjeta usuario-card ${activo ? 'activo' : ''}">
           <div class="usuario-cab">
             ${avatarHTML(u, 'grande')}
-            <div class="celda-t"><b>${esc(u.nombre)} ${activo ? '<span class="chip-mini">activo</span>' : ''}${r.enCurso ? '<span class="chip-mini alt">entrenando</span>' : ''}</b>
-              <small>${r.objetivo ? `${r.objetivo.icono} ${r.objetivo.nombre} · ${r.porSemana} días/sem` : 'Sin programa todavía'}</small></div>
+            <div class="celda-t"><b>${esc(u.nombre)} ${activo ? '<span class="chip-mini">activo</span>' : ''}${r.enCurso ? '<span class="chip-mini alt">entrenando</span>' : ''}${chipBeta(u)}</b>
+              <small>${esBeta(u) ? `${esc(textoBeta(u))} · ` : ''}${r.objetivo ? `${r.objetivo.icono} ${r.objetivo.nombre} · ${r.porSemana} días/sem` : 'Sin programa todavía'}</small></div>
             <a class="icono" href="#usuario/${u.id}" title="Editar usuario">✎</a>
           </div>
           <div class="mini-stats">
@@ -3500,8 +3622,26 @@ function formUsuario(u, nuevo) {
     ${nuevo ? formMedidasHTML() : ''}
     ${!nuevo && (soyDueno() || !hayDueno()) ? `<label class="interruptor"><span><b>Cuenta de administrador</b><br><small class="tenue">Podrá ver la bandeja de ideas e incidencias de la app</small></span>
       <input type="checkbox" name="admin" value="si" ${esDueno(u) ? 'checked' : ''}></label>` : ''}
+    ${!nuevo && soyDueno() ? formBetaUsuarioHTML(u) : ''}
     <button class="btn" type="submit">${nuevo ? 'Crear cuenta y continuar' : 'Guardar cambios'}</button>
   </form>`;
+}
+
+// Controles beta dentro del editor de un usuario (solo para el dueño).
+function formBetaUsuarioHTML(u) {
+  const b = betaDeUsuario(u);
+  const dias = b?.expira ? Math.max(1, diasRestantes(b.expira, hoy())) : 30;
+  return `<fieldset><legend>Beta tester</legend>
+    <label class="interruptor"><span><b>Cuenta de prueba (beta)</b><br><small class="tenue">Se bloqueará sola cuando termine el tiempo</small></span>
+      <input type="checkbox" name="esBeta" value="si" data-a="betaToggle" ${b ? 'checked' : ''}></label>
+    <div id="betaCampos" ${b ? '' : 'hidden'}>
+      ${b?.expira
+        ? `<p class="tenue">Ahora termina el <b>${fmtDia(b.expira)}</b>${diasRestantes(b.expira, hoy()) < 0 ? ' (ya caducada)' : ''}. Si guardas, la duración vuelve a contar desde hoy.</p>`
+        : b ? '<p class="tenue">Ahora mismo no tiene límite.</p>'
+          : '<p class="tenue">Elige cuántos días dura el acceso. Pon 0 para que no caduque nunca.</p>'}
+      <label class="campo">Duración en días desde hoy<input type="number" name="betaDias" min="0" max="3650" value="${dias}" placeholder="30"></label>
+    </div>
+  </fieldset>`;
 }
 
 // Medidas iniciales al crear la cuenta: alimentan la nutrición y el programa.
@@ -3548,14 +3688,14 @@ function usuarioEditar(id) {
 function menuUsuarios() {
   modal(`<h2>¿Quién va a entrenar?</h2>
     <div class="celdas">${usuarios.lista.map(u => `<button class="celda" data-a="usarUsuario" data-id="${u.id}">${avatarHTML(u)}
-      <span class="celda-t"><b>${esc(u.nombre)}</b><small>${u.id === usuarios.activo ? 'Usuario activo' : `${resumenUsuario(u).sesiones} sesiones`}</small></span>
+      <span class="celda-t"><b>${esc(u.nombre)} ${chipBeta(u)}</b><small>${u.id === usuarios.activo ? 'Usuario activo' : (esBeta(u) ? esc(textoBeta(u)) : `${resumenUsuario(u).sesiones} sesiones`)}</small></span>
       ${u.id === usuarios.activo ? '<span class="celda-v">✓</span>' : ''}</button>`).join('')}</div>
     <div class="botones"><a class="btn sec" href="#usuarios/nuevo" data-a="cerrar">＋ Nuevo</a><a class="btn sec" href="#usuarios" data-a="cerrar">Gestionar</a></div>`);
 }
 
-function crearUsuario({ nombre, avatar, color, nutricion, medidas, seguridad, admin = false }) {
+function crearUsuario({ nombre, avatar, color, nutricion, medidas, seguridad, admin = false, beta = null }) {
   const id = nuevoId();
-  usuarios.lista.push({ id, nombre, avatar, color, creado: new Date().toISOString(), ...(admin ? { admin: true } : {}) });
+  usuarios.lista.push({ id, nombre, avatar, color, creado: new Date().toISOString(), ...(admin ? { admin: true } : {}), ...(beta ? { beta } : {}) });
   const datos = vacio();
   if (nutricion) datos.nutricion = { ...NUTRICION_DEF, ...nutricion };
   if (Array.isArray(medidas) && medidas.length) datos.medidas = medidas;
@@ -4718,6 +4858,29 @@ document.addEventListener('click', async ev => {
       descargar(JSON.stringify(cargar(d.id), null, 2), 'application/json', `${u.nombre.replace(/[^\wáéíóúñ-]+/gi, '_')}.json`);
       toast(`Datos de ${u.nombre} descargados`); break;
     }
+    // ---- Beta testers ----
+    case 'betaGenerar': case 'betaGenerarCustom': {
+      const dias = d.a === 'betaGenerarCustom' ? Math.floor(Number($('[data-a=betaDiasCustom]')?.value) || 0) : Number(d.d);
+      if (d.a === 'betaGenerarCustom' && dias < 1) { toast('Escribe cuántos días quieres'); break; }
+      const codigo = await generarCodigo(dias);
+      estado.beta = estado.beta || { codigos: [] };
+      estado.beta.codigos.unshift({ codigo, dias: Math.max(0, dias), creado: new Date().toISOString() });
+      guardar(); render();
+      navigator.clipboard?.writeText(codigo)
+        .then(() => toast(`Código copiado para ${etiquetaDuracion(dias)}: ${codigo}`, { ms: 9000 }),
+          () => toast(`Código para ${etiquetaDuracion(dias)}: ${codigo}`, { ms: 9000 }));
+      break;
+    }
+    case 'betaCopiar':
+      navigator.clipboard?.writeText(d.codigo)
+        .then(() => toast('Código copiado'), () => toast('No he podido copiarlo. Cópialo a mano.'));
+      break;
+    case 'betaBorrar':
+      estado.beta = estado.beta || { codigos: [] };
+      estado.beta.codigos = estado.beta.codigos.filter(c => c.codigo !== d.codigo);
+      guardar(); render(); toast('Código borrado');
+      break;
+    case 'betaSalir': desbloqueado = false; ir('login'); break;
     // ---- Ideas e incidencias ----
     case 'incFiltro': ui.incFiltro = d.f; render(); break;
     case 'incLeida': conDeshacerInc('Marcada como leída', () => cambiarEstadoInc(d.id, 'leida')); break;
@@ -4742,6 +4905,7 @@ document.addEventListener('click', async ev => {
       break;
     }
     case 'incSerDueno':
+      if (esBeta(usuarioActual())) { toast('Una cuenta beta no puede ser administradora'); break; }
       usuarios.lista.forEach(u => delete u.admin);
       usuarioActual().admin = true;
       guardarUsuarios(); render();
@@ -4978,6 +5142,7 @@ document.addEventListener('change', async ev => {
     }
   }
   if (t.dataset.a === 'hora') { estado.ajustes.hora = t.value; guardar(); }
+  if (t.dataset.a === 'betaToggle') { const c = $('#betaCampos'); if (c) c.hidden = !t.checked; }
   if (t.dataset.a === 'calcCar') { actualizarCalcCarrera(); }
   if (t.dataset.a === 'ayudas') {
     estado.ajustes.ayudas = t.checked; guardar(); render();
@@ -5026,6 +5191,51 @@ document.addEventListener('submit', async ev => {
     else { const d = cargar(u.id); d.seguridad = seguridad; localStorage.setItem(claveDe(u.id), JSON.stringify(d)); }
     entrarComo(u.id);
     toast(`Contraseña creada. ¡Dentro, ${usuarioActual().nombre}! 🔓`);
+    return;
+  }
+  if (ev.target.id === 'formBeta') {
+    const aviso = t => { const el = $('#avisoBeta'); if (el) el.textContent = t; };
+    const codigo = String(f.get('codigo') || '').trim();
+    const nombre = String(f.get('nombre') || '').trim();
+    const correo = String(f.get('correo') || '').trim();
+    const clave = String(f.get('clave') || ''), clave2 = String(f.get('clave2') || '');
+    if (!codigo) { aviso('Pega tu código de invitación.'); return; }
+    if (!nombre) { aviso('Escribe tu nombre.'); return; }
+    if (usuarios.lista.some(u => u.nombre.toLowerCase() === nombre.toLowerCase())) { aviso('Ya hay un usuario con ese nombre en este dispositivo.'); return; }
+    if (!correo) { aviso('Escribe tu correo: lo usaré para recuperar la contraseña.'); return; }
+    if (clave.length < 4) { aviso('Usa al menos 4 caracteres en la contraseña.'); return; }
+    if (clave !== clave2) { aviso('Las dos contraseñas no coinciden.'); return; }
+    if (usuarios.lista.some(u => normalizarCorreo(datosUsuario(u.id)?.seguridad?.correo) === normalizarCorreo(correo))) { aviso('Ya hay una cuenta con ese correo.'); return; }
+    const lectura = await leerCodigo(codigo);
+    if (!lectura.ok) { aviso(lectura.error); return; }
+    const seguridad = await construirSeguridad({ clave, correo });
+    const inicio = hoy();
+    const expira = lectura.dias > 0 ? sumarDiasIso(inicio, lectura.dias) : null;
+    const nuevoId = crearUsuario({
+      nombre, avatar: 'ico:' + LISTA_ICONOS[usuarios.lista.length % LISTA_ICONOS.length], color: usuarios.lista.length % COLORES.length,
+      seguridad, beta: { etiqueta: etiquetaDuracion(lectura.dias), codigo, inicio, expira },
+    });
+    entrarComo(nuevoId);
+    toast(lectura.dias
+      ? `¡Bienvenido! Tienes ${etiquetaDuracion(lectura.dias)} de acceso beta 🎟️`
+      : '¡Bienvenido! Acceso beta sin límite 🎟️', { ms: 7000 });
+    return;
+  }
+  if (ev.target.id === 'formBetaRenovar') {
+    const aviso = t => { const el = $('#avisoBeta'); if (el) el.textContent = t; };
+    const lectura = await leerCodigo(f.get('codigo'));
+    if (!lectura.ok) { aviso(lectura.error); return; }
+    const u = usuarioActual();
+    const inicio = hoy();
+    u.beta = {
+      etiqueta: etiquetaDuracion(lectura.dias),
+      codigo: String(f.get('codigo') || '').trim(),
+      inicio,
+      expira: lectura.dias > 0 ? sumarDiasIso(inicio, lectura.dias) : null,
+    };
+    guardarUsuarios();
+    ir(estado.plan ? 'hoy' : 'bienvenida');
+    toast(lectura.dias ? `¡Beta reactivada! Tienes ${etiquetaDuracion(lectura.dias)} más 🎟️` : '¡Beta reactivada sin límite! 🎟️', { ms: 7000 });
     return;
   }
   if (ev.target.id === 'formRecIdent') {
@@ -5167,6 +5377,19 @@ document.addEventListener('submit', async ev => {
       const u = usuarios.lista.find(x => x.id === id);
       Object.assign(u, { nombre, avatar, color });
       if (u && ev.target.querySelector('[name=admin]')) u.admin = f.get('admin') === 'si';
+      if (u && ev.target.querySelector('[name=esBeta]')) {
+        if (f.get('esBeta') === 'si') {
+          const dias = Math.max(0, Math.min(3650, Math.floor(Number(f.get('betaDias')) || 0)));
+          u.beta = {
+            etiqueta: etiquetaDuracion(dias),
+            codigo: u.beta?.codigo || '',
+            inicio: u.beta?.inicio || hoy(),
+            expira: dias > 0 ? sumarDiasIso(hoy(), dias) : null,
+          };
+        } else {
+          delete u.beta;
+        }
+      }
       guardarUsuarios(); ir('usuarios'); toast('Usuario actualizado');
       return;
     }
@@ -5442,7 +5665,11 @@ async function pantallaEncendida() {
     if (!quiere && bloqueo) { await bloqueo.release(); bloqueo = null; }
   } catch { /* no disponible */ }
 }
-document.addEventListener('visibilitychange', pantallaEncendida);
+document.addEventListener('visibilitychange', () => {
+  pantallaEncendida();
+  // Si la beta ha caducado mientras la app estaba abierta, se bloquea al volver.
+  if (document.visibilityState === 'visible' && betaCaducada() && !soyDueno() && ruta() !== 'beta/fin') render();
+});
 
 // La primera vez que se usa la app explica cómo ver las ayudas.
 function consejoAyudas(tab) {
