@@ -541,6 +541,18 @@ input[type=url] { width: 100%; padding: 12px; border-radius: 12px; border: 1px s
 .mini-stats b { display: block; font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mini-stats small { color: var(--tenue); font-size: .68rem; }
 .usuario-prev { text-align: center; margin: 4px 0 16px; }
+.avatar-u.ico { color: #fff; }
+.avatar-u.ico svg { width: 60%; height: 60%; display: block; }
+.avatar-u.ico.enorme svg { width: 56%; height: 56%; }
+.chips.avatares-ico { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 8px; margin-bottom: 10px; }
+@media (max-width: 560px) { .chips.avatares-ico { max-height: 264px; overflow-y: auto; padding-right: 2px; } }
+.chip.avatar-ico { width: 100%; aspect-ratio: 1; padding: 0; border-radius: 14px; justify-content: center; background: var(--tarjeta2); color: var(--texto); transition: background .12s, border-color .12s, transform .12s, box-shadow .12s; }
+.chip.avatar-ico svg { width: 24px; height: 24px; }
+.chip.avatar-ico:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--acento) 45%, var(--borde)); }
+.chip.avatar-ico:has(input:checked) { background: var(--acento); border-color: var(--acento); color: var(--sobre-acento); box-shadow: 0 0 0 3px color-mix(in srgb, var(--acento) 30%, transparent); }
+.avatar-mas { margin-top: 8px; }
+.avatar-mas > summary { cursor: pointer; font-weight: 600; color: var(--tenue); font-size: .88rem; padding: 6px 0; }
+.avatar-mas[open] > summary { margin-bottom: 6px; }
 .chips.avatares .chip { font-size: 1.4rem; padding: 6px 10px; }
 .avatar-extra { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 4px; }
 .avatar-extra input[type=url] { flex: 1; min-width: 180px; }

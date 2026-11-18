@@ -21,6 +21,7 @@ import {
   construirContextoCoach, resumenParaIA, explicarEjercicio, sugerenciaEnVivo, sugerenciasSesion, sugerenciasSemana, preguntasSugeridas, responder,
 } from './coach.js';
 import { PROVEEDORES, leerConfig, guardarConfig, borrarConfig, chatear, probar, detectarNano, nanoActivo, nanoEstadoSync, activarNano, probarNano } from './llm.js';
+import { ICONOS_AVATAR, LISTA_ICONOS } from './avatares.js';
 
 // =====================================================================
 // Estado
@@ -114,16 +115,24 @@ function guardar() { localStorage.setItem(claveDe(usuarios.activo), JSON.stringi
 
 const usuarioActual = () => usuarios.lista.find(u => u.id === usuarios.activo) || usuarios.lista[0];
 const esImagenAvatar = a => /^(data:image\/|https?:\/\/|blob:)/i.test(String(a || ''));
+const esIconoAvatar = a => /^ico:/.test(String(a || ''));
 const esColorHex = c => /^#[0-9a-fA-F]{3,8}$/.test(String(c || ''));
 // u.color puede ser un índice de la paleta (datos antiguos) o un color CSS directo.
 const colorAvatar = c => {
   const s = String(c ?? '');
   return /^\d+$/.test(s) ? (COLORES[Number(s) % COLORES.length] || COLORES[0]) : (s || COLORES[0]);
 };
+// Contenido SVG de un icono de avatar ('ico:dumbbell') o cadena vacía.
+const svgIconoAvatar = a => esIconoAvatar(a) ? (ICONOS_AVATAR[String(a).slice(4)] || '') : '';
+const svgAvatar = inner => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
 const avatarHTML = (u, clase = '') => {
   const img = esImagenAvatar(u?.avatar);
+  const ico = svgIconoAvatar(u?.avatar);
   const fondo = img ? 'var(--tarjeta2)' : colorAvatar(u?.color);
-  return `<span class="avatar-u ${clase}${img ? ' foto' : ''}" style="background:${fondo}">${img ? `<img src="${esc(u.avatar)}" alt="" loading="lazy" decoding="async">` : esc(u?.avatar || '🙂')}</span>`;
+  const dentro = img ? `<img src="${esc(u.avatar)}" alt="" loading="lazy" decoding="async">`
+    : ico ? svgAvatar(ico)
+    : esc(u?.avatar || '🙂');
+  return `<span class="avatar-u ${clase}${img ? ' foto' : ''}${ico ? ' ico' : ''}" style="background:${fondo}">${dentro}</span>`;
 };
 
 // El «dueño» es la cuenta marcada como administradora: es la única que ve la
@@ -2651,6 +2660,8 @@ function ajAcerca() {
         <p>Registra lo que comes y bebes en el diario. DANTAL calcula tus objetivos con la fórmula de Mifflin-St Jeor y te avisa de lo que te falta, separando siempre los datos reales de las estimaciones.</p></div>
       <div class="tarjeta"><h2>🔒 Seguridad</h2>
         <p>Puedes proteger la app con una contraseña que se guarda cifrada (SHA-256 con salt) en este dispositivo. Si la olvidas, tienes tres formas de recuperar el acceso: la pregunta de seguridad, un código por correo o el código maestro.</p></div>
+      <div class="tarjeta"><h2>🎨 Iconos</h2>
+        <p>Los iconos de los avatares y de la interfaz son del set <a href="https://lucide.dev" target="_blank" rel="noopener">Lucide</a> (licencia ISC).</p></div>
       <p class="tenue centro">${MARCA.nombre} · versión ${APP_VERSION} · funciona sin conexión · tus datos no salen de tu dispositivo</p>
     `,
   });
@@ -3238,11 +3249,15 @@ function formUsuario(u, nuevo) {
           <button type="button" class="icono peq" data-a="verClave" data-f="clave2" aria-label="Mostrar u ocultar la contraseña" title="Mostrar u ocultar">${ICO_OJO}</button></span></label>` : ''}
     <fieldset><legend>Avatar</legend>
       <input type="hidden" name="avatar" value="${esc(u.avatar)}">
-      <div class="chips avatares scroll">${AVATARES.map(a => `<label class="chip"><input type="radio" name="avatarEmoji" value="${a}" ${a === u.avatar ? 'checked' : ''}>${a}</label>`).join('')}</div>
-      <div class="avatar-extra">
-        <label class="btn sec peq">📷 Subir una foto<input type="file" accept="image/*" data-a="avatarArchivo" hidden></label>
-        <input type="url" name="avatarUrl" data-a="avatarUrl" placeholder="https://… pega la dirección de una foto" spellcheck="false" autocomplete="off" value="${esImagenAvatar(u.avatar) && /^https?:/i.test(String(u.avatar)) ? esc(u.avatar) : ''}">
-      </div>
+      <div class="chips avatares-ico">${LISTA_ICONOS.map(id => `<label class="chip avatar-ico" title="${id}"><input type="radio" name="avatarIco" value="ico:${id}" ${u.avatar === 'ico:' + id ? 'checked' : ''}>${svgAvatar(ICONOS_AVATAR[id])}</label>`).join('')}</div>
+      <details class="avatar-mas" ${!esIconoAvatar(u.avatar) && !esImagenAvatar(u.avatar) ? 'open' : ''}>
+        <summary>Más opciones: emoji, foto o enlace</summary>
+        <div class="chips avatares scroll">${AVATARES.map(a => `<label class="chip"><input type="radio" name="avatarEmoji" value="${a}" ${a === u.avatar ? 'checked' : ''}>${a}</label>`).join('')}</div>
+        <div class="avatar-extra">
+          <label class="btn sec peq">📷 Subir una foto<input type="file" accept="image/*" data-a="avatarArchivo" hidden></label>
+          <input type="url" name="avatarUrl" data-a="avatarUrl" placeholder="https://… pega la dirección de una foto" spellcheck="false" autocomplete="off" value="${esImagenAvatar(u.avatar) && /^https?:/i.test(String(u.avatar)) ? esc(u.avatar) : ''}">
+        </div>
+      </details>
     </fieldset>
     <fieldset><legend>Color</legend>
       <div class="chips colores">
@@ -3278,7 +3293,7 @@ function formMedidasHTML() {
 }
 
 function usuarioNuevo() {
-  const u = { avatar: AVATARES[usuarios.lista.length % AVATARES.length], color: usuarios.lista.length % COLORES.length };
+  const u = { avatar: 'ico:' + LISTA_ICONOS[usuarios.lista.length % LISTA_ICONOS.length], color: usuarios.lista.length % COLORES.length };
   const primeraVez = esCuentaNueva();
   return pagina({
     titulo: primeraVez ? 'Crear cuenta' : 'Nuevo usuario',
@@ -3614,12 +3629,16 @@ function pintarPreviewUsuario(form) {
   const avatar = String(fd.get('avatar') || '🙂');
   const colorSel = String(fd.get('color') || '0');
   const fondo = colorSel === 'custom' ? String(fd.get('colorCustom') || '#2563eb') : colorAvatar(colorSel);
+  const ico = svgIconoAvatar(avatar);
+  prev.classList.toggle('foto', esImagenAvatar(avatar));
+  prev.classList.toggle('ico', Boolean(ico));
   if (esImagenAvatar(avatar)) {
-    prev.classList.add('foto');
     prev.style.background = 'var(--tarjeta2)';
     prev.innerHTML = `<img src="${esc(avatar)}" alt="">`;
+  } else if (ico) {
+    prev.style.background = fondo;
+    prev.innerHTML = svgAvatar(ico);
   } else {
-    prev.classList.remove('foto');
     prev.style.background = fondo;
     prev.textContent = avatar;
   }
@@ -4259,7 +4278,7 @@ document.addEventListener('change', async ev => {
       const data = await imagenAAvatar(t.files[0]);
       const hidden = t.form?.querySelector('input[name=avatar]');
       if (hidden) hidden.value = data;
-      t.form?.querySelectorAll('input[name=avatarEmoji]').forEach(r => { r.checked = false; });
+      t.form?.querySelectorAll('input[name=avatarEmoji], input[name=avatarIco]').forEach(r => { r.checked = false; });
       const url = t.form?.querySelector('input[name=avatarUrl]'); if (url) url.value = '';
       pintarPreviewUsuario(t.form);
       toast('Foto lista. Guarda los cambios para aplicarla.');
@@ -4267,9 +4286,12 @@ document.addEventListener('change', async ev => {
     t.value = '';
   }
   if (t.form?.id === 'formUsuario') {
-    if (t.name === 'avatarEmoji') {
+    if (t.name === 'avatarIco' || t.name === 'avatarEmoji') {
       const hidden = t.form.querySelector('input[name=avatar]');
       if (hidden) hidden.value = t.value;
+      const otro = t.name === 'avatarIco' ? 'avatarEmoji' : 'avatarIco';
+      t.form.querySelectorAll(`input[name=${otro}]`).forEach(r => { r.checked = false; });
+      const url = t.form.querySelector('input[name=avatarUrl]'); if (url) url.value = '';
       pintarPreviewUsuario(t.form);
     } else if (t.dataset.a === 'colorCustom') {
       const r = t.form.querySelector('input[name=color][value=custom]'); if (r) r.checked = true;
@@ -4281,7 +4303,7 @@ document.addEventListener('change', async ev => {
       if (url) {
         const hidden = t.form.querySelector('input[name=avatar]');
         if (hidden) hidden.value = url;
-        t.form.querySelectorAll('input[name=avatarEmoji]').forEach(r => { r.checked = false; });
+        t.form.querySelectorAll('input[name=avatarEmoji], input[name=avatarIco]').forEach(r => { r.checked = false; });
         pintarPreviewUsuario(t.form);
       }
     }
