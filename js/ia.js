@@ -1,4 +1,4 @@
-// Asistente DANTAL: contexto y avisos inteligentes.
+// Asistente DanTal: contexto y avisos inteligentes.
 // Separa siempre «Dato real» (lo que el usuario ha registrado) de «Estimación»
 // (cálculos metabólicos o de recuperación).
 

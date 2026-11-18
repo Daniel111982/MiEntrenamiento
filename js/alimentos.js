@@ -1,4 +1,4 @@
-// Base de datos de alimentos, comidas y recetas de DANTAL.
+// Base de datos de alimentos, comidas y recetas de DanTal.
 // Valores por 100 g de alimento (kcal, proteína, carbohidratos, grasa y fibra en gramos).
 // «porcion» es una ración habitual orientativa en gramos.
 

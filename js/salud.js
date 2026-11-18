@@ -3,7 +3,7 @@
 // =====================================================================
 // Lee un archivo CSV o JSON exportado de Google Fit, Health Connect, una
 // báscula o cualquier app de salud, y devuelve los datos listos para
-// fusionarlos con los de DANTAL. Todo ocurre en el dispositivo: el archivo
+// fusionarlos con los de DanTal. Todo ocurre en el dispositivo: el archivo
 // no sale de aquí.
 //
 // No guarda nada por su cuenta: `interpretarSalud` lee el texto y
@@ -46,21 +46,21 @@ const limpiaCabecera = h => sinAcentos(h).replace(/\([^)]*\)/g, ' ').replace(/[.
 // ¿El nombre de la columna dice que viene en libras?
 const esLibras = cabecera => /\b(lb|lbs|pound|pounds|libra|libras|oz|onzas)\b/.test(sinAcentos(cabecera));
 
-// ¿La distancia viene en metros? (en DANTAL se guarda en kilómetros)
+// ¿La distancia viene en metros? (en DanTal se guarda en kilómetros)
 function esMetros(cabecera) {
   const h = sinAcentos(cabecera);
   if (/\bkm\b|kilomet/.test(h)) return false;
   return /\(m\)|\bm\b|meters?|metros?/.test(h);
 }
 
-// Factor para pasar el valor leído a la unidad que usa DANTAL.
+// Factor para pasar el valor leído a la unidad que usa DanTal.
 function factorUnidad(cabecera, campo) {
   if (campo === 'peso' && esLibras(cabecera)) return 0.45359237;
   if (campo === 'distancia' && esMetros(cabecera)) return 0.001;
   return 1;
 }
 
-// A qué campo de DANTAL corresponde una cabecera (o null si no la reconozco).
+// A qué campo de DanTal corresponde una cabecera (o null si no la reconozco).
 export function campoDeCabecera(cabecera) {
   const h = limpiaCabecera(cabecera);
   if (!h) return null;

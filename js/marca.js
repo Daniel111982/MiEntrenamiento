@@ -1,9 +1,9 @@
-// Identidad visual de DANTAL.
+// Identidad visual de DanTal.
 // Inspirada en el Hotel Talaso Atlántico: azul petróleo, turquesa y turquesa luminoso.
 // Todo se genera como SVG en línea (sin imágenes externas) para que funcione sin conexión.
 
 export const MARCA = {
-  nombre: 'DANTAL',
+  nombre: 'DanTal',
   eslogan: 'TRAIN · NUTRITION · WELLNESS',
   frase: 'Tu entrenamiento. Tu alimentación. Tu evolución.',
 };
@@ -27,7 +27,7 @@ const DEGRADADOS = {
 let _uid = 0;
 const uid = () => `dantal-g${(++_uid).toString(36)}`;
 
-// Estrella dinámica de 4 puntas (el isotipo de DANTAL).
+// Estrella dinámica de 4 puntas (el isotipo de DanTal).
 const ESTRELLA = 'M50 3 C54.5 30 70 45.5 97 50 C70 54.5 54.5 70 50 97 C45.5 70 30 54.5 3 50 C30 45.5 45.5 30 50 3 Z';
 
 export function isotipoDantal({ tam = 40, variante = 'color', clase = '' } = {}) {

@@ -1,4 +1,4 @@
-// Vídeos de técnica en español para TODOS los ejercicios de DANTAL.
+// Vídeos de técnica en español para TODOS los ejercicios de DanTal.
 // Un vídeo por ejercicio, de canales en español, elegidos y verificados
 // (existencia e incrustación) el 17/11/2026 mediante el servicio oEmbed de YouTube.
 //

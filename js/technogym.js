@@ -1,4 +1,4 @@
-// Catálogo de máquinas Technogym de DANTAL.
+// Catálogo de máquinas Technogym de DanTal.
 // Relaciona los ejercicios con máquinas reales (líneas Selection 900, Pure Strength
 // y Kinesis One) y genera una ilustración biomecánica en SVG.
 //

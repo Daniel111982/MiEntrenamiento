@@ -1,7 +1,7 @@
 // =====================================================================
 // Coach IA opcional · conexión con un modelo de lenguaje real
 // ---------------------------------------------------------------------
-// DANTAL es una app estática (no hay servidor propio), así que la clave
+// DanTal es una app estática (no hay servidor propio), así que la clave
 // nunca puede venir dentro del código: la pegas tú en Ajustes y se guarda
 // SOLO en este navegador, en la clave de dispositivo «mientrenamiento:coachIA».
 // No forma parte de tus datos de usuario, no se exporta y no se sincroniza.
@@ -18,7 +18,7 @@ const COMPATIBLES = {
   mistral: { url: 'https://api.mistral.ai/v1/chat/completions', extraHeaders: {} },
   openrouter: {
     url: 'https://openrouter.ai/api/v1/chat/completions',
-    extraHeaders: { 'HTTP-Referer': 'https://daniel111982.github.io/MiEntrenamiento', 'X-Title': 'DANTAL' },
+    extraHeaders: { 'HTTP-Referer': 'https://daniel111982.github.io/MiEntrenamiento', 'X-Title': 'DanTal' },
   },
 };
 
@@ -204,7 +204,7 @@ export async function probarNano() {
 // ---------------------------------------------------------------------
 export function instrucciones(contexto = '') {
   return [
-    'Eres DANTAL, el entrenador personal y de nutrición de esta app de entrenamiento.',
+    'Eres DanTal, el entrenador personal y de nutrición de esta app de entrenamiento.',
     'Hablas siempre en español de España, cercano, claro y directo, tuteando al usuario.',
     'Tu trabajo es explicar CUÁNTO (series, repeticiones, kilos, descanso, calorías) y POR QUÉ (el motivo fisiológico o de método), y proponer ajustes concretos.',
     'Reglas:',

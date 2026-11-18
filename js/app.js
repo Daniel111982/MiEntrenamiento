@@ -860,7 +860,7 @@ function sesionCiencia() {
 }
 
 // =====================================================================
-// Coach DANTAL: explicaciones, adaptación en tiempo real y chat
+// Coach DanTal: explicaciones, adaptación en tiempo real y chat
 // ---------------------------------------------------------------------
 // El motor (js/coach.js) funciona siempre, sin conexión. Si el usuario
 // conecta un modelo de lenguaje real (js/llm.js), el chat lo usa; si falla,
@@ -947,7 +947,7 @@ function panelCoach(pos) {
   const visibles = lista.filter(x => !ui.coachIgnorados.includes(x.id));
   if (!visibles.length && !expl) return '';
   return `<div class="coach-panel">
-    <p class="coach-panel-t"><span aria-hidden="true">🧠</span> Coach DANTAL</p>
+    <p class="coach-panel-t"><span aria-hidden="true">🧠</span> Coach DanTal</p>
     ${expl}
     ${visibles.map(x => tarjetaSugerencia(x, { i: x.i ?? null })).join('')}
   </div>`;
@@ -1070,7 +1070,7 @@ function coach() {
       : `<a class="tarjeta enlace-tarjeta coach-cta" href="#ajustes/coach">
         <span class="celda-t"><b>¿Quieres conversar con un modelo real?</b><small>Conecta tu clave de OpenAI, Gemini o Claude. Es opcional.</small></span><span class="chev">›</span></a>`;
   return pagina({
-    titulo: 'Coach DANTAL',
+    titulo: 'Coach DanTal',
     sub,
     extra: `<button class="icono" data-a="ir" data-v="ajustes/coach" title="Configurar el coach" aria-label="Configurar el coach">⚙️</button>`,
     cuerpo: `
@@ -1086,7 +1086,7 @@ function coach() {
       ${semana.length ? `<h2 class="coach-h">Sugerencias para tu semana</h2>${semana.map(x => tarjetaSugerencia(x)).join('')}` : ''}
       ${ui.coachChat.length ? '<button class="enlace centro bloque" data-a="coachLimpiar">🗑 Empezar una conversación nueva</button>' : ''}
       ${cta}
-      <p class="tenue">DANTAL no es un servicio médico. Ante cualquier duda de salud, consulta con un profesional.</p>
+      <p class="tenue">DanTal no es un servicio médico. Ante cualquier duda de salud, consulta con un profesional.</p>
     `,
   });
 }
@@ -1129,7 +1129,7 @@ function ajCoach() {
     cuerpo: `
       <div class="tarjeta">
         <h2>🧠 Cómo funciona</h2>
-        <p>El coach de DANTAL <b>ya funciona sin configurar nada</b>: te explica el cuánto y el porqué y adapta tus cargas con reglas basadas en tus datos.</p>
+        <p>El coach de DanTal <b>ya funciona sin configurar nada</b>: te explica el cuánto y el porqué y adapta tus cargas con reglas basadas en tus datos.</p>
         <p>Además, puedes <b>conversar en lenguaje natural</b>. Hay dos formas de mejorar el chat, de más sencilla a más potente:</p>
         <ol class="ciencia-puntos">
           <li><b>IA del navegador</b> (abajo): gratis, sin clave y sin salir del dispositivo. Solo en Chrome de escritorio.</li>
@@ -1164,7 +1164,7 @@ function ajCoach() {
         </div>
         ${ok ? `<p class="aviso-ia ${ok.ok ? 'ok' : 'mal'}">${ok.ok ? '✅ Funciona: el modelo ha respondido.' : `⚠️ ${esc(ok.error)}`}</p>` : ''}
       </form>
-      <p class="tenue">Tu clave se guarda <b>solo en este navegador</b>. No forma parte de tus datos, no se exporta y no se comparte. DANTAL no tiene servidor propio: tus preguntas van directamente del navegador al proveedor que elijas. Las claves son personales y pueden tener coste por uso.</p>
+      <p class="tenue">Tu clave se guarda <b>solo en este navegador</b>. No forma parte de tus datos, no se exporta y no se comparte. DanTal no tiene servidor propio: tus preguntas van directamente del navegador al proveedor que elijas. Las claves son personales y pueden tener coste por uso.</p>
       <p class="tenue">Estado actual: <b>${motor.tipo === 'clave' ? `IA real (${esc(motor.nombre)})` : motor.tipo === 'navegador' ? 'IA del navegador' : 'motor local'}</b>.</p>
     `,
   });
@@ -1181,8 +1181,8 @@ function coachFab(tab) {
     fab.className = 'coach-fab';
     fab.dataset.a = 'ir';
     fab.dataset.v = 'coach';
-    fab.title = 'Coach DANTAL';
-    fab.setAttribute('aria-label', 'Abrir el coach DANTAL');
+    fab.title = 'Coach DanTal';
+    fab.setAttribute('aria-label', 'Abrir el coach DanTal');
     fab.innerHTML = '<span aria-hidden="true">🧠</span>';
     document.body.appendChild(fab);
   }
@@ -1199,7 +1199,7 @@ function tarjetaCoach() {
   const chip = motor.tipo === 'clave' ? 'IA real conectada'
     : motor.tipo === 'navegador' ? 'IA del navegador · gratis' : 'Siempre disponible';
   return `<a class="tarjeta enlace-tarjeta" href="#coach">
-    <div class="fila"><h2>🧠 Coach DANTAL</h2><span class="chev">›</span></div>
+    <div class="fila"><h2>🧠 Coach DanTal</h2><span class="chev">›</span></div>
     <p class="tenue">${texto}</p>
     <span class="chip-mini ${motor.tipo === 'local' ? 'mudo' : 'ok'}">${chip}</span>
   </a>`;
@@ -1637,7 +1637,7 @@ function segPasos() {
         <div class="fila"><div><h2>🔁 Sincronización automática</h2><p class="tenue">${estado.saludSync ? `Última vez: ${fmtFechaHora(estado.saludSync)}` : 'Todavía no se ha sincronizado'}</p></div>
         <button class="btn sec" data-a="syncSalud">🔄 Sincronizar</button></div>
       </div>` : `<a class="tarjeta enlace-tarjeta" href="#ajustes/salud">
-        <div class="fila"><div><h2>🔁 Traer los pasos desde otra app</h2><p class="tenue">Conecta una hoja de Google y DANTAL los leerá solo.</p></div><span class="chev">›</span></div>
+        <div class="fila"><div><h2>🔁 Traer los pasos desde otra app</h2><p class="tenue">Conecta una hoja de Google y DanTal los leerá solo.</p></div><span class="chev">›</span></div>
       </a>`}
       <form id="formPasos" class="tarjeta" novalidate>
         <div class="fila"><h2>${edit ? '✏️ Editar día' : '➕ Añadir día'}</h2>${edit ? '<button type="button" class="enlace" data-a="cancelarPaso">Cancelar</button>' : ''}</div>
@@ -2176,15 +2176,15 @@ function nutricionIA() {
   const consumo = macrosDia();
   const avisos = generarInsightsDantal(estado, metas || {}, consumo);
   return pagina({
-    titulo: 'Asistente DANTAL', sub: 'Avisos a partir de tus datos',
+    titulo: 'Asistente DanTal', sub: 'Avisos a partir de tus datos',
     cuerpo: `
       ${subnav(SUBNAV_NUTRICION, 'nutricion/ia')}
       <div class="tarjeta"><h2>🤖 Tu resumen</h2>
-        <p class="tenue">DANTAL separa siempre el <b>Dato real</b> (lo que has registrado) de la <b>Estimación</b> (cálculos metabólicos o de recuperación).</p></div>
+        <p class="tenue">DanTal separa siempre el <b>Dato real</b> (lo que has registrado) de la <b>Estimación</b> (cálculos metabólicos o de recuperación).</p></div>
       ${avisos.map(a => `<div class="insight ${a.tipo === 'Estimación' ? 'estimacion' : ''}">
         <span class="ins-ic">${a.icono}</span>
         <div class="ins-t"><span class="ins-tipo">${a.tipo}</span><b>${esc(a.titulo)}</b><p>${esc(a.texto)}</p></div></div>`).join('')}
-      <p class="tenue">DANTAL no es un servicio médico. Ante cualquier duda sobre alimentación o salud, consulta con un profesional.</p>
+      <p class="tenue">DanTal no es un servicio médico. Ante cualquier duda sobre alimentación o salud, consulta con un profesional.</p>
     `,
   });
 }
@@ -2657,7 +2657,7 @@ function ajAcerca() {
       <div class="tarjeta"><h2>💚 Recuperación</h2>
         <p>Se estima con las series de cada músculo y las horas desde que lo entrenaste (de 36 a 72 horas).</p></div>
       <div class="tarjeta"><h2>🍎 Nutrición</h2>
-        <p>Registra lo que comes y bebes en el diario. DANTAL calcula tus objetivos con la fórmula de Mifflin-St Jeor y te avisa de lo que te falta, separando siempre los datos reales de las estimaciones.</p></div>
+        <p>Registra lo que comes y bebes en el diario. DanTal calcula tus objetivos con la fórmula de Mifflin-St Jeor y te avisa de lo que te falta, separando siempre los datos reales de las estimaciones.</p></div>
       <div class="tarjeta"><h2>🔒 Seguridad</h2>
         <p>Puedes proteger la app con una contraseña que se guarda cifrada (SHA-256 con salt) en este dispositivo. Si la olvidas, tienes tres formas de recuperar el acceso: la pregunta de seguridad, un código por correo o el código maestro.</p></div>
       <div class="tarjeta"><h2>🎨 Iconos</h2>
@@ -2676,14 +2676,14 @@ function ajSalud() {
     cuerpo: `
       <div class="tarjeta">
         <h2>📥 Trae tus datos desde otra app</h2>
-        <p>Exporta de <b>Google Fit</b>, <b>Health Connect</b>, tu reloj o cualquier app de salud un archivo <b>CSV</b> o <b>JSON</b>, y DANTAL leerá el <b>peso</b>, la <b>grasa</b>, los <b>perímetros</b> y la <b>actividad diaria</b> (pasos, distancia y calorías) que encuentre.</p>
+        <p>Exporta de <b>Google Fit</b>, <b>Health Connect</b>, tu reloj o cualquier app de salud un archivo <b>CSV</b> o <b>JSON</b>, y DanTal leerá el <b>peso</b>, la <b>grasa</b>, los <b>perímetros</b> y la <b>actividad diaria</b> (pasos, distancia y calorías) que encuentre.</p>
         <p class="tenue">Los días que ya tenías se completan sin borrar nada; los días nuevos se añaden. La actividad de un día se actualiza con el valor más reciente.</p>
         <label class="btn" for="archivoSalud">📄 Elegir archivo CSV o JSON</label>
         <input id="archivoSalud" type="file" accept=".csv,text/csv,.json,application/json" data-a="importarSalud" hidden>
       </div>
       <div class="tarjeta">
         <h2>🔁 Sincronizar automáticamente</h2>
-        <p>Si prefieres no importar a mano, pega aquí la dirección de una <b>hoja de Google publicada como CSV</b> (o de cualquier archivo CSV/JSON en internet). DANTAL la leerá sola y traerá los datos nuevos.</p>
+        <p>Si prefieres no importar a mano, pega aquí la dirección de una <b>hoja de Google publicada como CSV</b> (o de cualquier archivo CSV/JSON en internet). DanTal la leerá sola y traerá los datos nuevos.</p>
         <form id="formSaludFuente">
           <label class="campo">Dirección (URL)<input type="url" name="url" value="${esc(estado.saludUrl || '')}" placeholder="https://docs.google.com/spreadsheets/d/e/…/pub?output=csv" inputmode="url" autocomplete="off"></label>
           <div class="botones">
@@ -2747,7 +2747,7 @@ function abrirEnvio(item) {
   const cuerpo = textoIncidencia(item);
   const num = String(d.whatsapp || '').replace(/[^\d]/g, '');
   const enlaces = [];
-  if (d.correo) enlaces.push(`<a class="btn sec" href="mailto:${encodeURIComponent(d.correo)}?subject=${encodeURIComponent('[DANTAL] ' + item.titulo)}&body=${encodeURIComponent(cuerpo)}">✉️ Enviar por correo</a>`);
+  if (d.correo) enlaces.push(`<a class="btn sec" href="mailto:${encodeURIComponent(d.correo)}?subject=${encodeURIComponent('[DanTal] ' + item.titulo)}&body=${encodeURIComponent(cuerpo)}">✉️ Enviar por correo</a>`);
   if (num) enlaces.push(`<a class="btn sec" href="https://wa.me/${num}?text=${encodeURIComponent(cuerpo)}" target="_blank" rel="noopener">💬 Enviar por WhatsApp</a>`);
   render();
   modal(`<h2>¡Gracias! 🙌</h2>
@@ -4116,7 +4116,7 @@ document.addEventListener('click', async ev => {
       break;
     case 'incExportar': {
       const inc = cargarIncidencias();
-      descargar(JSON.stringify({ app: 'DANTAL', tipo: 'incidencias', exportado: new Date().toISOString(), ...inc }, null, 2), 'application/json', 'incidencias');
+      descargar(JSON.stringify({ app: 'DanTal', tipo: 'incidencias', exportado: new Date().toISOString(), ...inc }, null, 2), 'application/json', 'incidencias');
       toast('Ideas e incidencias descargadas'); break;
     }
     case 'incCopiar': {
@@ -4143,7 +4143,7 @@ document.addEventListener('click', async ev => {
     case 'videoQuitar': conDeshacer('Vídeo quitado', () => { delete estado.videos[d.id]; }); break;
     case 'fotoQuitar': conDeshacer('Foto quitada', () => { delete estado.fotos[d.id]; }); break;
     case 'descDeshacer': { const f = temporizador.deshacer; pararDescanso(); f?.(); break; }
-    // ---- Coach DANTAL ----
+    // ---- Coach DanTal ----
     case 'coachAccion': coachAplicar(d); break;
     case 'coachIgnorar': coachIgnorar(d.sug); break;
     case 'coachPreg': coachEnviar(d.q); break;

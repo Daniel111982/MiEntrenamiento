@@ -1,5 +1,5 @@
 // =====================================================================
-// Coach DANTAL · motor local de explicaciones y adaptación en tiempo real
+// Coach DanTal · motor local de explicaciones y adaptación en tiempo real
 // ---------------------------------------------------------------------
 // Este módulo NO necesita internet. Analiza tu programa, tus series y tu
 // historial, y devuelve sugerencias que tú confirmas con un toque.
@@ -445,7 +445,7 @@ export function responder(pregunta, ctx) {
     if (tiene('dolor', 'lesion', 'lesión')) return {
       titulo: 'Sobre el dolor o una molestia',
       html: `<p>Si notas dolor articular, pinchazos o una molestia que no es simple agujetas, <b>para ese ejercicio</b> y no entrenes a través del dolor.</p>
-      <p>DANTAL no es un servicio médico. Ante cualquier duda, consulta con un fisio o un profesional sanitario antes de seguir.</p>`,
+      <p>DanTal no es un servicio médico. Ante cualquier duda, consulta con un fisio o un profesional sanitario antes de seguir.</p>`,
     };
     return {
       titulo: 'Recuperación',

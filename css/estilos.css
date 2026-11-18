@@ -1,5 +1,5 @@
 /* =====================================================================
-   DANTAL · estilos
+   DanTal · estilos
    Paleta petróleo / turquesa inspirada en el Atlántico.
    ===================================================================== */
 :root {
@@ -569,16 +569,16 @@ input[type=url] { width: 100%; padding: 12px; border-radius: 12px; border: 1px s
 .usuario-card.con-info > .info { top: 26px; right: 62px; }
 
 /* =====================================================================
-   DANTAL · marca, nutrición, Technogym, acceso y ayudas
+   DanTal · marca, nutrición, Technogym, acceso y ayudas
    ===================================================================== */
 
 /* ---------- Marca ---------- */
 .marca-logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--texto); }
 .marca-isotipo { display: block; flex: none; }
 .marca-logo-t { display: flex; flex-direction: column; line-height: 1.05; }
-.marca-logo-t b { font-size: 1.35rem; letter-spacing: .16em; font-weight: 800; }
+.marca-logo-t b { font-size: 1.35rem; letter-spacing: .06em; font-weight: 800; }
 .marca-logo-t small { font-size: .58rem; letter-spacing: .18em; color: var(--tenue); font-weight: 600; }
-.marca-logo.compacto .marca-logo-t b { font-size: 1.05rem; letter-spacing: .12em; }
+.marca-logo.compacto .marca-logo-t b { font-size: 1.05rem; letter-spacing: .05em; }
 .marca-logo.claro .marca-logo-t b { color: #fff; }
 .marca-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 12px; }
 .marca-cabecera .frase-marca { margin: 0; font-size: .78rem; color: var(--tenue); text-align: right; }
@@ -723,7 +723,7 @@ input[type=url] { width: 100%; padding: 12px; border-radius: 12px; border: 1px s
 .estudio-t { font-size: .82rem; line-height: 1.35; }
 .estudio-t small { display: block; color: var(--acento); font-weight: 700; margin-top: 3px; font-size: .72rem; }
 
-/* ---------- Coach DANTAL ---------- */
+/* ---------- Coach DanTal ---------- */
 .btn.peq { padding: 7px 12px; font-size: .84rem; border-radius: 11px; margin: 0; flex: none; }
 .chip-mini.ok { background: var(--acento); color: var(--sobre-acento); }
 .chip-mini.mudo { background: color-mix(in srgb, var(--tenue) 20%, var(--tarjeta)); color: var(--tenue); }
