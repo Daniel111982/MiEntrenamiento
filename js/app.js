@@ -24,6 +24,11 @@ import {
 } from './coach.js';
 import { PROVEEDORES, leerConfig, guardarConfig, borrarConfig, chatear, probar, detectarNano, nanoActivo, nanoEstadoSync, activarNano, probarNano } from './llm.js';
 import { ICONOS_AVATAR, LISTA_ICONOS } from './avatares.js';
+import {
+  OBJETIVOS_CARRERA, NIVELES_CARRERA, DURACIONES, DISTANCIAS,
+  generarPlanCarrera, progresoCarrera, sesionesSemana, proximaCarrera, semanaCarrera,
+  resumenPlan, resumenHechas, ritmosDe, facilDesdeMarca, marcasDesde, leerTiempo, fmtRitmo, fmtTiempo, fmtKm,
+} from './carrera.js';
 
 // =====================================================================
 // Estado
@@ -41,6 +46,7 @@ const vacio = () => ({
   actividad: [], saludUrl: '', saludSync: '',
   nutricion: { ...NUTRICION_DEF }, ajustes: { recordatorio: false, hora: '18:00', avisado: '', ayudas: true, consejoVisto: false },
   comidas: {}, agua: {}, ejerciciosPropios: [], seguridad: null, avisos: [],
+  carrera: null, carreraEnCurso: null,
 });
 const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const AVATARES = [
@@ -110,6 +116,8 @@ function cargar(id = usuarios.activo) {
       ejerciciosPropios: Array.isArray(d.ejerciciosPropios) ? d.ejerciciosPropios : [],
       seguridad: d.seguridad && typeof d.seguridad === 'object' ? d.seguridad : null,
       avisos: Array.isArray(d.avisos) ? d.avisos : [],
+      carrera: d.carrera && typeof d.carrera === 'object' ? d.carrera : null,
+      carreraEnCurso: d.carreraEnCurso && typeof d.carreraEnCurso === 'object' ? d.carreraEnCurso : null,
     };
   } catch { /* datos corruptos */ }
   return vacio();
@@ -299,6 +307,13 @@ const RUTAS = [
   [/^seguimiento\/historial$/, segHistorial, 'seguimiento'],
   [/^seguimiento\/calculadora$/, segCalculadora, 'seguimiento'],
   [/^historial\/(\d+)$/, historialDetalle, 'seguimiento'],
+  [/^carrera$/, carrera, 'carrera'],
+  [/^carrera\/nueva$/, carreraNueva, 'carrera'],
+  [/^carrera\/plan$/, carreraPlan, 'carrera'],
+  [/^carrera\/sesion\/([\w-]+)$/, carreraSesion, 'carrera'],
+  [/^carrera\/entreno$/, carreraEntreno, 'carrera'],
+  [/^carrera\/historial$/, carreraHistorial, 'carrera'],
+  [/^carrera\/calculadora$/, carreraCalculadora, 'carrera'],
   [/^nutricion$/, nutricion, 'nutricion'],
   [/^nutricion\/diario$/, nutricion, 'nutricion'],
   [/^nutricion\/recetas$/, nutricionRecetas, 'nutricion'],
@@ -345,6 +360,7 @@ function render() {
     r = 'hoy';
   }
   if (r === 'sesion' && !estado.enCurso) r = 'hoy';
+  if (r === 'carrera/entreno' && !estado.carreraEnCurso) r = 'carrera';
   let entrada = RUTAS.find(([re]) => re.test(r));
   if (!entrada) { r = 'hoy'; entrada = RUTAS[0]; }
   const [re, pagina, tab] = entrada;
@@ -360,15 +376,20 @@ function render() {
   render.ultima = r;
   document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('activo', a.dataset.v === tab));
   pintarBadges();
-  $('.nav').hidden = !estado.plan || tab === 'sesion' || tab === 'bienvenida' || tab === 'login' || tab === 'recuperar';
+  $('.nav').hidden = !estado.plan || tab === 'sesion' || tab === 'bienvenida' || tab === 'login' || tab === 'recuperar' || r === 'carrera/entreno';
+  const navEl = $('.nav');
+  const navAct = navEl.querySelector('a.activo');
+  if (navAct && navEl.scrollWidth > navEl.clientWidth) navEl.scrollLeft = navAct.offsetLeft - (navEl.clientWidth - navAct.offsetWidth) / 2;
   coachFab(tab);
   if ($('#grafica')) dibujarGrafica();
   if ($('#graficaMedidas')) dibujarGraficaMedidas();
   if ($('#graficaPasos')) dibujarGraficaPasos();
   if ($('#nutriResultados')) actualizarNutricion();
+  if ($('#calcCarRes')) actualizarCalcCarrera();
   const chat = $('#coachChat');
   if (chat) chat.scrollTop = chat.scrollHeight;
   if (tab === 'sesion') actualizarCrono();
+  if (r === 'carrera/entreno') actualizarCronoCarrera();
   document.body.classList.toggle('sin-ayudas', estado.ajustes.ayudas === false);
   esconderAyuda();
   aplicarAyudas();
@@ -629,6 +650,7 @@ function inicio() {
           ${tile('💧', `${(vasos * VASO_ML / 1000).toFixed(2)} L`, metas ? `de ${(metas.aguaMl / 1000).toFixed(1)} L` : 'agua', 'azul')}
         </div></a>`;
     })()}
+    ${tarjetaCarreraInicio()}
     ${tarjetaCoach()}
     <a class="tarjeta enlace-tarjeta" href="#seguimiento/recuperacion">
       <div class="fila"><h2>Recuperación muscular</h2><span class="chev">›</span></div>
@@ -4028,6 +4050,395 @@ function regenerar(perfil) {
 
 
 // =====================================================================
+// Running: plan de carrera a pie
+// =====================================================================
+// Se apoya en js/carrera.js (motor puro). Los datos viven en estado.carrera,
+// independientes del programa de gimnasio (estado.plan).
+const SENSACIONES = { facil: ['😌', 'Fácil'], bien: ['🙂', 'Bien'], duro: ['🥵', 'Duro'] };
+const sensTxt = s => SENSACIONES[s] ? `${SENSACIONES[s][0]} ${SENSACIONES[s][1]}` : '';
+const carPlan = () => (estado.carrera && estado.carrera.plan) || null;
+const carHechas = () => (estado.carrera && Array.isArray(estado.carrera.hechas)) ? estado.carrera.hechas : [];
+
+// Tiempo del entrenamiento de running en curso (segundos).
+function tiempoCarrera() {
+  const c = estado.carreraEnCurso;
+  return c ? (c.acumulado + (c.pausado ? 0 : Date.now() - c.reanudado)) / 1000 : 0;
+}
+function actualizarCronoCarrera() {
+  const el = $('#cronoCar');
+  if (el && estado.carreraEnCurso) el.textContent = fmtSeg(tiempoCarrera()) + (estado.carreraEnCurso.pausado ? ' · en pausa' : '');
+}
+
+// Resumen de un bloque: tiempo, distancia, repeticiones, ritmo y recuperación.
+function metaBloque(b) {
+  const p = [];
+  if (b.min) p.push(`⏱ ${b.min} min`);
+  if (b.km) p.push(`📍 ${fmtKm(b.km)}`);
+  if (b.reps) p.push(`🔁 ${b.reps}${b.dist ? ` × ${b.dist} m` : ''}`);
+  if (b.ritmo) p.push(`🎯 ${fmtRitmo(b.ritmo)}`);
+  if (b.rec) p.push(`↩ ${b.rec}`);
+  return p.join(' · ');
+}
+
+function bloquesHTML(bloques, { editable = false, pos = -1 } = {}) {
+  return `<ul class="bloques">${(bloques || []).map((b, k) => `
+    <li class="${b.hecho ? 'hecho' : ''} ${k === pos ? 'activo' : ''}">
+      ${editable ? `<button class="check" data-a="carBloque" data-k="${k}" aria-label="Bloque hecho">${b.hecho ? '✓' : ''}</button>` : ''}
+      <div>
+        <div class="blo-etq">${esc(b.etiqueta || '')}</div>
+        <div class="blo-txt">${esc(b.texto || '')}</div>
+        ${metaBloque(b) ? `<div class="blo-meta">${metaBloque(b)}</div>` : ''}
+      </div>
+    </li>`).join('')}</ul>`;
+}
+
+function filaSesionCarrera(s) {
+  const est = s.estado === 'hecha' ? 'hecha' : (s.fecha < hoy() ? 'perdida' : 'pendiente');
+  const etq = { hecha: '✓ Hecha', perdida: '! Perdida', pendiente: s.fecha === hoy() ? 'Hoy' : 'Pendiente' }[est];
+  return `<div class="dia-fila ${est} ${s.fecha === hoy() ? 'hoy' : ''}">
+    <div class="dia-fecha"><small>${DIAS[s.dia].slice(0, 3)}</small><b>${deIso(s.fecha).getDate()}</b></div>
+    <div class="dia-cont">
+      <a class="enlace fuerte" href="#carrera/sesion/${s.id}">${s.icono} ${esc(s.nombre)}</a><br>
+      <span class="tenue">${s.min} min${s.km ? ` · ${fmtKm(s.km)}` : ''} · ${esc(s.foco)}</span><br>
+      <span class="estado-${est}">${etq}</span>
+    </div>
+    <div class="acciones">
+      ${est !== 'hecha' ? `<button class="icono" title="Empezar" data-a="carEmpezar" data-id="${s.id}">▶</button>` : ''}
+    </div>
+  </div>`;
+}
+
+function barraSemanasCarrera(plan, sem) {
+  return `<div class="ciclo" style="grid-template-columns:repeat(${plan.semanas},1fr)">${Array.from({ length: plan.semanas }, (_, i) => {
+    const w = i + 1, p = progresoCarrera(w, plan.semanas);
+    return `<span class="f-A ${w === sem ? 'act' : ''} ${w < sem ? 'pasada' : ''} ${p.descarga ? 'desc' : ''} ${p.test ? 'f-R' : ''}" title="Semana ${w}: ${p.nombre}"></span>`;
+  }).join('')}</div>`;
+}
+
+function tarjetaProxCarrera(s) {
+  return `<div class="hero">
+    <p class="eyebrow">Próximo entrenamiento · ${fmtFecha(s.fecha)}</p>
+    <h2>${s.icono} ${esc(s.nombre)}</h2>
+    <p>${esc(s.desc)}</p>
+    <div class="badges"><span class="badge">⏱ ${s.min} min</span>${s.km ? `<span class="badge">📍 ${fmtKm(s.km)}</span>` : ''}<span class="badge">${esc(s.foco)}</span><span class="badge">Semana ${s.semana}</span></div>
+    <div class="botones">
+      <button class="btn" data-a="carEmpezar" data-id="${s.id}">▶ Empezar</button>
+      <a class="btn sec" href="#carrera/sesion/${s.id}">Ver sesión</a>
+    </div>
+  </div>`;
+}
+
+// Tarjeta de acceso a Running desde la pantalla de Hoy.
+function tarjetaCarreraInicio() {
+  const plan = carPlan();
+  const rh = resumenHechas(carHechas());
+  if (!plan) return `<a class="tarjeta enlace-tarjeta" href="#carrera">
+    <div class="fila"><h2>🏃 Running</h2><span class="chev">›</span></div>
+    <p class="tenue">Empieza a correr con un plan a tu medida: resistencia, velocidad, 5K, 10K o media maratón.</p></a>`;
+  const prox = proximaCarrera(plan);
+  return `<a class="tarjeta enlace-tarjeta" href="#carrera">
+    <div class="fila"><h2>🏃 Running</h2><span class="chev">›</span></div>
+    ${prox ? `<p><b>${prox.icono} ${esc(prox.nombre)}</b> · ${fmtFecha(prox.fecha)}<br><span class="tenue">${prox.min} min${prox.km ? ` · ${fmtKm(prox.km)}` : ''}</span></p>`
+      : '<p class="tenue">¡Plan completado! Crea uno nuevo para seguir mejorando.</p>'}
+    <div class="tiles">
+      ${tile('🏃', rh.veces, 'carreras', 'verde')}
+      ${tile('📍', `${fmtDec(rh.km)} km`, 'recorridos', 'azul')}
+      ${tile('⏱', rh.ritmo ? fmtRitmo(rh.ritmo) : '–', 'ritmo medio', 'violeta')}
+    </div></a>`;
+}
+
+function carrera() {
+  const plan = carPlan();
+  if (!plan) return carreraVacia();
+  const objetivo = OBJETIVOS_CARRERA[plan.objetivo] || {};
+  const nivel = NIVELES_CARRERA[plan.nivel] || {};
+  const sem = semanaCarrera(plan);
+  const prox = proximaCarrera(plan);
+  const rh = resumenHechas(carHechas());
+  const res = resumenPlan(plan);
+  const ses = sesionesSemana(plan, sem);
+  const hechasSem = ses.filter(s => s.estado === 'hecha').length;
+  const c = estado.carreraEnCurso;
+  const p = progresoCarrera(sem, plan.semanas);
+  return pagina({
+    titulo: 'Running',
+    sub: `${objetivo.icono || '🏃'} ${objetivo.nombre || ''} · ${nivel.nombre || ''} · ${plan.dias.length} días/semana · ${plan.semanas} semanas`,
+    extra: '<a class="icono" href="#carrera/nueva" title="Cambiar el plan">✎</a>',
+    cuerpo: `
+      ${c ? `<div class="hero ok"><p class="eyebrow">Entrenamiento en curso</p><h2>${c.icono} ${esc(c.nombre)}</h2>
+        <p>${c.bloques.filter(b => b.hecho).length} de ${c.bloques.length} bloques hechos</p>
+        <button class="btn" data-a="ir" data-v="carrera/entreno">Continuar entrenamiento</button></div>` : ''}
+      ${prox ? tarjetaProxCarrera(prox) : `<div class="hero ok"><p class="eyebrow">Plan terminado</p><h2>¡Has completado tu plan! 🏆</h2><p>Crea uno nuevo para seguir mejorando.</p><a class="btn" href="#carrera/nueva">Nuevo plan</a></div>`}
+      <div class="tiles">
+        ${tile('✅', `${hechasSem}/${ses.length}`, 'esta semana', 'verde')}
+        ${tile('🏃', rh.veces, 'carreras', 'azul')}
+        ${tile('📍', `${fmtDec(rh.km)} km`, 'recorridos', 'violeta')}
+      </div>
+      <div class="tarjeta">
+        <div class="fila"><div><p class="eyebrow">Semana ${sem} de ${plan.semanas}</p><h2>${p.nombre}</h2></div>
+          <div class="anillo-mini" style="--p:${sem / plan.semanas}"><b>${sem}/${plan.semanas}</b></div></div>
+        ${barraSemanasCarrera(plan, sem)}
+        <p class="tenue">${p.descarga ? 'Semana de descarga: menos kilómetros para asimilar el trabajo.' : p.test ? 'Semana del test: toca comprobar tu progreso.' : 'Entrena a tus ritmos y descansa lo que necesites.'}</p>
+      </div>
+      <div class="semana-lista">${ses.map(filaSesionCarrera).join('')}</div>
+      ${grupo('Tu running',
+        celda('carrera/plan', '🗓️', 'Plan completo', `${res.sesiones} sesiones · ${res.km} km · ~${res.horas} h`, 'azul') +
+        celda('carrera/historial', '📒', 'Historial de carreras', carHechas().length ? `${rh.veces} carreras · ${fmtDec(rh.km)} km` : 'Registra tus carreras', 'verde') +
+        celda('carrera/calculadora', '🧮', 'Calculadora de ritmos y marcas', 'Predice tus tiempos y calcula tus ritmos', 'violeta') +
+        celda('carrera/nueva', '🔁', 'Cambiar objetivo o regenerar', 'Elige otro objetivo, nivel o días', 'naranja'))}
+    `,
+  });
+}
+
+function carreraVacia() {
+  const hechas = carHechas();
+  return pagina({
+    titulo: 'Running',
+    sub: 'Tu plan de carrera a pie',
+    cuerpo: `
+      ${vacioMsg('🏃', 'Empieza a correr', 'Crea un plan adaptado a tu objetivo: empezar desde cero, ganar resistencia o velocidad, preparar un 5K, un 10K o una media maratón.', '<a class="btn" href="#carrera/nueva">Crear mi plan de running</a>')}
+      ${grupo('Herramientas',
+        celda('carrera/calculadora', '🧮', 'Calculadora de ritmos y marcas', 'Calcula tus tiempos y tus ritmos de entrenamiento', 'violeta') +
+        celda('carrera/historial', '📒', 'Historial de carreras', hechas.length ? `${hechas.length} registradas` : 'Aún no has registrado ninguna', 'azul'))}
+    `,
+  });
+}
+
+function carreraPlan() {
+  const plan = carPlan();
+  if (!plan) return null;
+  const objetivo = OBJETIVOS_CARRERA[plan.objetivo] || {};
+  return pagina({
+    titulo: 'Plan de running', padre: 'carrera',
+    sub: `${objetivo.icono || ''} ${objetivo.nombre || ''} · ${plan.semanas} semanas`,
+    cuerpo: Array.from({ length: plan.semanas }, (_, i) => {
+      const w = i + 1, p = progresoCarrera(w, plan.semanas);
+      return `<h2 class="sec-tit">Semana ${w} · ${p.nombre}${p.descarga ? ' · descarga' : ''}${p.test ? ' · test 🏁' : ''}</h2>
+        <div class="semana-lista">${sesionesSemana(plan, w).map(filaSesionCarrera).join('')}</div>`;
+    }).join(''),
+  });
+}
+
+function carreraSesion(id) {
+  const s = carPlan()?.sesiones.find(x => x.id === id);
+  if (!s) return null;
+  const hecha = s.estado === 'hecha';
+  return pagina({
+    titulo: `${s.icono} ${esc(s.nombre)}`, padre: 'carrera/plan',
+    sub: `${fmtFecha(s.fecha)} · Semana ${s.semana} · ${esc(s.foco)}`,
+    cuerpo: `
+      <div class="hero compacto">
+        <div class="badges"><span class="badge">⏱ ${s.min} min</span>${s.km ? `<span class="badge">📍 ${fmtKm(s.km)}</span>` : ''}${hecha ? '<span class="badge">✓ Hecha</span>' : ''}</div>
+        <p>${esc(s.desc)}</p>
+        <div class="botones">
+          <button class="btn" data-a="carEmpezar" data-id="${s.id}">▶ ${hecha ? 'Repetir' : 'Empezar'}</button>
+          ${hecha ? '' : `<button class="btn sec" data-a="carHechaYa" data-id="${s.id}">✓ Ya la he hecho</button>`}
+        </div>
+      </div>
+      <div class="tarjeta">${bloquesHTML(s.bloques)}</div>
+    `,
+  });
+}
+
+function carreraEntreno() {
+  const c = estado.carreraEnCurso;
+  if (!c) return null;
+  const total = c.bloques.length;
+  const hechos = c.bloques.filter(b => b.hecho).length;
+  const pos = c.bloques.findIndex(b => !b.hecho);
+  return `
+    <header class="cab-sesion">
+      <button class="icono" data-a="carSalir" title="Salir (el entrenamiento queda abierto)">‹ Salir</button>
+      <div class="centro"><b>${c.icono} ${esc(c.nombre)}</b><br><span id="cronoCar" class="crono"></span></div>
+      <button class="icono" data-a="carPausa" title="${c.pausado ? 'Reanudar' : 'Pausar'}">${c.pausado ? '▶' : '❚❚'}</button>
+    </header>
+    <div class="progreso-ses"><i style="width:${total ? (hechos / total) * 100 : 0}%"></i></div>
+    <p class="tenue centro">${hechos} de ${total} bloques</p>
+    ${c.pausado ? '<div class="alerta centro"><b>Entrenamiento en pausa</b><br><button class="btn" data-a="carPausa">Reanudar</button></div>' : ''}
+    ${pos === -1 ? `<div class="hero ok"><h2>¡Entrenamiento completado! 🎉</h2><p>Guarda tu carrera para el historial.</p><button class="btn" data-a="carTerminar">Guardar y terminar</button></div>`
+      : `<div class="guiado">
+          <p class="eyebrow">${esc(c.bloques[pos].etiqueta || '')} · bloque ${pos + 1} de ${total}</p>
+          <h2>${esc(c.bloques[pos].texto || '')}</h2>
+          ${metaBloque(c.bloques[pos]) ? `<p class="tenue">${metaBloque(c.bloques[pos])}</p>` : ''}
+          <button class="btn" data-a="carBloque" data-k="${pos}">✓ Bloque hecho</button>
+        </div>`}
+    <h2 class="sec-tit">Bloques del entrenamiento</h2>
+    <div class="tarjeta">${bloquesHTML(c.bloques, { editable: true, pos })}</div>
+    <button class="btn" data-a="carTerminar">Guardar y terminar</button>
+    <button class="btn peligro" data-a="carDescartar">Descartar entrenamiento</button>
+  `;
+}
+
+function carreraHistorial() {
+  const todas = carHechas();
+  const lista = todas.slice().reverse();
+  const rh = resumenHechas(todas);
+  return pagina({
+    titulo: 'Historial de running', padre: 'carrera',
+    extra: '<button class="icono" data-a="carAdd" title="Registrar una carrera">＋</button>',
+    sub: todas.length ? `${rh.veces} carreras · ${fmtDec(rh.km)} km` : '',
+    cuerpo: lista.length ? `
+      <div class="tiles">
+        ${tile('🏃', rh.veces, 'carreras', 'azul')}
+        ${tile('📍', `${fmtDec(rh.km)} km`, 'recorridos', 'verde')}
+        ${tile('⏱', rh.ritmo ? fmtRitmo(rh.ritmo) : '–', 'ritmo medio', 'violeta')}
+      </div>
+      <div class="semana-lista">${lista.map((h, ri) => {
+        const i = todas.length - 1 - ri;
+        return `<div class="dia-fila">
+          <div class="dia-fecha"><small>${fmtDia(h.fecha)}</small><b class="car-dia-km">${h.km ? fmtDec(h.km) : '—'}</b></div>
+          <div class="dia-cont"><b>${esc(h.nombre || 'Carrera')}</b><br>
+            <span class="tenue">${h.seg ? fmtTiempo(h.seg) : (h.min ? `${h.min} min` : '')}${h.ritmo ? ` · ${fmtRitmo(h.ritmo)}` : ''}${h.sensacion ? ` · ${sensTxt(h.sensacion)}` : ''}</span></div>
+          <div class="acciones"><button class="icono" data-a="carBorrar" data-i="${i}" title="Borrar">🗑️</button></div>
+        </div>`;
+      }).join('')}</div>
+    ` : vacioMsg('📒', 'Aún no has registrado carreras', 'Cuando termines un entrenamiento o corras por tu cuenta, anótalo aquí.', '<button class="btn" data-a="carAdd">Registrar una carrera</button>'),
+  });
+}
+
+const RITMOS_TXT = [
+  ['recuperacion', 'Recuperación'], ['suave', 'Rodaje suave'], ['largo', 'Tirada larga'], ['progresivo', 'Progresivo'],
+  ['fartlek', 'Fartlek'], ['tempo', 'Tempo'], ['umbral', 'Umbral'], ['series_largas', 'Series largas'],
+  ['series_cortas', 'Series cortas'], ['cuestas', 'Cuestas'],
+];
+
+function carreraCalculadora() {
+  return pagina({
+    titulo: 'Calculadora de ritmos', padre: 'carrera', sub: 'A partir de una marca real',
+    cuerpo: `
+      <div class="tarjeta">
+        <p class="tenue">Escribe una distancia y un tiempo que hayas hecho (una carrera, un test, un entrenamiento fuerte). Te diré qué ritmos entrenar y qué tiempos podrías lograr.</p>
+        <form id="formCalcCarrera" novalidate>
+          <label class="campo">Distancia
+            <select name="dist" data-a="calcCar">${DISTANCIAS.map(d => `<option value="${d.id}">${d.nombre}</option>`).join('')}</select>
+          </label>
+          <label class="campo">Tiempo (mm:ss o hh:mm:ss)
+            <input type="text" name="tiempo" data-a="calcCar" inputmode="numeric" placeholder="50:00" autocomplete="off">
+          </label>
+        </form>
+      </div>
+      <div id="calcCarRes"></div>
+    `,
+  });
+}
+
+function actualizarCalcCarrera() {
+  const cont = $('#calcCarRes');
+  const form = $('#formCalcCarrera');
+  if (!cont || !form) return;
+  const dist = DISTANCIAS.find(d => d.id === form.querySelector('[name=dist]')?.value) || DISTANCIAS[2];
+  const seg = leerTiempo(form.querySelector('[name=tiempo]')?.value);
+  if (!seg) { cont.innerHTML = '<p class="tenue centro">Escribe un tiempo para ver el resultado.</p>'; return; }
+  const ritmo = Math.round(seg / dist.km);
+  const facil = facilDesdeMarca(dist.km, seg);
+  const ritmos = ritmosDe(facil);
+  cont.innerHTML = `
+    <div class="tarjeta">
+      <div class="fila"><h2>Tu marca</h2><span class="badge prim">${dist.nombre}</span></div>
+      <div class="nutri-linea"><span>Tiempo</span><b>${fmtTiempo(seg)}</b></div>
+      <div class="nutri-linea"><span>Ritmo medio</span><b>${fmtRitmo(ritmo)}</b></div>
+      <div class="nutri-linea destacada"><span>Ritmo fácil recomendado</span><b>${fmtRitmo(facil)}</b></div>
+    </div>
+    <h2 class="sec-tit">🏁 Tiempos que podrías lograr</h2>
+    <div class="tarjeta">${marcasDesde(dist.km, seg).map(m => `<div class="nutri-linea"><span>${m.nombre}</span><b>${fmtTiempo(m.seg)} <small class="tenue">(${fmtRitmo(m.ritmo)})</small></b></div>`).join('')}</div>
+    ${ritmos ? `<h2 class="sec-tit">🎯 Tus ritmos de entrenamiento</h2>
+      <div class="tarjeta">${RITMOS_TXT.map(([k, t]) => `<div class="nutri-linea"><span>${t}</span><b>${fmtRitmo(ritmos[k])}</b></div>`).join('')}</div>
+      <p class="tenue centro">Los ritmos son una referencia: ajústalos a cómo te sientes cada día.</p>` : ''}
+  `;
+}
+
+function carreraNueva() {
+  const p = estado.carrera?.perfil || {};
+  const objetivo = p.objetivo || 'resistencia';
+  const nivel = p.nivel || 'principiante';
+  const dias = (p.dias && p.dias.length ? p.dias : [0, 2, 4]).map(Number);
+  const semanas = p.semanas || OBJETIVOS_CARRERA[objetivo]?.semanas || 8;
+  const inicio = p.inicio && p.inicio >= hoy() ? p.inicio : hoy();
+  const marcaDist = p.marca?.dist || '';
+  const marcaTiempo = p.marca?.seg ? fmtTiempo(p.marca.seg) : '';
+  const chk = (a, b) => String(a) === String(b) ? 'checked' : '';
+  return pagina({
+    titulo: estado.carrera?.plan ? 'Cambiar el plan' : 'Nuevo plan de running',
+    padre: estado.carrera?.plan ? 'carrera' : null,
+    sub: 'Responde y te preparo el plan',
+    cuerpo: `<form id="formCarrera" novalidate>
+      <fieldset>
+        <legend>¿Cuál es tu objetivo?</legend>
+        <p class="tenue ayuda">Adapta los tipos de sesión y la progresión del plan.</p>
+        <div class="opciones">${Object.entries(OBJETIVOS_CARRERA).map(([k, o]) => `<label class="chip grande"><input type="radio" name="objetivo" value="${k}" ${chk(objetivo, k)} required><span class="op-ic">${o.icono}</span>${o.nombre}<small>${o.desc}</small></label>`).join('')}</div>
+      </fieldset>
+      <fieldset>
+        <legend>¿Qué experiencia tienes corriendo?</legend>
+        <div class="opciones col">${Object.entries(NIVELES_CARRERA).map(([k, n]) => `<label class="chip grande fila-op"><input type="radio" name="nivel" value="${k}" ${chk(nivel, k)} required><span class="op-ic">${n.icono}</span><span><b>${n.nombre}</b><small>${n.desc}</small></span></label>`).join('')}</div>
+      </fieldset>
+      <fieldset>
+        <legend>¿Qué días puedes correr?</legend>
+        <p class="tenue ayuda">Elige entre 1 y 6 días. Repartiré las sesiones en esos días.</p>
+        <div class="chips dias-sel">${DIAS.map((d, i) => `<label class="chip"><input type="checkbox" name="dias" value="${i}" ${dias.includes(i) ? 'checked' : ''}>${d.slice(0, 3)}</label>`).join('')}</div>
+      </fieldset>
+      <fieldset>
+        <legend>¿Cuántas semanas quieres entrenar?</legend>
+        <div class="opciones cinco">${DURACIONES.map(n => `<label class="chip grande"><input type="radio" name="semanas" value="${n}" ${chk(semanas, n)} required><b class="op-num">${n}</b><small>semanas</small></label>`).join('')}</div>
+        <label class="campo" style="margin-top:14px">¿Cuándo empiezas?<input type="date" name="inicio" value="${inicio}" min="${hoy()}" max="${sumarDias(hoy(), 30)}" required></label>
+      </fieldset>
+      <fieldset>
+        <legend>¿Tienes una marca reciente?</legend>
+        <p class="tenue ayuda">Opcional. Si la pones, calculo tus ritmos de entrenamiento. Si no, entrena por sensaciones.</p>
+        <label class="campo">Distancia
+          <select name="marcaDist"><option value="">Sin marca (por sensaciones)</option>${DISTANCIAS.map(d => `<option value="${d.id}" ${chk(marcaDist, d.id)}>${d.nombre}</option>`).join('')}</select>
+        </label>
+        <label class="campo">Tiempo (mm:ss o hh:mm:ss)<input type="text" name="marcaTiempo" value="${marcaTiempo}" inputmode="numeric" placeholder="50:00" autocomplete="off"></label>
+      </fieldset>
+      <button class="btn grande" type="submit">${estado.carrera?.plan ? 'Guardar y regenerar plan' : 'Crear mi plan ✨'}</button>
+    </form>`,
+  });
+}
+
+function empezarCarrera(id) {
+  const s = carPlan()?.sesiones.find(x => x.id === id);
+  if (!s) return;
+  estado.carreraEnCurso = {
+    sesionId: s.id, nombre: s.nombre, tipo: s.tipo, icono: s.icono, foco: s.foco,
+    inicio: Date.now(), acumulado: 0, reanudado: Date.now(), pausado: false, km: s.km || null,
+    bloques: (s.bloques || []).map(b => ({ ...b, hecho: false })),
+  };
+  guardar(); ir('carrera/entreno');
+}
+
+function modalRegistrarCarrera({ sesionId = null, km = '', seg = null, fecha = hoy(), sensacion = 'bien' } = {}) {
+  modal(`<h2>${sesionId ? 'Guardar el entrenamiento' : 'Registrar una carrera'}</h2>
+    <p class="tenue">Anota la distancia y el tiempo para llevar tu historial.</p>
+    <form id="formCarreraReg" data-id="${sesionId || ''}">
+      <label class="campo">Fecha<input type="date" name="fecha" value="${fecha}" min="${sumarDias(hoy(), -365)}" max="${hoy()}"></label>
+      <label class="campo">Distancia (km)<input type="number" name="km" inputmode="decimal" step="0.1" min="0" value="${km === null || km === undefined ? '' : km}" placeholder="5,0"></label>
+      <label class="campo">Tiempo (mm:ss o hh:mm:ss)<input type="text" name="tiempo" inputmode="numeric" value="${seg ? fmtTiempo(seg) : ''}" placeholder="25:30" autocomplete="off"></label>
+      <p class="sub-leg">¿Cómo te has sentido?</p>
+      <div class="chips">${Object.entries(SENSACIONES).map(([k, v]) => `<label class="chip"><input type="radio" name="sensacion" value="${k}" ${sensacion === k ? 'checked' : ''}>${v[0]} ${v[1]}</label>`).join('')}</div>
+      <button class="btn" type="submit">Guardar</button>
+    </form>`);
+}
+
+function guardarCarreraHecha({ sesionId = null, fecha = hoy(), km = 0, seg = null, sensacion = 'bien' }) {
+  const plan = carPlan();
+  const ses = sesionId && plan ? plan.sesiones.find(s => s.id === sesionId) : null;
+  const enCurso = estado.carreraEnCurso;
+  const min = seg ? Math.round(seg / 60) : (enCurso ? Math.round(tiempoCarrera() / 60) : 0);
+  const item = {
+    fecha, nombre: ses?.nombre || enCurso?.nombre || 'Carrera', tipo: ses?.tipo || enCurso?.tipo || 'suave',
+    km: Number(km) || 0, seg: seg || null, min, sensacion,
+    ritmo: seg && km ? Math.round(seg / km) : null,
+  };
+  if (!estado.carrera) estado.carrera = { perfil: null, plan: null, hechas: [] };
+  estado.carrera.hechas = [...(estado.carrera.hechas || []), item];
+  if (ses) { ses.estado = 'hecha'; ses.hist = estado.carrera.hechas.length - 1; }
+  estado.carreraEnCurso = null;
+  cerrarModal();
+  guardar();
+  ir(ses ? `carrera/sesion/${ses.id}` : 'carrera/historial');
+  toast('Carrera guardada 🏃');
+}
+
+// =====================================================================
 // Eventos
 // =====================================================================
 document.addEventListener('click', async ev => {
@@ -4395,6 +4806,48 @@ document.addEventListener('click', async ev => {
       toast(r.ok ? 'La IA del navegador responde ✅' : 'No ha funcionado');
       break;
     }
+    // ---- Running ----
+    case 'carEmpezar': empezarCarrera(d.id); break;
+    case 'carPausa': {
+      const c = estado.carreraEnCurso;
+      if (!c) break;
+      if (c.pausado) { c.reanudado = Date.now(); c.pausado = false; }
+      else { c.acumulado += Date.now() - c.reanudado; c.pausado = true; }
+      guardar(); render();
+      break;
+    }
+    case 'carBloque': {
+      const c = estado.carreraEnCurso;
+      if (!c || !c.bloques[k]) break;
+      c.bloques[k].hecho = !c.bloques[k].hecho;
+      guardar(); render();
+      break;
+    }
+    case 'carSalir': ir('carrera'); break;
+    case 'carTerminar': {
+      const c = estado.carreraEnCurso;
+      if (!c) break;
+      const seg = Math.round(tiempoCarrera());
+      modalRegistrarCarrera({ sesionId: c.sesionId, km: c.km || '', seg: seg || null, sensacion: 'bien' });
+      break;
+    }
+    case 'carDescartar':
+      confirmar('Se perderá el entrenamiento en curso. El plan no cambia.', { titulo: '¿Descartar el entrenamiento?', ok: 'Descartar', peligro: true })
+        .then(ok => { if (ok) { estado.carreraEnCurso = null; guardar(); ir('carrera'); toast('Entrenamiento descartado'); } });
+      break;
+    case 'carHechaYa': modalRegistrarCarrera({ sesionId: d.id }); break;
+    case 'carAdd': modalRegistrarCarrera(); break;
+    case 'carBorrar':
+      conDeshacer('Carrera borrada', () => {
+        const hechas = carHechas().filter((_, idx) => idx !== i);
+        estado.carrera = { ...estado.carrera, hechas };
+        (carPlan()?.sesiones || []).forEach(s => {
+          if (s.hist == null) return;
+          if (s.hist === i) { s.estado = 'pendiente'; s.hist = null; }
+          else if (s.hist > i) s.hist -= 1;
+        });
+      });
+      break;
   }
 });
 
@@ -4461,6 +4914,8 @@ document.addEventListener('input', ev => {
     const inc = cargarIncidencias();
     inc[d.c] = t.value.trim();
     guardarIncidencias(inc);
+  } else if (d.a === 'calcCar') {
+    actualizarCalcCarrera();
   } else if (t.name === 'diasSemana') {
     const n = document.querySelectorAll('[name=diasSemana]:checked').length;
     $('#avisoDias').classList.remove('error');
@@ -4523,6 +4978,7 @@ document.addEventListener('change', async ev => {
     }
   }
   if (t.dataset.a === 'hora') { estado.ajustes.hora = t.value; guardar(); }
+  if (t.dataset.a === 'calcCar') { actualizarCalcCarrera(); }
   if (t.dataset.a === 'ayudas') {
     estado.ajustes.ayudas = t.checked; guardar(); render();
     toast(t.checked ? 'Iconos de ayuda activados' : 'Iconos de ayuda ocultos. Las ayudas de los botones siguen disponibles');
@@ -4794,6 +5250,47 @@ document.addEventListener('submit', async ev => {
     toast('Clave guardada. Prueba la conexión 👇');
     return;
   }
+  // ---- Running ----
+  if (ev.target.id === 'formCarrera') {
+    const objetivo = String(f.get('objetivo') || '');
+    if (!OBJETIVOS_CARRERA[objetivo]) { toast('Elige un objetivo para tu plan'); return; }
+    const nivel = String(f.get('nivel') || '');
+    if (!NIVELES_CARRERA[nivel]) { toast('Elige tu experiencia corriendo'); return; }
+    const dias = f.getAll('dias').map(Number).filter(n => n >= 0 && n <= 6);
+    if (!dias.length) { toast('Elige al menos un día para correr'); return; }
+    if (dias.length > 6) { toast('Deja al menos un día de descanso a la semana'); return; }
+    const semanas = Number(f.get('semanas')) || OBJETIVOS_CARRERA[objetivo].semanas;
+    if (!DURACIONES.includes(semanas)) { toast('Elige una duración válida'); return; }
+    const inicio = String(f.get('inicio') || hoy());
+    const marcaDist = String(f.get('marcaDist') || '');
+    const marcaTiempo = String(f.get('marcaTiempo') || '');
+    let marca = null, ritmo = null;
+    if (marcaDist) {
+      const dist = DISTANCIAS.find(d => d.id === marcaDist);
+      const seg = leerTiempo(marcaTiempo);
+      if (!dist || !seg) { toast('Revisa tu marca: elige distancia y escribe un tiempo válido'); return; }
+      marca = { dist: dist.id, km: dist.km, seg };
+      ritmo = facilDesdeMarca(dist.km, seg);
+    }
+    if (carPlan() && !await confirmar('Se creará un plan nuevo desde la fecha elegida. Las carreras que ya has registrado se conservan.', { titulo: '¿Regenerar el plan de running?', ok: 'Regenerar' })) return;
+    const perfil = { objetivo, nivel, dias, semanas, inicio, ritmo, marca };
+    estado.carrera = { perfil, plan: generarPlanCarrera(perfil), hechas: carHechas() };
+    estado.carreraEnCurso = null;
+    guardar();
+    ir('carrera');
+    toast('Plan de running creado 🏃');
+    return;
+  }
+  if (ev.target.id === 'formCarreraReg') {
+    const sesionId = ev.target.dataset.id || null;
+    const fecha = String(f.get('fecha') || hoy());
+    const km = Number(String(f.get('km') || '').replace(',', '.')) || 0;
+    const seg = leerTiempo(String(f.get('tiempo') || ''));
+    const sensacion = String(f.get('sensacion') || 'bien');
+    if (!km && !seg) { toast('Anota al menos la distancia o el tiempo'); return; }
+    guardarCarreraHecha({ sesionId, fecha, km, seg, sensacion });
+    return;
+  }
   if (ev.target.id === 'formPerfil') {
     const diasSemana = f.getAll('diasSemana').map(Number);
     if (!diasSemana.length) { avisoCampo('#avisoDias', 'Elige al menos un día de entrenamiento.'); return; }
@@ -4899,7 +5396,7 @@ function actualizarCrono() {
   const c = $('#crono');
   if (c && estado.enCurso) c.textContent = fmtSeg(tiempoSesion()) + (estado.enCurso.pausado ? ' · en pausa' : '');
 }
-setInterval(actualizarCrono, 1000);
+setInterval(() => { actualizarCrono(); actualizarCronoCarrera(); }, 1000);
 
 // Recordatorios: comprueba cada minuto si toca entrenar hoy.
 function comprobarRecordatorio() {
