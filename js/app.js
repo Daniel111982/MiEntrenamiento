@@ -40,11 +40,23 @@ const vacio = () => ({
   comidas: {}, agua: {}, ejerciciosPropios: [], seguridad: null,
 });
 const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-const AVATARES = ['🙂', '💪', '🏃', '🧘', '🏋️', '🚴', '🤸', '⚽', '🦁', '🐯', '🌟', '🔥', '🎯', '🦊', '🐻', '👑'];
+const AVATARES = [
+  '🙂', '😎', '🤠', '🥳', '😺', '🐯', '🦁', '🐻', '🦊', '🐺', '🐼', '🐨', '🐸', '🐵', '🦄', '🐲',
+  '💪', '🏋️', '🏃', '🚴', '🧘', '🤸', '⛹️', '🏊', '🥊', '⛷️', '🧗', '🚶', '🤾', '🏄', '🥇', '🏆',
+  '🔥', '⚡', '🌟', '🎯', '🚀', '👑', '💎', '🦾', '🧠', '❤️', '🍀', '🌙', '☀️', '🎮', '🎧', '🛡️',
+];
+// Los 6 primeros se mantienen igual para no cambiar el color de los usuarios ya existentes.
 const COLORES = [
   'linear-gradient(135deg,#2563eb,#16a34a)', 'linear-gradient(135deg,#7c3aed,#db2777)', 'linear-gradient(135deg,#ea580c,#facc15)',
   'linear-gradient(135deg,#0891b2,#22d3ee)', 'linear-gradient(135deg,#dc2626,#f97316)', 'linear-gradient(135deg,#334155,#64748b)',
+  'linear-gradient(135deg,#0ea5e9,#6366f1)', 'linear-gradient(135deg,#f43f5e,#f59e0b)', 'linear-gradient(135deg,#10b981,#84cc16)',
+  'linear-gradient(135deg,#8b5cf6,#ec4899)', 'linear-gradient(135deg,#f97316,#ef4444)', 'linear-gradient(135deg,#14b8a6,#0ea5e9)',
+  'linear-gradient(135deg,#eab308,#84cc16)', 'linear-gradient(135deg,#a855f7,#3b82f6)', 'linear-gradient(135deg,#f472b6,#a78bfa)',
+  'linear-gradient(135deg,#64748b,#0f172a)', 'linear-gradient(135deg,#059669,#065f46)', 'linear-gradient(135deg,#b45309,#78350f)',
 ];
+// Iconos de ojo (mostrar/ocultar contraseña) en SVG para un aspecto más cuidado.
+const ICO_OJO = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>';
+const ICO_OJO_OFF = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>';
 
 let usuarios = cargarUsuarios();
 let estado = cargar();
@@ -101,7 +113,18 @@ function cargar(id = usuarios.activo) {
 function guardar() { localStorage.setItem(claveDe(usuarios.activo), JSON.stringify(estado)); }
 
 const usuarioActual = () => usuarios.lista.find(u => u.id === usuarios.activo) || usuarios.lista[0];
-const avatarHTML = (u, clase = '') => `<span class="avatar-u ${clase}" style="background:${COLORES[u.color % COLORES.length]}">${u.avatar}</span>`;
+const esImagenAvatar = a => /^(data:image\/|https?:\/\/|blob:)/i.test(String(a || ''));
+const esColorHex = c => /^#[0-9a-fA-F]{3,8}$/.test(String(c || ''));
+// u.color puede ser un índice de la paleta (datos antiguos) o un color CSS directo.
+const colorAvatar = c => {
+  const s = String(c ?? '');
+  return /^\d+$/.test(s) ? (COLORES[Number(s) % COLORES.length] || COLORES[0]) : (s || COLORES[0]);
+};
+const avatarHTML = (u, clase = '') => {
+  const img = esImagenAvatar(u?.avatar);
+  const fondo = img ? 'var(--tarjeta2)' : colorAvatar(u?.color);
+  return `<span class="avatar-u ${clase}${img ? ' foto' : ''}" style="background:${fondo}">${img ? `<img src="${esc(u.avatar)}" alt="" loading="lazy" decoding="async">` : esc(u?.avatar || '🙂')}</span>`;
+};
 
 // El «dueño» es la cuenta marcada como administradora: es la única que ve la
 // bandeja de ideas e incidencias. Si todavía no hay ninguna, la primera cuenta
@@ -124,7 +147,7 @@ function cambiarUsuario(id, { entrar: entrarYa = false } = {}) {
   estado = cargar(id);
   desbloqueado = Boolean(entrarYa);
   usuarioLogin = id;
-  recuperacionProc.ok = false; recuperacionProc.codigo = null;
+  recuperacionProc.ok = false; recuperacionProc.codigo = null; recuperacionProc.usuario = null;
   sincronizarPropios();
   Object.assign(ui, UI_INICIAL);
   cerrarModal();
@@ -137,7 +160,7 @@ function entrarComo(id) {
   usuarioLogin = id;
   if (id !== usuarios.activo) { cambiarUsuario(id, { entrar: true }); return; }
   desbloqueado = true;
-  recuperacionProc.ok = false; recuperacionProc.codigo = null; ui.recMetodo = null;
+  recuperacionProc.ok = false; recuperacionProc.codigo = null; recuperacionProc.usuario = null; ui.recMetodo = null;
   ir(estado.plan ? 'hoy' : 'bienvenida');
 }
 
@@ -460,7 +483,7 @@ const PREGUNTAS_SEG = [
   '¿Cuál es tu grupo o cantante favorito?',
 ];
 // Estado temporal del proceso de recuperación (no se guarda).
-const recuperacionProc = { ok: false, codigo: null, expira: 0 };
+const recuperacionProc = { ok: false, codigo: null, expira: 0, usuario: null };
 
 // Silueta de frente y de espalda con cada músculo coloreado.
 function cuerpoSVG(colores = {}, { mini = false } = {}) {
@@ -1117,7 +1140,7 @@ function ajCoach() {
         <label class="campo">Clave de la API
           <span class="clave-fila">
             <input type="password" name="clave" value="${esc(cfg.clave)}" placeholder="${prov ? esc(prov.claveEjemplo) : 'Pega aquí tu clave'}" autocomplete="off" spellcheck="false">
-            <button type="button" class="icono" data-a="verClave" data-f="clave" aria-label="Mostrar u ocultar la clave">👁️</button>
+            <button type="button" class="icono" data-a="verClave" data-f="clave" aria-label="Mostrar u ocultar la clave">${ICO_OJO}</button>
           </span>
         </label>
         <label class="campo">Modelo
@@ -2836,6 +2859,29 @@ function ajIncidencias() {
 // =====================================================================
 const SEG_PREG = i => PREGUNTAS_SEG[Number(i)] || PREGUNTAS_SEG[0];
 const normalizarResp = t => String(t ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const normalizarNombre = t => String(t ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+const normalizarCorreo = t => String(t ?? '').trim().toLowerCase();
+// Busca un usuario por su nombre (coincidencia exacta o por principio único), sin distinguir mayúsculas ni tildes.
+function usuarioPorNombre(nombre) {
+  const n = normalizarNombre(nombre);
+  if (!n) return null;
+  const lista = usuarios.lista;
+  const exacto = lista.find(u => normalizarNombre(u.nombre) === n);
+  if (exacto) return exacto;
+  const prefijo = lista.filter(u => normalizarNombre(u.nombre).startsWith(n));
+  return prefijo.length === 1 ? prefijo[0] : null;
+}
+// Busca un usuario por el correo con el que recupera su contraseña.
+function usuarioPorCorreo(correo) {
+  const c = normalizarCorreo(correo);
+  if (!c) return null;
+  return usuarios.lista.find(u => normalizarCorreo(datosUsuario(u.id)?.seguridad?.correo) === c) || null;
+}
+// Datos de seguridad del usuario que está recuperando la contraseña (o del usuario activo).
+const seguridadRecuperacion = () => {
+  const id = recuperacionProc.usuario;
+  return (id ? datosUsuario(id) : estado)?.seguridad || null;
+};
 
 async function verificarClaveDe(d, clave) {
   const s = d?.seguridad;
@@ -2846,7 +2892,7 @@ async function verificarClave(clave) {
   return verificarClaveDe(estado, clave);
 }
 async function verificarRespuesta(txt) {
-  const s = estado.seguridad;
+  const s = seguridadRecuperacion();
   if (!s?.respuesta) return false;
   return await hashClave(normalizarResp(txt), s.salt) === s.respuesta;
 }
@@ -2875,35 +2921,68 @@ function login() {
   const sel = lista.some(u => u.id === usuarioLogin) ? usuarioLogin : usuarios.activo;
   const u = lista.find(x => x.id === sel) || lista[0];
   const tieneClave = Boolean(datosUsuario(u.id).seguridad?.activa);
-  const selector = lista.length > 1
-    ? `<label class="campo">Usuario<select name="usuario" data-a="loginUsuario">
-        ${lista.map(x => `<option value="${x.id}" ${x.id === u.id ? 'selected' : ''}>${esc(x.nombre)}</option>`).join('')}
-      </select></label>`
-    : '';
+  const correo = datosUsuario(u.id).seguridad?.correo || '';
+  const campoUsuario = `<label class="campo">Usuario
+      <input type="text" name="usuarioNombre" data-a="loginUsuarioNombre" list="listaUsuarios" value="${esc(u.nombre)}" autocomplete="username" spellcheck="false" autocapitalize="off" required ${lista.length > 1 ? 'autofocus' : ''}>
+      <datalist id="listaUsuarios">${lista.map(x => `<option value="${esc(x.nombre)}"></option>`).join('')}</datalist>
+    </label>`;
+  const campoCorreo = `<label class="campo">Correo
+      <input type="email" name="correo" autocomplete="email" value="${esc(correo)}" placeholder="tucorreo@ejemplo.com" spellcheck="false">
+    </label>`;
   const formulario = tieneClave
     ? `<form id="formLogin" class="tarjeta" novalidate>
-        ${selector}
-        <label class="campo">Contraseña<input type="password" name="clave" autocomplete="current-password" required autofocus></label>
+        ${campoUsuario}
+        ${campoCorreo}
+        <label class="campo">Contraseña
+          <span class="clave-fila">
+            <input type="password" name="clave" autocomplete="current-password" required ${lista.length > 1 ? '' : 'autofocus'}>
+            <button type="button" class="icono peq" data-a="verClave" data-f="clave" aria-label="Mostrar u ocultar la contraseña" title="Mostrar u ocultar">${ICO_OJO}</button>
+          </span>
+        </label>
         <p class="tenue error" id="avisoLogin"></p>
         <button class="btn" type="submit">🔓 Entrar</button>
       </form>
       <a class="btn sec" href="#recuperar">He olvidado la contraseña</a>`
     : `<form id="formLoginClave" class="tarjeta" novalidate>
-        ${selector}
+        ${campoUsuario}
         <p class="tenue"><b>${esc(u.nombre)}</b> todavía no tiene contraseña. Crea una para entrar.</p>
-        <label class="campo">Contraseña<input type="password" name="clave" minlength="4" autocomplete="new-password" required autofocus placeholder="Al menos 4 caracteres"></label>
-        <label class="campo">Repite la contraseña<input type="password" name="clave2" minlength="4" autocomplete="new-password" required></label>
+        <label class="campo">Correo
+          <input type="email" name="correo" autocomplete="email" placeholder="tucorreo@ejemplo.com" spellcheck="false">
+        </label>
+        <label class="campo">Contraseña
+          <span class="clave-fila">
+            <input type="password" name="clave" minlength="4" autocomplete="new-password" required placeholder="Al menos 4 caracteres" ${lista.length > 1 ? '' : 'autofocus'}>
+            <button type="button" class="icono peq" data-a="verClave" data-f="clave" aria-label="Mostrar u ocultar la contraseña" title="Mostrar u ocultar">${ICO_OJO}</button>
+          </span>
+        </label>
+        <label class="campo">Repite la contraseña
+          <span class="clave-fila">
+            <input type="password" name="clave2" minlength="4" autocomplete="new-password" required>
+            <button type="button" class="icono peq" data-a="verClave" data-f="clave2" aria-label="Mostrar u ocultar la contraseña" title="Mostrar u ocultar">${ICO_OJO}</button>
+          </span>
+        </label>
         <p class="tenue error" id="avisoLogin"></p>
         <button class="btn" type="submit">🔒 Crear contraseña y entrar</button>
       </form>`;
   return `<div class="login">
     ${isotipoCuadrado({ tam: 72, clase: 'login-logo' })}
     <h1>${MARCA.nombre}</h1>
-    <p class="tenue">${lista.length > 1 ? 'Elige tu usuario y entra con tu contraseña.' : (tieneClave ? 'Entra con tu contraseña.' : 'Crea tu contraseña de acceso.')}</p>
+    <p class="tenue">${lista.length > 1 ? 'Escribe tu usuario y tu contraseña para entrar.' : (tieneClave ? 'Entra con tu contraseña.' : 'Crea tu contraseña de acceso.')}</p>
     ${formulario}
     <a class="btn sec" href="#usuarios/nuevo">＋ Crear cuenta nueva</a>
     <p class="tenue centro">Tus datos se guardan solo en este dispositivo.</p>
   </div>`;
+}
+
+function recIdentificar() {
+  return `<form id="formRecIdent" class="tarjeta" novalidate>
+    <p class="tenue">Escribe el correo con el que creaste tu cuenta (y tu usuario, si lo recuerdas) para encontrar tu acceso.</p>
+    <label class="campo">Correo<input type="email" name="correo" autocomplete="email" placeholder="tucorreo@ejemplo.com" spellcheck="false" required autofocus></label>
+    <label class="campo">Usuario (opcional)<input type="text" name="usuarioNombre" list="listaUsuariosRec" autocomplete="username" spellcheck="false" autocapitalize="off" placeholder="Tu nombre de usuario"></label>
+    <datalist id="listaUsuariosRec">${usuarios.lista.map(x => `<option value="${esc(x.nombre)}"></option>`).join('')}</datalist>
+    <p class="tenue error" id="avisoRec"></p>
+    <button class="btn" type="submit">Buscar mi cuenta</button>
+  </form>`;
 }
 
 function recElegir(s) {
@@ -2962,22 +3041,28 @@ function recNueva() {
 }
 
 function recuperar() {
-  const s = estado.seguridad;
-  if (!s?.activa) {
+  const hayBloqueo = usuarios.lista.some(x => datosUsuario(x.id).seguridad?.activa);
+  if (!hayBloqueo) {
     return `<div class="login">${isotipoCuadrado({ tam: 64, clase: 'login-logo' })}
-      <h1>Sin bloqueo</h1><p class="tenue">Esta cuenta todavía no tiene contraseña. Créala en el acceso.</p>
+      <h1>Sin bloqueo</h1><p class="tenue">Todavía no hay ninguna cuenta con contraseña. Créala en el acceso.</p>
       <a class="btn" href="#login">Volver al acceso</a></div>`;
   }
-  const paso = recuperacionProc.ok ? 'nueva' : (ui.recMetodo || 'elegir');
+  const id = recuperacionProc.usuario;
+  const s = id ? seguridadRecuperacion() : null;
+  const u = id ? usuarios.lista.find(x => x.id === id) : null;
+  const paso = recuperacionProc.ok ? 'nueva' : (!s?.activa ? 'identificar' : (ui.recMetodo || 'elegir'));
   const cuerpo = paso === 'pregunta' ? recPregunta(s)
     : paso === 'correo' ? recCorreo(s)
       : paso === 'maestro' ? recMaestro(s)
         : paso === 'nueva' ? recNueva()
-          : recElegir(s);
+          : paso === 'identificar' ? recIdentificar()
+            : recElegir(s);
+  const enMetodo = paso === 'pregunta' || paso === 'correo' || paso === 'maestro';
   return `<div class="login">
     ${isotipoCuadrado({ tam: 64, clase: 'login-logo' })}
     <h1>Recuperar acceso</h1>
-    ${paso === 'elegir' ? '' : '<button class="enlace centro" data-a="recVolver">‹ Elegir otro método</button>'}
+    ${u ? `<p class="tenue">Cuenta: <b>${esc(u.nombre)}</b>${s?.correo ? ` · ${esc(s.correo)}` : ''}</p>` : ''}
+    ${enMetodo ? '<button class="enlace centro" data-a="recVolver">‹ Elegir otro método</button>' : ''}
     ${cuerpo}
     <a class="btn sec" href="#login">Volver al acceso</a>
   </div>`;
@@ -2985,7 +3070,7 @@ function recuperar() {
 
 // Genera un código de 6 dígitos y abre el correo del usuario (sin servidor).
 function enviarCodigo() {
-  const s = estado.seguridad;
+  const s = seguridadRecuperacion();
   if (!s?.correo) { toast('No hay correo configurado'); return; }
   const codigo = String(Math.floor(100000 + Math.random() * 900000));
   recuperacionProc.codigo = codigo;
@@ -3006,15 +3091,17 @@ function segInactivaHTML() {
     <form id="formSeguridad" class="tarjeta" novalidate>
       <label class="campo">Contraseña
         <div class="clave-fila"><input type="password" name="clave" minlength="4" autocomplete="new-password" required>
-          <button class="icono peq" type="button" data-a="verClave" data-f="clave" title="Mostrar u ocultar">👁️</button></div></label>
-      <label class="campo">Repite la contraseña<input type="password" name="clave2" minlength="4" autocomplete="new-password" required></label>
+          <button class="icono peq" type="button" data-a="verClave" data-f="clave" title="Mostrar u ocultar">${ICO_OJO}</button></div></label>
+      <label class="campo">Repite la contraseña
+        <div class="clave-fila"><input type="password" name="clave2" minlength="4" autocomplete="new-password" required>
+          <button class="icono peq" type="button" data-a="verClave" data-f="clave2" title="Mostrar u ocultar">${ICO_OJO}</button></div></label>
       <label class="campo">Pregunta de seguridad<select name="pregunta">
         ${PREGUNTAS_SEG.map((p, i) => `<option value="${i}">${esc(p)}</option>`).join('')}
       </select></label>
       <label class="campo">Tu respuesta<input type="search" name="respuesta" autocomplete="off" required placeholder="No distingue mayúsculas ni tildes"></label>
-      <label class="campo">Correo (opcional, para recuperar)<input type="email" name="correo" autocomplete="email" placeholder="tucorreo@ejemplo.com"></label>
+      <label class="campo">Correo (para recuperar)<input type="email" name="correo" autocomplete="email" required placeholder="tucorreo@ejemplo.com" spellcheck="false"></label>
       <p class="tenue error" id="avisoSeg"></p>
-      <p class="tenue">Guarda bien la contraseña. Si la olvidas, tendrás tres formas de entrar: la pregunta de seguridad, un código enviado a tu correo o el código maestro.</p>
+      <p class="tenue">Guarda bien la contraseña. Si la olvidas, podrás recuperarla con tu correo y tu pregunta de seguridad, o con el código maestro.</p>
       <button class="btn" type="submit">🔒 Activar contraseña</button>
     </form>`;
 }
@@ -3038,7 +3125,7 @@ function segActivaHTML(s) {
       <p class="tenue">Guárdalo en un lugar seguro. Es la última forma de entrar si olvidas todo lo demás.</p>
       <div class="codigo-maestro">${ui.verMaestro ? esc(s.maestro) : '•••• ••••'}</div>
       <div class="botones">
-        <button class="btn sec" data-a="verMaestro">${ui.verMaestro ? '🙈 Ocultar' : '👁️ Mostrar código'}</button>
+        <button class="btn sec" data-a="verMaestro">${ui.verMaestro ? `${ICO_OJO_OFF} Ocultar` : `${ICO_OJO} Mostrar código`}</button>
         ${ui.verMaestro ? '<button class="btn sec" data-a="copiarMaestro">📋 Copiar</button>' : ''}
       </div>
     </div>
@@ -3075,7 +3162,7 @@ function modalCambiarPregunta() {
         ${PREGUNTAS_SEG.map((p, i) => `<option value="${i}" ${Number(s?.pregunta) === i ? 'selected' : ''}>${esc(p)}</option>`).join('')}
       </select></label>
       <label class="campo">Respuesta nueva<input type="search" name="respuesta" autocomplete="off" required></label>
-      <label class="campo">Correo<input type="email" name="correo" autocomplete="email" value="${esc(s?.correo || '')}" placeholder="tucorreo@ejemplo.com"></label>
+      <label class="campo">Correo (para recuperar)<input type="email" name="correo" autocomplete="email" value="${esc(s?.correo || '')}" placeholder="tucorreo@ejemplo.com" required></label>
       <button class="btn" type="submit">Guardar cambios</button>
     </form>`);
   setTimeout(() => $('#formCambiarPregunta input')?.focus(), 50);
@@ -3137,10 +3224,31 @@ function formUsuario(u, nuevo) {
     <div class="usuario-prev">${avatarHTML(u, 'enorme')}</div>
     <label class="campo">Nombre<input type="search" name="nombre" value="${esc(nuevo ? '' : u.nombre)}" maxlength="24" placeholder="Por ejemplo: Ana" required autocomplete="off"></label>
     ${nuevo ? `
-      <label class="campo">Contraseña<input type="password" name="clave" minlength="4" autocomplete="new-password" required placeholder="Al menos 4 caracteres"></label>
-      <label class="campo">Repite la contraseña<input type="password" name="clave2" minlength="4" autocomplete="new-password" required></label>` : ''}
-    <fieldset><legend>Avatar</legend><div class="chips avatares">${AVATARES.map(a => `<label class="chip"><input type="radio" name="avatar" value="${a}" ${a === u.avatar ? 'checked' : ''}>${a}</label>`).join('')}</div></fieldset>
-    <fieldset><legend>Color</legend><div class="chips colores">${COLORES.map((c, i) => `<label class="chip color" style="background:${c}"><input type="radio" name="color" value="${i}" ${i === u.color ? 'checked' : ''} aria-label="Color ${i + 1}"></label>`).join('')}</div></fieldset>
+      <label class="campo">Correo (para recuperar la contraseña)<input type="email" name="correo" autocomplete="email" required placeholder="tucorreo@ejemplo.com" spellcheck="false"></label>
+      <label class="campo">Contraseña
+        <span class="clave-fila"><input type="password" name="clave" minlength="4" autocomplete="new-password" required placeholder="Al menos 4 caracteres">
+          <button type="button" class="icono peq" data-a="verClave" data-f="clave" aria-label="Mostrar u ocultar la contraseña" title="Mostrar u ocultar">${ICO_OJO}</button></span></label>
+      <label class="campo">Repite la contraseña
+        <span class="clave-fila"><input type="password" name="clave2" minlength="4" autocomplete="new-password" required>
+          <button type="button" class="icono peq" data-a="verClave" data-f="clave2" aria-label="Mostrar u ocultar la contraseña" title="Mostrar u ocultar">${ICO_OJO}</button></span></label>` : ''}
+    <fieldset><legend>Avatar</legend>
+      <input type="hidden" name="avatar" value="${esc(u.avatar)}">
+      <div class="chips avatares scroll">${AVATARES.map(a => `<label class="chip"><input type="radio" name="avatarEmoji" value="${a}" ${a === u.avatar ? 'checked' : ''}>${a}</label>`).join('')}</div>
+      <div class="avatar-extra">
+        <label class="btn sec peq">📷 Subir una foto<input type="file" accept="image/*" data-a="avatarArchivo" hidden></label>
+        <input type="url" name="avatarUrl" data-a="avatarUrl" placeholder="https://… pega la dirección de una foto" spellcheck="false" autocomplete="off" value="${esImagenAvatar(u.avatar) && /^https?:/i.test(String(u.avatar)) ? esc(u.avatar) : ''}">
+      </div>
+    </fieldset>
+    <fieldset><legend>Color</legend>
+      <div class="chips colores">
+        ${COLORES.map((c, i) => `<label class="chip color" style="background:${c}"><input type="radio" name="color" value="${i}" ${String(u.color) === String(i) ? 'checked' : ''} aria-label="Color ${i + 1}"></label>`).join('')}
+        <label class="chip color" style="background:${esColorHex(u.color) ? u.color : 'conic-gradient(from 90deg,#ef4444,#f59e0b,#84cc16,#06b6d4,#6366f1,#ec4899,#ef4444)'}" title="Color personalizado">
+          <input type="radio" name="color" value="custom" ${esColorHex(u.color) ? 'checked' : ''} aria-label="Color personalizado">
+          <span class="color-custom-ico">🎨</span>
+        </label>
+      </div>
+      <label class="campo">Tu color personalizado<input type="color" name="colorCustom" data-a="colorCustom" value="${esColorHex(u.color) ? u.color : '#2563eb'}"></label>
+    </fieldset>
     ${nuevo ? formMedidasHTML() : ''}
     ${!nuevo && (soyDueno() || !hayDueno()) ? `<label class="interruptor"><span><b>Cuenta de administrador</b><br><small class="tenue">Podrá ver la bandeja de ideas e incidencias de la app</small></span>
       <input type="checkbox" name="admin" value="si" ${esDueno(u) ? 'checked' : ''}></label>` : ''}
@@ -3487,6 +3595,37 @@ async function guardarFoto(id, file) {
   estado.fotos = { ...(estado.fotos || {}), [id]: c.toDataURL('image/jpeg', 0.72) };
   try { guardar(); render(); toast('Foto guardada'); }
   catch { delete estado.fotos[id]; toast('No queda espacio para más fotos. Quita alguna antes.', { ms: 6000 }); }
+}
+
+// Convierte una foto en un avatar cuadrado (256 px, JPEG) para guardarlo en el usuario.
+async function imagenAAvatar(file) {
+  const img = await createImageBitmap(file);
+  const lado = 256;
+  const c = document.createElement('canvas');
+  c.width = lado; c.height = lado;
+  const k = Math.max(lado / img.width, lado / img.height);
+  const w = Math.round(img.width * k), h = Math.round(img.height * k);
+  c.getContext('2d').drawImage(img, Math.round((lado - w) / 2), Math.round((lado - h) / 2), w, h);
+  return c.toDataURL('image/jpeg', 0.82);
+}
+
+// Refresca la vista previa del avatar en el formulario de usuario (emoji, foto o URL).
+function pintarPreviewUsuario(form) {
+  const prev = $('.usuario-prev .avatar-u');
+  if (!prev || !form) return;
+  const fd = new FormData(form);
+  const avatar = String(fd.get('avatar') || '🙂');
+  const colorSel = String(fd.get('color') || '0');
+  const fondo = colorSel === 'custom' ? String(fd.get('colorCustom') || '#2563eb') : colorAvatar(colorSel);
+  if (esImagenAvatar(avatar)) {
+    prev.classList.add('foto');
+    prev.style.background = 'var(--tarjeta2)';
+    prev.innerHTML = `<img src="${esc(avatar)}" alt="">`;
+  } else {
+    prev.classList.remove('foto');
+    prev.style.background = fondo;
+    prev.textContent = avatar;
+  }
 }
 
 // =====================================================================
@@ -3905,10 +4044,10 @@ document.addEventListener('click', async ev => {
     case 'enviarCodigo': enviarCodigo(); break;
     case 'verClave': {
       const inp = document.querySelector(`#${b.closest('form')?.id || 'vista'} input[name="${d.f}"]`) || b.parentElement.querySelector('input');
-      if (inp) { inp.type = inp.type === 'password' ? 'text' : 'password'; b.textContent = inp.type === 'password' ? '👁️' : '🙈'; }
+      if (inp) { inp.type = inp.type === 'password' ? 'text' : 'password'; b.innerHTML = inp.type === 'password' ? ICO_OJO : ICO_OJO_OFF; }
       break;
     }
-    case 'bloquearAhora': desbloqueado = false; ui.recMetodo = null; recuperacionProc.ok = false; ir('login'); toast('App bloqueada 🔒'); break;
+    case 'bloquearAhora': desbloqueado = false; ui.recMetodo = null; recuperacionProc.ok = false; recuperacionProc.usuario = null; ir('login'); toast('App bloqueada 🔒'); break;
     case 'cambiarClaveBtn': modalCambiarClave(); break;
     case 'cambiarPreguntaBtn': modalCambiarPregunta(); break;
     case 'verMaestro': ui.verMaestro = !ui.verMaestro; render(); break;
@@ -4102,7 +4241,15 @@ document.addEventListener('input', ev => {
 
 document.addEventListener('change', async ev => {
   const t = ev.target;
-  if (t.dataset.a === 'loginUsuario') { usuarioLogin = t.value; render(); return; }
+  if (t.dataset.a === 'loginUsuarioNombre') {
+    const u = usuarioPorNombre(t.value);
+    if (!u) return;
+    const antes = Boolean(usuarioLogin && datosUsuario(usuarioLogin)?.seguridad?.activa);
+    const ahora = Boolean(datosUsuario(u.id)?.seguridad?.activa);
+    usuarioLogin = u.id;
+    if (antes !== ahora) render();
+    return;
+  }
   if (t.dataset.a === 'selEj') { ui.ejSel = t.value; dibujarGrafica(); }
   if (t.dataset.a === 'metrica') { ui.metricaMedida = MEDIDAS_CAMPOS[t.value] ? t.value : 'peso'; dibujarGraficaMedidas(); }
   if (t.dataset.a === 'nutricion') { guardarNutricion(); actualizarNutricion(); }
@@ -4110,10 +4257,37 @@ document.addEventListener('change', async ev => {
   if (t.dataset.a === 'importarSalud' && t.files[0]) { importarSalud(t.files[0]); t.value = ''; }
   if (t.dataset.a === 'foto' && t.files[0]) guardarFoto(t.dataset.id, t.files[0]).catch(() => toast('No he podido leer esa imagen.'));
   if (t.name === 'lugar' && $('#fsEquipo')) $('#fsEquipo').hidden = t.value === 'gimnasio';
-  if (t.form?.id === 'formUsuario' && (t.name === 'avatar' || t.name === 'color')) {
-    const prev = $('.usuario-prev .avatar-u');
-    const fd = new FormData(t.form);
-    prev.textContent = fd.get('avatar'); prev.style.background = COLORES[Number(fd.get('color')) || 0];
+  if (t.dataset.a === 'avatarArchivo' && t.files[0]) {
+    try {
+      const data = await imagenAAvatar(t.files[0]);
+      const hidden = t.form?.querySelector('input[name=avatar]');
+      if (hidden) hidden.value = data;
+      t.form?.querySelectorAll('input[name=avatarEmoji]').forEach(r => { r.checked = false; });
+      const url = t.form?.querySelector('input[name=avatarUrl]'); if (url) url.value = '';
+      pintarPreviewUsuario(t.form);
+      toast('Foto lista. Guarda los cambios para aplicarla.');
+    } catch { toast('No he podido leer esa imagen.'); }
+    t.value = '';
+  }
+  if (t.form?.id === 'formUsuario') {
+    if (t.name === 'avatarEmoji') {
+      const hidden = t.form.querySelector('input[name=avatar]');
+      if (hidden) hidden.value = t.value;
+      pintarPreviewUsuario(t.form);
+    } else if (t.dataset.a === 'colorCustom') {
+      const r = t.form.querySelector('input[name=color][value=custom]'); if (r) r.checked = true;
+      pintarPreviewUsuario(t.form);
+    } else if (t.name === 'color') {
+      pintarPreviewUsuario(t.form);
+    } else if (t.dataset.a === 'avatarUrl') {
+      const url = t.value.trim();
+      if (url) {
+        const hidden = t.form.querySelector('input[name=avatar]');
+        if (hidden) hidden.value = url;
+        t.form.querySelectorAll('input[name=avatarEmoji]').forEach(r => { r.checked = false; });
+        pintarPreviewUsuario(t.form);
+      }
+    }
   }
   if (t.dataset.a === 'hora') { estado.ajustes.hora = t.value; guardar(); }
   if (t.dataset.a === 'ayudas') {
@@ -4135,9 +4309,12 @@ document.addEventListener('submit', async ev => {
   const f = new FormData(ev.target);
   // ---- Acceso y recuperación ----
   if (ev.target.id === 'formLogin') {
-    const id = String(f.get('usuario') || usuarioLogin || usuarios.activo);
-    if (await verificarClaveDe(datosUsuario(id), f.get('clave'))) {
-      entrarComo(id);
+    const u = usuarioPorNombre(f.get('usuarioNombre')) || usuarioPorCorreo(f.get('correo'));
+    if (!u) { $('#avisoLogin').textContent = 'No encuentro ese usuario. Revisa el nombre o el correo.'; return; }
+    usuarioLogin = u.id;
+    if (!datosUsuario(u.id).seguridad?.activa) { render(); return; }
+    if (await verificarClaveDe(datosUsuario(u.id), f.get('clave'))) {
+      entrarComo(u.id);
       toast(`Hola, ${usuarioActual().nombre} 👋`);
     } else {
       $('#avisoLogin').textContent = 'Contraseña incorrecta. Inténtalo de nuevo.';
@@ -4146,15 +4323,31 @@ document.addEventListener('submit', async ev => {
     return;
   }
   if (ev.target.id === 'formLoginClave') {
-    const id = String(f.get('usuario') || usuarioLogin || usuarios.activo);
+    const u = usuarioPorNombre(f.get('usuarioNombre')) || usuarioPorCorreo(f.get('correo'));
+    if (!u) { $('#avisoLogin').textContent = 'No encuentro ese usuario. Revisa el nombre o el correo.'; return; }
+    usuarioLogin = u.id;
+    if (datosUsuario(u.id).seguridad?.activa) { render(); return; }
     const clave = String(f.get('clave') || ''), clave2 = String(f.get('clave2') || '');
+    const correo = String(f.get('correo') || '').trim();
+    if (!correo) { $('#avisoLogin').textContent = 'Escribe tu correo: lo usaré para recuperar la contraseña.'; return; }
     if (clave.length < 4) { $('#avisoLogin').textContent = 'Usa al menos 4 caracteres.'; return; }
     if (clave !== clave2) { $('#avisoLogin').textContent = 'Las dos contraseñas no coinciden.'; return; }
-    const seguridad = await construirSeguridad({ clave });
-    if (id === usuarios.activo) { estado.seguridad = seguridad; guardar(); }
-    else { const d = cargar(id); d.seguridad = seguridad; localStorage.setItem(claveDe(id), JSON.stringify(d)); }
-    entrarComo(id);
+    const seguridad = await construirSeguridad({ clave, correo });
+    if (u.id === usuarios.activo) { estado.seguridad = seguridad; guardar(); }
+    else { const d = cargar(u.id); d.seguridad = seguridad; localStorage.setItem(claveDe(u.id), JSON.stringify(d)); }
+    entrarComo(u.id);
     toast(`Contraseña creada. ¡Dentro, ${usuarioActual().nombre}! 🔓`);
+    return;
+  }
+  if (ev.target.id === 'formRecIdent') {
+    const u = usuarioPorCorreo(f.get('correo')) || usuarioPorNombre(f.get('usuarioNombre'));
+    if (!u || !datosUsuario(u.id).seguridad?.activa) {
+      $('#avisoRec').textContent = 'No encuentro ninguna cuenta con esos datos.';
+      return;
+    }
+    recuperacionProc.usuario = u.id;
+    ui.recMetodo = null;
+    render();
     return;
   }
   if (ev.target.id === 'formPregunta') {
@@ -4170,7 +4363,7 @@ document.addEventListener('submit', async ev => {
   }
   if (ev.target.id === 'formMaestro') {
     const c = String(f.get('maestro') || '').trim().toUpperCase();
-    if (c && c === String(estado.seguridad?.maestro || '').toUpperCase()) { recuperacionProc.ok = true; render(); }
+    if (c && c === String(seguridadRecuperacion()?.maestro || '').toUpperCase()) { recuperacionProc.ok = true; render(); }
     else $('#avisoRec').textContent = 'Ese código maestro no es correcto.';
     return;
   }
@@ -4178,11 +4371,13 @@ document.addEventListener('submit', async ev => {
     const clave = String(f.get('clave') || ''), clave2 = String(f.get('clave2') || '');
     if (clave.length < 4) { $('#avisoRec').textContent = 'Usa al menos 4 caracteres.'; return; }
     if (clave !== clave2) { $('#avisoRec').textContent = 'Las dos contraseñas no coinciden.'; return; }
+    const id = recuperacionProc.usuario || usuarios.activo;
     const salt = nuevoSalt();
-    estado.seguridad = { ...estado.seguridad, salt, hash: await hashClave(clave, salt), actualizado: new Date().toISOString() };
-    desbloqueado = true; recuperacionProc.ok = false; recuperacionProc.codigo = null; ui.recMetodo = null;
-    guardar();
-    ir(estado.plan ? 'hoy' : 'bienvenida');
+    const nueva = { ...(seguridadRecuperacion() || {}), salt, hash: await hashClave(clave, salt), actualizado: new Date().toISOString() };
+    if (id === usuarios.activo) { estado.seguridad = nueva; guardar(); }
+    else { const d = cargar(id); d.seguridad = nueva; localStorage.setItem(claveDe(id), JSON.stringify(d)); }
+    desbloqueado = true; recuperacionProc.ok = false; recuperacionProc.codigo = null; recuperacionProc.usuario = null; ui.recMetodo = null;
+    entrarComo(id);
     toast('Contraseña actualizada. ¡Dentro! 🔓');
     return;
   }
@@ -4191,6 +4386,7 @@ document.addEventListener('submit', async ev => {
     if (clave.length < 4) { avisoCampo('#avisoSeg', 'Usa al menos 4 caracteres.'); return; }
     if (clave !== clave2) { avisoCampo('#avisoSeg', 'Las dos contraseñas no coinciden.'); return; }
     if (!String(f.get('respuesta') || '').trim()) { avisoCampo('#avisoSeg', 'Escribe una respuesta a la pregunta.'); return; }
+    if (!String(f.get('correo') || '').trim()) { avisoCampo('#avisoSeg', 'Escribe tu correo para poder recuperar la contraseña.'); return; }
     await crearSeguridad({ clave, pregunta: f.get('pregunta'), respuesta: f.get('respuesta'), correo: f.get('correo') });
     desbloqueado = true; guardar(); render();
     toast('Contraseña activada 🔒');
@@ -4210,11 +4406,13 @@ document.addEventListener('submit', async ev => {
   if (ev.target.id === 'formCambiarPregunta') {
     const respuesta = String(f.get('respuesta') || '').trim();
     if (!respuesta) { toast('Escribe una respuesta'); return; }
+    const correo = String(f.get('correo') || '').trim();
+    if (!correo) { toast('Escribe tu correo de recuperación'); return; }
     estado.seguridad = {
       ...estado.seguridad,
       pregunta: Number(f.get('pregunta')) || 0,
       respuesta: await hashClave(normalizarResp(respuesta), estado.seguridad.salt),
-      correo: String(f.get('correo') || '').trim(),
+      correo,
     };
     guardar(); cerrarModal(); render();
     toast('Datos de recuperación actualizados');
@@ -4271,8 +4469,9 @@ document.addEventListener('submit', async ev => {
   if (ev.target.id === 'formUsuario') {
     const nombre = String(f.get('nombre') || '').trim();
     if (!nombre) { toast('Escribe un nombre'); return; }
-    const avatar = f.get('avatar') || '🙂';
-    const color = Number(f.get('color')) || 0;
+    const avatar = String(f.get('avatar') || '').trim() || '🙂';
+    const colorSel = String(f.get('color') || '0');
+    const color = colorSel === 'custom' ? (String(f.get('colorCustom') || '').trim() || 0) : (Number(colorSel) || 0);
     const id = ev.target.dataset.id;
     if (usuarios.lista.some(u => u.id !== id && u.nombre.toLowerCase() === nombre.toLowerCase())) { toast('Ya hay un usuario con ese nombre'); return; }
     if (id) {
@@ -4282,13 +4481,16 @@ document.addEventListener('submit', async ev => {
       guardarUsuarios(); ir('usuarios'); toast('Usuario actualizado');
       return;
     }
-    // Cuenta nueva: contraseña y medidas obligatorias.
+    // Cuenta nueva: contraseña, correo y medidas obligatorias.
     const clave = String(f.get('clave') || ''), clave2 = String(f.get('clave2') || '');
+    const correo = String(f.get('correo') || '').trim();
     if (clave.length < 4) { toast('Usa al menos 4 caracteres en la contraseña'); return; }
     if (clave !== clave2) { toast('Las dos contraseñas no coinciden'); return; }
+    if (!correo) { toast('Escribe tu correo: lo usaré para recuperar tu contraseña'); return; }
+    if (usuarios.lista.some(u => normalizarCorreo(datosUsuario(u.id)?.seguridad?.correo) === normalizarCorreo(correo))) { toast('Ya hay una cuenta con ese correo'); return; }
     const nutricion = nutricionDeForm(f);
     if (!nutricion.peso || !nutricion.altura || !nutricion.edad) { toast('Completa tu peso, tu altura y tu edad'); return; }
-    const seguridad = await construirSeguridad({ clave });
+    const seguridad = await construirSeguridad({ clave, correo });
     const nuevoId = crearUsuario({
       nombre, avatar, color, nutricion, seguridad,
       medidas: [{ fecha: hoy(), peso: nutricion.peso, nota: 'Peso inicial' }],

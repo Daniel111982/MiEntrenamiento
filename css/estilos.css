@@ -518,9 +518,11 @@ input[type=url] { width: 100%; padding: 12px; border-radius: 12px; border: 1px s
 .dibujo .peso { fill: var(--naranja); stroke: color-mix(in srgb, var(--naranja) 55%, #000); }
 
 /* ---------- Usuarios ---------- */
-.avatar-u { display: inline-grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 50%; font-size: 1.2rem; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .25); }
+.avatar-u { display: inline-grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 50%; font-size: 1.2rem; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .25); overflow: hidden; }
 .avatar-u.grande { width: 54px; height: 54px; font-size: 1.7rem; border-radius: 18px; }
 .avatar-u.enorme { width: 88px; height: 88px; font-size: 2.8rem; border-radius: 28px; box-shadow: var(--sombra); }
+.avatar-u.foto { background: var(--tarjeta2); box-shadow: 0 0 0 2px color-mix(in srgb, var(--texto) 16%, transparent); }
+.avatar-u img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .avatar-btn { background: none; border: 0; padding: 0; cursor: pointer; border-radius: 50%; }
 .avatar-btn:hover .avatar-u { transform: scale(1.06); }
 .barra .racha + .avatar-btn { margin-left: 4px; }
@@ -533,6 +535,9 @@ input[type=url] { width: 100%; padding: 12px; border-radius: 12px; border: 1px s
 .mini-stats small { color: var(--tenue); font-size: .68rem; }
 .usuario-prev { text-align: center; margin: 4px 0 16px; }
 .chips.avatares .chip { font-size: 1.4rem; padding: 6px 10px; }
+.avatar-extra { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 4px; }
+.avatar-extra input[type=url] { flex: 1; min-width: 180px; }
+.color-custom-ico { display: grid; place-items: center; width: 100%; height: 100%; font-size: 1.1rem; }
 .chip.color { width: 44px; height: 44px; padding: 0; border: 3px solid transparent; }
 .chip.color:has(input:checked) { border-color: var(--texto); background-clip: padding-box; }
 .bienvenida .avatar-u.enorme { margin: 0 auto 8px; display: grid; }
@@ -636,6 +641,10 @@ input[type=url] { width: 100%; padding: 12px; border-radius: 12px; border: 1px s
   background: var(--fondo2); border: 1px dashed var(--borde); border-radius: 12px; padding: 10px; text-align: center; }
 .clave-fila { display: flex; align-items: center; gap: 8px; }
 .clave-fila input { flex: 1; }
+.clave-fila .icono { display: grid; place-items: center; }
+[data-a="verClave"] svg { display: block; }
+.btn[data-a="verMaestro"] { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.btn[data-a="verMaestro"] svg { display: block; }
 .campo-fila select, .campo-fila input { width: auto; }
 
 /* ---------- Descanso editable y ejercicios propios ---------- */
