@@ -37,7 +37,8 @@ Sigue estos pasos. Tardarás unos 10 minutos.
 2. Para probar rápido, **desactiva** *Confirm email* (así los usuarios entran sin
    confirmar el correo). Para producción, déjalo activado.
 3. En **Authentication → URL Configuration**, pon en **Site URL** la dirección de tu
-   app: `https://daniel111982.github.io/MiEntrenamiento/`
+   app: `https://dantal-app.pages.dev/`
+   (la copia antigua `https://daniel111982.github.io/MiEntrenamiento/` sigue funcionando)
 
 ## Paso 5 — Copiar las claves
 

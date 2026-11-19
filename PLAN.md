@@ -10,7 +10,8 @@
 
 - **Tecnología:** HTML · CSS · JavaScript ES6 (módulos). Sin npm ni compilación.
 - **Tipo:** PWA (web instalable) con **backend en Supabase (plan gratis)**.
-- **Dónde vive ahora:** GitHub Pages → https://daniel111982.github.io/MiEntrenamiento/
+- **Dónde vive ahora:** Cloudflare Pages → **https://dantal-app.pages.dev**
+  (GitHub Pages sigue como copia: https://daniel111982.github.io/MiEntrenamiento/)
 - **Qué ya hace:** programa personalizado, sesiones guiadas, nutrición, Running,
   seguimiento, usuarios, avisos, ideas e incidencias, **cuentas beta con código de
   invitación y caducidad**, **gestión de betas a distancia** y **sincronización de
@@ -118,9 +119,9 @@ contraseña local y las fotos (se quedan en el dispositivo).
 
 **Ordenador y navegador.** Es lo que ya tienes: la app se abre en cualquier navegador.
 
-- **Hoy:** servida por GitHub Pages (gratis).
-- **Fase 3 (gratis):** se sirve desde **Cloudflare Pages** para tener una dirección limpia
-  (`dantal.pages.dev`), HTTPS y publicación automática. Ver «Fase 3» más abajo.
+- **Hoy:** servida por **Cloudflare Pages** en https://dantal-app.pages.dev (gratis, HTTPS
+  y publicación automática). GitHub Pages sigue activa como copia.
+- **Fase 3 (hecha):** migración a Cloudflare Pages. Ver «Fase 3» más abajo.
 - **Instalable:** al ser PWA, se puede "Añadir a pantalla de inicio" en móvil y
   escritorio, y funciona sin conexión.
 - **Ventaja:** la web es la base de todo lo demás (Android e iOS reutilizan esta misma
@@ -219,34 +220,39 @@ mayoría ya lo tienes).
 - [x] **Fase 2 — Cuentas y sincronización.** Usuarios reales en el servidor y datos
   sincronizados entre dispositivos. *(hecho: v32, más un ping diario que evita que
   Supabase se pause a los 7 días sin visitas)*
-- [ ] **Fase 3 — URL propia (gratis).** Un dominio de verdad cuesta ~10 €/año; mientras
-  tanto se usa **Cloudflare Pages** para tener una dirección limpia (`dantal.pages.dev`)
+- [x] **Fase 3 — URL propia (gratis).** Un dominio de verdad cuesta ~10 €/año; mientras
+  tanto se usa **Cloudflare Pages** en https://dantal-app.pages.dev (hecho el 19-11-2026),
   con HTTPS, actualización automática y lista para Android/TWA.
 - [ ] **Fase 4 — Android.** Paquete TWA y publicación en Google Play.
 - [ ] **Fase 5 — iOS.** Envoltorio con Capacitor y publicación en la App Store.
 - [ ] **Fase 6 — Monetización.** Suscripciones con el pago de las tiendas.
 
-### Fase 3 — URL propia gratis (Cloudflare Pages)
+### Fase 3 — URL propia gratis (Cloudflare Pages) — HECHA
 
 Un **dominio propio de verdad** (tipo `dantal.com`) **no es gratis**: cuesta unos
 8–12 € al año. Mientras tanto, **Cloudflare Pages** (plan gratis) da una dirección limpia
 y profesional, con HTTPS y actualización automática desde GitHub. Además sirve para
 **Android/TWA**, porque Google Play solo pide un dominio que tú controles con HTTPS.
 
-**Pasos (una sola vez):**
+**Resultado (19-11-2026): la app está publicada en https://dantal-app.pages.dev**
+(se comprobó que abre la pantalla de acceso de DanTal y no da errores de consola).
+El nombre `dantal` ya estaba ocupado, así que se usó `dantal-app`. GitHub Pages sigue
+disponible como copia.
 
-1. Crear una cuenta gratis en https://dash.cloudflare.com/sign-up (no pide tarjeta).
+**Pasos que se hicieron (una sola vez):**
+
+1. Cuenta gratis en https://dash.cloudflare.com/sign-up y verificación del correo.
 2. En el panel: **Workers & Pages → Create application → Pages → Connect to Git**.
-   Autorizar Cloudflare en GitHub dándole acceso solo al repositorio `MiEntrenamiento`.
-3. Elegir el repositorio `Daniel111982/MiEntrenamiento` y la rama `main`.
-4. Configurar la compilación:
-   - **Project name:** `dantal` → la dirección será `https://dantal.pages.dev`
-     (si estuviera cogido, probar `dantal-app`).
+   Se autorizó la app **Cloudflare Workers and Pages** en GitHub con acceso **solo al
+   repositorio `MiEntrenamiento`**.
+3. Repositorio `Daniel111982/MiEntrenamiento`, rama `main`.
+4. Configuración de compilación usada:
+   - **Project name:** `dantal-app` → `https://dantal-app.pages.dev`
    - **Production branch:** `main`
    - **Framework preset:** `None`
    - **Build command:** `exit 0`
    - **Build output directory:** `/`
-5. **Save and Deploy.** En un minuto la app estará en `https://dantal.pages.dev`.
+5. **Save and Deploy.** El despliegue terminó correctamente.
 6. A partir de ahí, **cada `push` a `main` se publica solo**.
 
 > El día que se quiera un dominio real, se compra (Cloudflare Registrar lo vende casi a
@@ -283,9 +289,10 @@ La clave que se usa es la **pública** (anon), la misma que va dentro de la app;
 ## Decisiones que necesito de ti
 
 1. ~~Crear el proyecto en Supabase y conectar la app~~ **Hecho** (Fases 1 y 2).
-2. **¿Tienes dominio propio** o seguimos con GitHub Pages de momento.
+2. ~~¿Tienes dominio propio?~~ **Hecho:** se usa `dantal-app.pages.dev` gratis; un dominio
+   real (~10 €/año) se podrá añadir después en *Custom domains*.
 3. **¿Tienes un Mac** para el día de iOS? (si no, iOS se deja para el final)
 4. **Modelo de negocio:** ¿suscripción, pago único, o gratis con extras?
 
-Lo siguiente será la **Fase 3** (dominio propio) o la **Fase 4** (Android/TWA), según lo
+Lo siguiente será la **Fase 4** (Android/TWA) o la **Fase 6** (monetización), según lo
 que prefieras.

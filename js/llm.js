@@ -18,7 +18,7 @@ const COMPATIBLES = {
   mistral: { url: 'https://api.mistral.ai/v1/chat/completions', extraHeaders: {} },
   openrouter: {
     url: 'https://openrouter.ai/api/v1/chat/completions',
-    extraHeaders: { 'HTTP-Referer': 'https://daniel111982.github.io/MiEntrenamiento', 'X-Title': 'DanTal' },
+    extraHeaders: { 'HTTP-Referer': 'https://dantal-app.pages.dev', 'X-Title': 'DanTal' },
   },
 };
 
