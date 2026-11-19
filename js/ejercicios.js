@@ -254,3 +254,35 @@ export function sincronizarEjerciciosUsuario(propios = []) {
     porId[ej.id] = ej;
   }
 }
+
+// Añade los ejercicios que publica el dueño desde el panel de administración.
+// Se reconstruyen en cada carga: si el dueño borra uno, desaparece aquí.
+// Los ejercicios propios del usuario tienen prioridad y nunca se pisan.
+export function sincronizarEjerciciosGlobales(lista = []) {
+  for (let i = EJERCICIOS.length - 1; i >= 0; i--) {
+    if (EJERCICIOS[i].global) { delete porId[EJERCICIOS[i].id]; EJERCICIOS.splice(i, 1); }
+  }
+  for (const e of lista) {
+    if (!e?.id) continue;
+    const actual = porId[e.id];
+    if (actual?.propio) continue;
+    if (actual) {
+      const i = EJERCICIOS.findIndex(x => x.id === e.id);
+      if (i >= 0) EJERCICIOS.splice(i, 1);
+      delete porId[e.id];
+    }
+    const ej = {
+      id: e.id, nombre: e.nombre, patron: e.patron, musculos: e.musculos || [],
+      equipo: e.equipo || [], compuesto: Boolean(e.compuesto), desc: e.desc || '',
+      ...(e.tipo === 'tiempo' ? { tipo: 'tiempo' } : {}),
+      ...(e.videoCustom ? { videoCustom: e.videoCustom } : {}),
+      ...(e.maquinaCustom ? {
+        maquinaCustom: e.maquinaCustom, lineaCustom: e.lineaCustom,
+        musculoCustom: e.musculoCustom, ajusteCustom: e.ajusteCustom,
+      } : {}),
+      global: true,
+    };
+    EJERCICIOS.push(ej);
+    porId[ej.id] = ej;
+  }
+}

@@ -128,6 +128,28 @@ export const guardarContenidoNube = contenido =>
 export const borrarContenidoNube = id =>
   peticion(`/rest/v1/avisos?id=eq.${encodeURIComponent(id)}`, { metodo: 'DELETE' });
 
+// ------------------------------------------------------- Catálogo global
+// Ejercicios, alimentos y rutinas que el dueño publica para todas las
+// cuentas. Los usuarios normales solo pueden LEER los activos (lo decide
+// la base de datos); el dueño ve también los ocultos y puede escribir.
+export const listarCatalogoNube = tipo =>
+  peticion(`/rest/v1/catalogos?tipo=eq.${encodeURIComponent(tipo)}&select=*&order=orden.asc,id.asc`);
+
+export const guardarCatalogoNube = fila =>
+  peticion('/rest/v1/catalogos', {
+    metodo: 'POST',
+    cuerpo: { ...fila, autor: usuarioNube()?.id, actualizado: new Date().toISOString() },
+    cabeceras: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+  });
+
+export const borrarCatalogoNube = (tipo, id) =>
+  peticion(`/rest/v1/catalogos?tipo=eq.${encodeURIComponent(tipo)}&id=eq.${encodeURIComponent(id)}`, { metodo: 'DELETE' });
+
+// Borra una cuenta desde el panel del dueño. La base de datos comprueba
+// que quien llama es administrador y que no se borra a sí mismo.
+export const borrarUsuarioAdminNube = id =>
+  peticion('/rest/v1/rpc/borrar_usuario_admin', { metodo: 'POST', cuerpo: { p_id: id } });
+
 // ---------------------------------------------------------------- Datos
 export async function leerDatosNube() {
   const uid = usuarioNube()?.id;

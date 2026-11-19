@@ -30,6 +30,12 @@ Sigue estos pasos. Tardarás unos 10 minutos.
 4. Pulsa **Run** (abajo a la derecha).
 5. Debe aparecer **«Success. No rows returned»**. Ya tienes las tablas, la seguridad y
    el alta automática de usuarios.
+6. **Si el proyecto ya existía** (como es nuestro caso), abre otra *New query*, pega
+   ahora **`supabase/esquema-admin.sql`** y pulsa **Run**. Crea la tabla `catalogos` y
+   la función `borrar_usuario_admin(uuid)` que usa el panel de administración. Es
+   incremental: también debe aparecer **«Success. No rows returned»** y se puede
+   repetir sin problema. Para instalaciones nuevas, ese contenido ya está incluido
+   al final de `esquema.sql`.
 
 > **Ya ejecutado el 19-11-2026** en el proyecto real. El esquema incluye además la
 > función `borrar_mi_cuenta()` (RGPD): el usuario autenticado puede borrar su cuenta
@@ -42,6 +48,14 @@ Sigue estos pasos. Tardarás unos 10 minutos.
 > `public.es_admin()` puede insertar, editar o borrar. `anon` no tiene permisos. Se gestiona
 > desde **Ajustes → Contenidos de la app** y aparece en la pantalla «Hoy». Verificado por
 > API: usuario normal 200 al leer y 403 al escribir, anon 401, dueño 201/204.
+>
+> **Pendiente de ejecutar:** `esquema-admin.sql` (paso 6). Mientras no esté, la app
+> funciona igual con sus catálogos de serie y **Ajustes → Administración** muestra un
+> aviso con este archivo. Cuando se ejecute, el dueño podrá publicar ejercicios,
+> alimentos y rutinas globales y editar o borrar cuentas desde el panel. La RLS hará
+> que las cuentas normales solo lean los elementos activos, `anon` no tenga acceso y
+> solo `public.es_admin()` pueda escribir o borrar usuarios. La app **no necesita
+> `service_role`** para nada de esto.
 
 ## Paso 4 — Ajustar el acceso (recomendado)
 
@@ -72,9 +86,10 @@ Sigue estos pasos. Tardarás unos 10 minutos.
 ## Estado actual
 
 Ya están hechas la **Fase 1** (cuentas reales y betas a distancia), la **Fase 2**
-(sincronización) y la **Fase 3** (URL propia gratis en Cloudflare Pages). La app usa
-esta misma clave pública para avisos, betas, sync y borrado de cuenta. Para publicar,
-basta con hacer `push` a `main`: Cloudflare Pages actualiza la web sola.
+(sincronización), la **Fase 3** (URL propia gratis en Cloudflare Pages) y la **Fase 3C**
+(panel de administración; falta el paso 6 de SQL en el proyecto real). La app usa
+esta misma clave pública para avisos, catálogos, betas, sync y borrado de cuenta. Para
+publicar, basta con hacer `push` a `main`: Cloudflare Pages actualiza la web sola.
 
 ---
 
@@ -95,7 +110,9 @@ basta con hacer `push` a `main`: Cloudflare Pages actualiza la web sola.
 
 ## Lo que necesito de ti ahora
 
-1. Crear el proyecto en Supabase y ejecutar `esquema.sql` (pasos 1–3).
-2. Mandarme el **Project URL** y la **clave anon public** (paso 5).
+1. ~~Crear el proyecto en Supabase y ejecutar `esquema.sql` (pasos 1–3).~~ **Hecho.**
+2. ~~Mandarme el **Project URL** y la **clave anon public** (paso 5).~~ **Hecho.**
+3. **Pegar `esquema-admin.sql` en SQL Editor → New query → Run** (paso 6). Es lo
+   único que falta para estrenar el panel de administración completo.
 
 Con eso, sigo yo.

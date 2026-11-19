@@ -350,6 +350,13 @@ textarea { resize: vertical; min-height: 68px; }
 .campo textarea { margin-top: 6px; font-weight: 400; }
 .tenue.error { color: var(--peligro); font-weight: 700; }
 
+/* Editor de rutinas del panel de administración */
+.rutina-nuevo { display: grid; grid-template-columns: 2fr repeat(3, 1fr) auto; gap: 6px; align-items: center; margin-bottom: 10px; }
+.rutina-nuevo select, .rutina-nuevo input { padding: 10px; font-size: .85rem; }
+.rutina-ej { gap: 8px; border: 1px solid var(--borde); border-radius: 12px; padding: 8px 10px; margin-bottom: 6px; background: var(--fondo2); }
+.rutina-ej span { flex: 1; min-width: 0; font-size: .9rem; }
+@media (max-width: 560px) { .rutina-nuevo { grid-template-columns: 1fr 1fr; } .rutina-nuevo select { grid-column: 1 / -1; } }
+
 /* Asistente de bienvenida */
 .bienvenida { text-align: center; padding: calc(28px + env(safe-area-inset-top)) 0 8px; }
 .bienvenida h1 { margin: 6px 0 4px; }

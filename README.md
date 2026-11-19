@@ -4,7 +4,7 @@ App web instalable (PWA) de entrenamiento y nutrición. **Entrena · Nutre · Ev
 
 **Probarla:** https://dantal-app.pages.dev/ (copia en https://daniel111982.github.io/MiEntrenamiento/)
 
-**Cuentas:** acceso con correo y contraseña (Supabase, plan gratis). La primera cuenta es la administradora; las demás entran con un código beta que reparte el dueño, con caducidad o sin límite. Sin conexión se sigue usando igual; al volver la red se sincroniza.
+**Cuentas:** acceso con correo y contraseña (Supabase, plan gratis). La primera cuenta es la administradora; las demás entran con un código beta que reparte el dueño, con caducidad o sin límite. Sin conexión se sigue usando igual; al volver la red se sincroniza. El dueño gestiona desde el panel de administración los catálogos globales y las cuentas cloud.
 
 ## Funciones
 
@@ -27,6 +27,7 @@ App web instalable (PWA) de entrenamiento y nutrición. **Entrena · Nutre · Ev
 - **Coach mejorado:** explica técnica con pasos reales, alternativas según tu material, detecta estancamiento y compara tus metas con tu ingesta real del día.
 - **Privacidad (RGPD):** política y consentimiento dentro de la app, con finalidades claras y ejercicio del derecho a borrado.
 - **Contenidos del dueño:** el administrador publica avisos globales que aparecen en «Hoy»; solo él puede escribirlos (el resto solo lee).
+- **Panel de administración** (*Ajustes → Administración*): el dueño publica, edita, oculta y borra **ejercicios, alimentos y rutinas globales**, y puede editar o borrar **cuentas cloud**. Los cambios llegan a todas las cuentas; la base de datos solo permite escribir al administrador. Las rutinas globales se copian en «Mis sesiones» sin sustituir el programa de cada usuario.
 - **Datos:** resumen en PDF, exportación CSV y copia de seguridad en JSON (de un usuario o de todos).
 
 ## Ejecutar en local
@@ -57,7 +58,7 @@ y abre http://localhost:8765.
 | `js/planificador.js` | Reorganización y ajuste de sesiones |
 | `js/rgpd.js` | Política de privacidad y consentimiento |
 | `js/coach.js`, `js/llm.js` | Coach local y conexión opcional con IA |
-| `supabase/esquema.sql`, `supabase/GUIA.md` | Tablas, permisos y pasos del backend gratis |
+| `supabase/esquema.sql`, `supabase/esquema-admin.sql`, `supabase/GUIA.md` | Tablas, permisos y pasos del backend gratis (el segundo es el paso incremental del panel admin) |
 | `sw.js` | Funcionamiento sin conexión |
 | `VERSIONES/` | Copias completas por versión, historial y scripts para guardar o restaurar |
 
@@ -69,7 +70,7 @@ El proyecto guarda una copia completa de cada versión en `VERSIONES/`, para pod
 - `VERSIONES/nueva-version.cmd -Nota "..."` — guarda el estado actual como versión nueva.
 - `VERSIONES/restaurar.cmd -Version v1.00` — vuelve a una versión anterior.
 
-La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.00`). Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
+La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.01`). La caché del service worker es `dantal-v4.4` y los archivos estáticos usan `?v=4.4`. Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
 
 ## Privacidad y seguridad
 
@@ -77,4 +78,6 @@ La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahor
 - Las fotos, los datos de seguridad locales y las fotos de progreso **no se sincronizan**.
 - Los reportes de «Ideas e incidencias» son privados del dueño.
 - Los avisos globales se guardan en la tabla `avisos` de Supabase: lectura para cuentas autenticadas, escritura solo para el administrador.
+- Los catálogos globales viven en la tabla `catalogos`: las cuentas normales solo leen los activos; el dueño ve también los ocultos y puede escribir. Las cuentas normales no pueden borrar usuarios: la función `borrar_usuario_admin(uuid)` comprueba `es_admin()` en la base de datos.
+- Si las tablas nuevas aún no están creadas, la app sigue funcionando con sus catálogos de serie y el panel indica que falta ejecutar `supabase/esquema-admin.sql`.
 - Política y consentimiento RGPD disponibles en **Ajustes → Privacidad y RGPD**.

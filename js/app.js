@@ -1,4 +1,4 @@
-import { EJERCICIOS, EJERCICIOS_BASE, EQUIPOS, MUSCULOS, PATRONES, porId, sincronizarEjerciciosUsuario } from './ejercicios.js';
+import { EJERCICIOS, EJERCICIOS_BASE, EQUIPOS, MUSCULOS, PATRONES, porId, sincronizarEjerciciosUsuario, sincronizarEjerciciosGlobales } from './ejercicios.js';
 import {
   OBJETIVOS, METODOS, FRECUENCIAS, frecuenciaPosible, SEMANAS_CICLO, fase, prescribir, generarPrograma, generarAgenda, alternativas, unoRM,
   duracionEstimada, ajustarDuracion, sesionALaCarta, descansoRecomendado, hoyIso, iso, deIso, lunes, sumarDias,
@@ -7,7 +7,7 @@ import { dibujoSVG, pasosDibujo, guiaEjercicio } from './tecnica.js';
 import { aplicarAyudas, esconder as esconderAyuda } from './ayudas.js';
 import { volumenSesion, mejorSerie, recordAntes, recordsDeSesion, racha, volumenMuscular, recuperacion, historialCSV } from './stats.js';
 import { MARCA, logoDantal, isotipoCuadrado, cabeceraMarca } from './marca.js';
-import { COMIDAS, CATEGORIAS_ALIMENTO, ALIMENTOS, alimentoPorId, macrosDe, sumarMacros, buscarAlimentos, RECETAS, resumenReceta } from './alimentos.js';
+import { COMIDAS, CATEGORIAS_ALIMENTO, ALIMENTOS, alimentoPorId, macrosDe, sumarMacros, buscarAlimentos, RECETAS, resumenReceta, sincronizarAlimentosGlobales } from './alimentos.js';
 import { generarInsightsDantal } from './ia.js';
 import { EQUIPO_TECHNOGYM, urlVideoTechnogym, infoTechnogym, esTechnogym, ilustracionTechnogymSVG } from './technogym.js';
 import { videoEjercicio } from './videos.js';
@@ -37,6 +37,7 @@ import {
   miPerfilNube, listarPerfilesNube, actualizarPerfilNube, actualizarMiPerfilNube,
   canjearCodigoNube, leerDatosNube, guardarDatosNube, borrarCuentaNube,
   listarContenidosNube, guardarContenidoNube, borrarContenidoNube,
+  listarCatalogoNube, guardarCatalogoNube, borrarCatalogoNube, borrarUsuarioAdminNube,
 } from './nube.js';
 import { LOGROS, RETOS, retoDelMes, calcularLogros, progresoReto } from './logros.js';
 import { informeSemanal, textoInforme } from './informe.js';
@@ -50,7 +51,7 @@ import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from 
 // =====================================================================
 // Cada usuario guarda sus datos por separado: 'mientrenamiento:u:<id>'.
 // La lista de usuarios y cuál está activo van en 'mientrenamiento:usuarios'.
-const APP_VERSION = '2.00'; // versión de la app (ver VERSIONES/HISTORIAL.md)
+const APP_VERSION = '2.01'; // versión de la app (ver VERSIONES/HISTORIAL.md)
 const CLAVE = 'mientrenamiento:v2'; // formato anterior, de un solo usuario
 const CLAVE_USUARIOS = 'mientrenamiento:usuarios';
 const claveDe = id => `mientrenamiento:u:${id}`;
@@ -253,6 +254,8 @@ const UI_INICIAL = {
   coachIgnorados: [], coachIAOk: null, coachNanoOk: null, coachNanoDescargando: false,
   informeOffset: 0, escanerResultado: null, escanerComida: 'comida', menuSemilla: 0,
   contenidos: [], contenidoEdit: null,
+  catalogos: { ejercicio: [], alimento: [], rutina: [] },
+  catalogosEstado: 'inicial', catalogosError: '', adminEdit: null,
 };
 
 // Cambia de usuario. Sin `entrar`, la sesión queda bloqueada y se pide la contraseña.
@@ -442,6 +445,8 @@ const RUTAS = [
   [/^ajustes\/incidencias$/, ajIncidencias, 'ajustes'],
   [/^ajustes\/beta$/, ajBeta, 'ajustes'],
   [/^ajustes\/contenidos$/, ajContenidos, 'ajustes'],
+  [/^ajustes\/admin$/, () => ajAdmin('ejercicios'), 'ajustes'],
+  [/^ajustes\/admin\/(ejercicios|alimentos|rutinas|usuarios)$/, ajAdmin, 'ajustes'],
   [/^ajustes\/avisos$/, ajAvisos, 'ajustes'],
   [/^ajustes\/salud$/, ajSalud, 'ajustes'],
   [/^ajustes\/coach$/, ajCoach, 'ajustes'],
@@ -980,11 +985,18 @@ function programaSesion(i) {
 
 function programaMias() {
   const m = estado.misSesiones;
+  const globales = (ui.catalogos.rutina || []).filter(x => x.activo !== false);
   return pagina({
     titulo: 'Mis sesiones', padre: 'programa',
     extra: '<a class="icono" href="#programa/carta" title="Crear sesión">＋</a>',
-    cuerpo: m.length ? m.map((s, i) => tarjetaResumenSesion(s, `programa/mia/${i}`)).join('')
-      : vacioMsg('⭐', 'Aún no tienes sesiones propias', 'Crea una sesión a la carta y guárdala para repetirla cuando quieras.', '<a class="btn" href="#programa/carta">Crear sesión a la carta</a>'),
+    cuerpo: (m.length ? m.map((s, i) => tarjetaResumenSesion(s, `programa/mia/${i}`)).join('')
+      : vacioMsg('⭐', 'Aún no tienes sesiones propias', 'Crea una sesión a la carta y guárdala para repetirla cuando quieras.', '<a class="btn" href="#programa/carta">Crear sesión a la carta</a>'))
+      + (globales.length ? grupo('Rutinas de DanTal', globales.map(r => `
+        <div class="celda">
+          <span class="ic violeta">📋</span>
+          <span class="celda-t"><b>${esc(r.datos?.nombre || r.id)}</b><small>${esc(r.datos?.desc || '')} · ${(r.datos?.ejercicios || []).length} ejercicios</small></span>
+          <button class="btn sec peq" data-a="rutinaCopiar" data-id="${esc(r.id)}">Copiar</button>
+        </div>`).join('')) : ''),
   });
 }
 
@@ -2828,6 +2840,10 @@ function ajustes() {
       ${modoNube()
         ? (soyDueno() ? grupo('Administración',
             celda('ajustes/incidencias', '📥', 'Ideas e incidencias', 'Lo que envían los usuarios', 'rojo', contarNuevas() ? `${contarNuevas()} sin leer` : '') +
+            celda('ajustes/admin/ejercicios', '🏋️', 'Ejercicios globales', 'Catálogo que ven todas las cuentas', 'azul', (ui.catalogos.ejercicio || []).length || '') +
+            celda('ajustes/admin/alimentos', '🥗', 'Alimentos globales', 'Catálogo de nutrición de la app', 'verde', (ui.catalogos.alimento || []).length || '') +
+            celda('ajustes/admin/rutinas', '📋', 'Rutinas globales', 'Sesiones que cualquier usuario puede copiar', 'violeta', (ui.catalogos.rutina || []).length || '') +
+            celda('ajustes/admin/usuarios', '👥', 'Usuarios cloud', 'Edita cuentas y accesos desde el servidor', 'naranja', (perfilesNube || []).length || '') +
             celda('ajustes/beta', '🎟️', 'Beta testers', 'Reparte y gestiona los accesos de prueba', 'violeta', '') +
             celda('ajustes/contenidos', '📢', 'Contenidos de la app', 'Publica avisos para todas las cuentas', 'verde', ui.contenidos.length || '')) : '')
         : (soyDueno() || (!hayDueno() && !esBeta(usuarioActual())) ? grupo('Administración',
@@ -3043,6 +3059,256 @@ function ajContenidos() {
         : vacioMsg('📭', 'Sin contenidos publicados', 'Publica el primer aviso para que aparezca en la pantalla de inicio de todos.')}
     `,
   });
+}
+
+// =====================================================================
+// Panel de administración: catálogos globales y cuentas cloud.
+// Solo lo ve la cuenta marcada como administradora; la base de datos
+// comprueba lo mismo antes de aceptar cualquier escritura.
+// =====================================================================
+const ADMIN_TABS = [
+  ['ejercicios', '🏋️', 'Ejercicios'],
+  ['alimentos', '🥗', 'Alimentos'],
+  ['rutinas', '📋', 'Rutinas'],
+  ['usuarios', '👥', 'Usuarios'],
+];
+
+function ajAdminPrivada() {
+  return pagina({
+    titulo: 'Administración', padre: 'ajustes',
+    cuerpo: vacioMsg('🔒', 'Sección privada', 'Solo la cuenta marcada como administradora puede gestionar los catálogos y las cuentas.'),
+  });
+}
+
+function ajAdmin(seccion = 'ejercicios') {
+  if (!soyDueno()) return ajAdminPrivada();
+  if (!modoNube()) {
+    return pagina({
+      titulo: 'Administración', padre: 'ajustes',
+      cuerpo: vacioMsg('☁️', 'Necesitas una cuenta cloud', 'El panel de administración guarda los cambios en el servidor. Entra con la cuenta del dueño para usarlo.'),
+    });
+  }
+  const tab = ADMIN_TABS.some(t => t[0] === seccion) ? seccion : 'ejercicios';
+  if (tab === 'usuarios') { if (perfilesNubeEstado === 'inicial') cargarPerfilesNube(); }
+  else if (ui.catalogosEstado === 'inicial') cargarCatalogos();
+
+  const nav = `<div class="chips">${ADMIN_TABS.map(([k, ico, nombre]) =>
+    `<a class="chip ${k === tab ? 'on' : ''}" href="#ajustes/admin/${k}">${ico} ${nombre}</a>`).join('')}</div>`;
+  const cuerpo = tab === 'ejercicios' ? adminEjercicios()
+    : tab === 'alimentos' ? adminAlimentos()
+      : tab === 'rutinas' ? adminRutinas() : adminUsuarios();
+  return pagina({
+    titulo: 'Administración', padre: 'ajustes',
+    sub: 'Cambios globales · solo el dueño puede escribir en el servidor',
+    cuerpo: nav + cuerpo,
+  });
+}
+
+// Aviso cuando todavía no se ha ejecutado esquema-admin.sql en Supabase.
+function avisoCatalogos() {
+  if (ui.catalogosEstado !== 'error') return '';
+  return `<p class="aviso-ia mal">No he podido leer el catálogo del servidor: ${esc(ui.catalogosError || '')}. Si es la primera vez, ejecuta <code>supabase/esquema-admin.sql</code> en el editor SQL de Supabase y pulsa Recargar.</p>`;
+}
+
+function adminFila(tipo, fila) {
+  const d = fila.datos || {};
+  const ed = ui.adminEdit?.tipo === tipo && ui.adminEdit?.id === fila.id;
+  const detalle = tipo === 'ejercicio'
+    ? `${(d.musculos || []).map(m => MUSCULOS[m] || m).join(', ') || 'Sin músculos'} · ${(d.equipo || []).map(x => EQUIPOS[x] || x).join(', ') || 'Sin material'}`
+    : tipo === 'alimento'
+      ? `${fmtNum(d.kcal)} kcal · ${d.prot || 0} g proteína por 100 g · ${CATEGORIAS_ALIMENTO[d.cat] || d.cat || ''}`
+      : `${(d.ejercicios || []).length} ejercicios${d.desc ? ' · ' + esc(d.desc) : ''}`;
+  return `<div class="celda ${ed ? 'activo' : ''}">
+    <span class="ic ${fila.activo === false ? 'rojo' : 'verde'}">${fila.activo === false ? '🙈' : tipo === 'ejercicio' ? '🏋️' : tipo === 'alimento' ? '🥗' : '📋'}</span>
+    <span class="celda-t"><b>${esc(d.nombre || fila.id)}</b><small><code>${esc(fila.id)}</code> · ${detalle}</small></span>
+    <div class="acciones">
+      <button class="icono peq" data-a="adminEditar" data-tipo="${tipo}" data-id="${esc(fila.id)}" title="Editar">✎</button>
+      <button class="icono peq" data-a="adminQuitar" data-tipo="${tipo}" data-id="${esc(fila.id)}" title="Borrar">🗑️</button>
+    </div>
+  </div>`;
+}
+
+function adminCabecera(titulo, texto, recargar = true, conAviso = true) {
+  return `<div class="tarjeta">
+    <h2>${titulo}</h2>
+    <p class="tenue">${texto}</p>
+    ${conAviso ? avisoCatalogos() : ''}
+    ${recargar ? '<div class="botones"><button class="btn sec" data-a="catalogosRecargar">🔄 Recargar del servidor</button></div>' : ''}
+  </div>`;
+}
+
+function adminEjercicios() {
+  const ed = ui.adminEdit?.tipo === 'ejercicio' ? (ui.catalogos.ejercicio || []).find(x => x.id === ui.adminEdit.id) : null;
+  const e = ed?.datos || {};
+  const lista = ui.catalogos.ejercicio || [];
+  return adminCabecera('🏋️ Ejercicios globales', 'Los ejercicios que publiques aquí aparecen en la biblioteca de todas las cuentas. Tus ejercicios propios siguen siendo solo tuyos.')
+    + `<form id="formAdminEjercicio" class="tarjeta">
+        <input type="hidden" name="codigo" value="${esc(ed?.id || '')}">
+        <label class="campo">Identificador (letras, números y guiones)
+          <input type="text" name="idTexto" pattern="[a-z0-9\\-]+" maxlength="40" value="${esc(ed?.id || '')}" ${ed ? 'readonly' : ''} placeholder="ej. press-inclinado-maquina" required></label>
+        <label class="campo">Nombre<input type="text" name="nombre" maxlength="50" value="${esc(e.nombre || '')}" required></label>
+        <label class="campo">Patrón de movimiento<select name="patron">${Object.entries(PATRONES).map(([k, v]) => `<option value="${k}" ${e.patron === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
+        <fieldset><legend>Músculos</legend><div class="chips">${Object.entries(MUSCULOS).map(([k, v]) => `<label class="chip"><input type="checkbox" name="musculos" value="${k}" ${(e.musculos || []).includes(k) ? 'checked' : ''}>${v}</label>`).join('')}</div></fieldset>
+        <fieldset><legend>Material</legend><div class="chips">${Object.entries(EQUIPOS).map(([k, v]) => `<label class="chip"><input type="checkbox" name="equipo" value="${k}" ${(e.equipo || []).includes(k) ? 'checked' : ''}>${v}</label>`).join('')}</div></fieldset>
+        <div class="medida-grid">
+          <label class="campo">Tipo<select name="tipo"><option value="reps" ${e.tipo !== 'tiempo' ? 'selected' : ''}>Repeticiones</option><option value="tiempo" ${e.tipo === 'tiempo' ? 'selected' : ''}>Por tiempo</option></select></label>
+          <label class="campo">¿Multiarticular?<select name="compuesto"><option value="si" ${e.compuesto !== false ? 'selected' : ''}>Sí</option><option value="no" ${e.compuesto === false ? 'selected' : ''}>No</option></select></label>
+        </div>
+        <label class="campo">Descripción / técnica<textarea name="desc" rows="3" maxlength="300">${esc(e.desc || '')}</textarea></label>
+        <label class="campo">Vídeo de YouTube (opcional)<input type="url" name="videoCustom" value="${esc(e.videoCustom || '')}" placeholder="https://youtu.be/…"></label>
+        <div class="medida-grid">
+          <label class="campo">Orden<input type="number" name="orden" value="${ed?.orden ?? 0}"></label>
+          <label class="campo">Estado<select name="activo"><option value="1" ${ed?.activo !== false ? 'selected' : ''}>Visible</option><option value="0" ${ed?.activo === false ? 'selected' : ''}>Oculto</option></select></label>
+        </div>
+        <div class="botones"><button class="btn" type="submit">${ed ? 'Guardar cambios' : 'Publicar ejercicio'}</button>
+          ${ed ? '<button class="btn sec" type="button" data-a="adminNuevo">Cancelar edición</button>' : ''}</div>
+      </form>`
+    + (lista.length ? grupo('Publicados (' + lista.length + ')', lista.map(f => adminFila('ejercicio', f)).join(''))
+      : vacioMsg('🏋️', 'Sin ejercicios globales', 'Publica el primero y aparecerá en la biblioteca de todas las cuentas.'));
+}
+
+function adminAlimentos() {
+  const ed = ui.adminEdit?.tipo === 'alimento' ? (ui.catalogos.alimento || []).find(x => x.id === ui.adminEdit.id) : null;
+  const a = ed?.datos || {};
+  const lista = ui.catalogos.alimento || [];
+  const num = (v, d) => esc(v ?? d);
+  return adminCabecera('🥗 Alimentos globales', 'Macros por cada 100 g. Se suman al diario, al menú semanal y al informe de nutrición de todas las cuentas.')
+    + `<form id="formAdminAlimento" class="tarjeta">
+        <input type="hidden" name="codigo" value="${esc(ed?.id || '')}">
+        <label class="campo">Identificador<input type="text" name="idTexto" pattern="[a-z0-9\\-]+" maxlength="40" value="${esc(ed?.id || '')}" ${ed ? 'readonly' : ''} required placeholder="ej. yogur-soja"></label>
+        <label class="campo">Nombre<input type="text" name="nombre" maxlength="50" value="${esc(a.nombre || '')}" required></label>
+        <label class="campo">Categoría<select name="cat">${Object.entries(CATEGORIAS_ALIMENTO).map(([k, v]) => `<option value="${k}" ${a.cat === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
+        <div class="medida-grid">
+          <label class="campo">kcal / 100 g<input type="number" name="kcal" min="0" max="1000" step="0.1" value="${num(a.kcal, 0)}" required></label>
+          <label class="campo">Proteína (g)<input type="number" name="prot" min="0" max="100" step="0.1" value="${num(a.prot, 0)}" required></label>
+          <label class="campo">Hidratos (g)<input type="number" name="carbs" min="0" max="100" step="0.1" value="${num(a.carbs, 0)}" required></label>
+          <label class="campo">Grasa (g)<input type="number" name="grasa" min="0" max="100" step="0.1" value="${num(a.grasa, 0)}" required></label>
+          <label class="campo">Fibra (g)<input type="number" name="fibra" min="0" max="100" step="0.1" value="${num(a.fibra, 0)}"></label>
+          <label class="campo">Ración habitual (g)<input type="number" name="porcion" min="1" max="2000" step="1" value="${num(a.porcion, 100)}"></label>
+        </div>
+        <div class="medida-grid">
+          <label class="campo">Orden<input type="number" name="orden" value="${ed?.orden ?? 0}"></label>
+          <label class="campo">Estado<select name="activo"><option value="1" ${ed?.activo !== false ? 'selected' : ''}>Visible</option><option value="0" ${ed?.activo === false ? 'selected' : ''}>Oculto</option></select></label>
+        </div>
+        <div class="botones"><button class="btn" type="submit">${ed ? 'Guardar cambios' : 'Publicar alimento'}</button>
+          ${ed ? '<button class="btn sec" type="button" data-a="adminNuevo">Cancelar edición</button>' : ''}</div>
+      </form>`
+    + (lista.length ? grupo('Publicados (' + lista.length + ')', lista.map(f => adminFila('alimento', f)).join(''))
+      : vacioMsg('🥗', 'Sin alimentos globales', 'Publica el primero y aparecerá en el buscador de alimentos.'));
+}
+
+function filaRutinaEj(e = {}) {
+  const nombre = porId[e.id]?.nombre || e.id || 'Ejercicio';
+  const repsMin = e.repsMin ?? e.reps ?? 10;
+  const repsMax = e.repsMax ?? repsMin;
+  return `<div class="rutina-ej fila">
+    <input type="hidden" name="ejId" value="${esc(e.id || '')}">
+    <input type="hidden" name="series" value="${esc(e.series || 3)}">
+    <input type="hidden" name="reps" value="${esc(repsMin)}${repsMax !== repsMin ? '-' + esc(repsMax) : ''}">
+    <input type="hidden" name="descanso" value="${esc(e.descanso || 90)}">
+    <span><b>${esc(nombre)}</b><br><small class="tenue">${esc(e.series || 3)} series · ${esc(repsMin)}${repsMax !== repsMin ? '-' + esc(repsMax) : ''} · ${esc(e.descanso || 90)} s</small></span>
+    <button class="icono peq" type="button" data-a="adminRutinaQuitar" title="Quitar">🗑️</button>
+  </div>`;
+}
+
+// Convierte "8-12" o "45" en un rango de repeticiones/segundos.
+function repsRutina(texto) {
+  const t = String(texto || '').trim().replace(',', '.');
+  const m = t.match(/^(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)$/);
+  if (m) return { repsMin: Number(m[1]), repsMax: Number(m[2]) };
+  const n = Number(t) || 10;
+  return { repsMin: n, repsMax: n };
+}
+
+function adminRutinas() {
+  const ed = ui.adminEdit?.tipo === 'rutina' ? (ui.catalogos.rutina || []).find(x => x.id === ui.adminEdit.id) : null;
+  const r = ed?.datos || {};
+  const lista = ui.catalogos.rutina || [];
+  return adminCabecera('📋 Rutinas globales', 'Prepara sesiones para que cualquier usuario pueda copiarlas en «Mis sesiones». No sustituyen a su programa: las elige cada uno.')
+    + `<form id="formAdminRutina" class="tarjeta">
+        <input type="hidden" name="codigo" value="${esc(ed?.id || '')}">
+        <label class="campo">Identificador<input type="text" name="idTexto" pattern="[a-z0-9\\-]+" maxlength="40" value="${esc(ed?.id || '')}" ${ed ? 'readonly' : ''} required placeholder="ej. fullbody-inicial"></label>
+        <label class="campo">Nombre<input type="text" name="nombre" maxlength="50" value="${esc(r.nombre || '')}" required></label>
+        <label class="campo">Descripción<textarea name="desc" rows="2" maxlength="200" placeholder="Para quién es y qué trabaja">${esc(r.desc || '')}</textarea></label>
+        <fieldset><legend>Ejercicios de la sesión</legend>
+          <div class="rutina-nuevo">
+            <select name="ejId" aria-label="Ejercicio">${EJERCICIOS.map(e => `<option value="${esc(e.id)}">${esc(e.nombre)}</option>`).join('')}</select>
+            <input type="number" name="series" value="3" min="1" max="10" aria-label="Series" class="hora">
+            <input type="text" name="reps" value="8-12" maxlength="12" aria-label="Repeticiones o segundos" class="hora">
+            <input type="number" name="descanso" value="90" min="0" max="600" aria-label="Descanso en segundos" class="hora">
+            <button class="btn sec peq" type="button" data-a="adminRutinaAnadir">＋ Añadir</button>
+          </div>
+          <div id="rutinaEjercicios">${(r.ejercicios || []).map(filaRutinaEj).join('')}</div>
+          <p class="tenue">En «Repeticiones o segundos» puedes poner un número (12) o un rango (8-12).</p>
+        </fieldset>
+        <div class="medida-grid">
+          <label class="campo">Orden<input type="number" name="orden" value="${ed?.orden ?? 0}"></label>
+          <label class="campo">Estado<select name="activo"><option value="1" ${ed?.activo !== false ? 'selected' : ''}>Visible</option><option value="0" ${ed?.activo === false ? 'selected' : ''}>Oculto</option></select></label>
+        </div>
+        <div class="botones"><button class="btn" type="submit">${ed ? 'Guardar cambios' : 'Publicar rutina'}</button>
+          ${ed ? '<button class="btn sec" type="button" data-a="adminNuevo">Cancelar edición</button>' : ''}</div>
+      </form>`
+    + (lista.length ? grupo('Publicadas (' + lista.length + ')', lista.map(f => adminFila('rutina', f)).join(''))
+      : vacioMsg('📋', 'Sin rutinas globales', 'Publica la primera y tus usuarios podrán copiarla desde «Mis sesiones».'));
+}
+
+function filaAdminUsuario(p) {
+  const activa = p.beta && (!p.beta_expira || !estaCaducada(p.beta_expira, hoy()));
+  return `<div class="celda">
+    <span class="ic ${p.admin ? 'rojo' : activa ? 'verde' : 'azul'}">${p.admin ? '👑' : activa ? '🎟️' : '🙂'}</span>
+    <span class="celda-t"><b>${esc(p.nombre || 'Sin nombre')}${p.admin ? ' · dueño' : ''}</b><small>${esc(p.correo || '')} · ${esc(estadoBetaNube(p))}</small></span>
+    <div class="acciones">
+      <button class="icono peq" data-a="adminUsuarioEditar" data-id="${esc(p.id)}" title="Editar cuenta">✎</button>
+      <button class="icono peq" data-a="adminUsuarioBorrar" data-id="${esc(p.id)}" title="Borrar cuenta" ${p.admin ? 'disabled' : ''}>🗑️</button>
+    </div>
+  </div>`;
+}
+
+function adminUsuarios() {
+  const cuentas = perfilesNube || [];
+  return adminCabecera('👥 Usuarios cloud', 'Edita nombre, avatar, permisos, plan y acceso beta de cualquier cuenta. Borrar una cuenta elimina también sus datos y su acceso.', false, false)
+    + `<div class="tarjeta">
+        <h2>Cuentas (${cuentas.length})</h2>
+        <p class="tenue">${perfilesNubeEstado === 'cargando' ? 'Cargando…' : perfilesNubeError ? esc(perfilesNubeError) : 'Los cambios se guardan en el servidor y llegan al usuario al abrir la app.'}</p>
+        <div class="botones"><button class="btn sec" data-a="betaRecargar">🔄 Recargar cuentas</button></div>
+      </div>`
+    + (cuentas.length ? grupo('Todas las cuentas', cuentas.map(filaAdminUsuario).join(''))
+      : vacioMsg('👥', 'Sin cuentas todavía', 'Aquí aparecerán las cuentas que se registren en la app.'));
+}
+
+// Ventana de edición de una cuenta del servidor.
+function modalUsuarioAdmin(id) {
+  const p = (perfilesNube || []).find(x => x.id === id);
+  if (!p) return;
+  modal(`
+    <h2>✎ ${esc(p.nombre || 'Sin nombre')}</h2>
+    <p class="tenue">${esc(p.correo || '')}</p>
+    <form id="formAdminUsuario" data-id="${esc(p.id)}">
+      <label class="campo">Nombre<input type="text" name="nombre" maxlength="24" value="${esc(p.nombre || '')}" required></label>
+      <label class="campo">Avatar (emoji o <code>ico:nombre</code>)<input type="text" name="avatar" maxlength="60" value="${esc(p.avatar || '🙂')}"></label>
+      <label class="campo">Color<select name="color">${COLORES.map((c, i) => `<option value="${i}" ${Number(p.color) === i ? 'selected' : ''}>Color ${i + 1}</option>`).join('')}</select></label>
+      <label class="campo">Plan<select name="plan"><option value="gratis" ${p.plan !== 'premium' ? 'selected' : ''}>Gratis</option><option value="premium" ${p.plan === 'premium' ? 'selected' : ''}>Premium</option></select></label>
+      <label class="interruptor"><span><b>Cuenta de administrador</b><br><small class="tenue">Podrá gestionar catálogos y cuentas</small></span>
+        <input type="checkbox" name="admin" value="si" ${p.admin ? 'checked' : ''} ${p.admin && p.id === usuarioNube()?.id ? 'disabled' : ''}></label>
+      <div class="botones"><button class="btn sec" type="button" data-a="cerrar">Cancelar</button>
+        <button class="btn" type="submit">Guardar cuenta</button></div>
+    </form>
+    <div class="botones">
+      <button class="btn sec" data-a="betaCuenta" data-id="${esc(p.id)}">🎟️ Gestionar beta</button>
+      ${p.admin ? '' : `<button class="btn rojo" data-a="adminUsuarioBorrar" data-id="${esc(p.id)}">🗑️ Borrar cuenta</button>`}
+    </div>`);
+}
+
+// Copia una rutina global a las sesiones propias del usuario.
+function rutinaCopiar(id) {
+  const r = (ui.catalogos.rutina || []).find(x => x.id === id);
+  if (!r) return;
+  const ejercicios = (r.datos?.ejercicios || []).filter(e => porId[e.id]).map(e => ({ ...e, foco: false }));
+  if (!ejercicios.length) { toast('Esa rutina no tiene ejercicios disponibles.'); return; }
+  estado.misSesiones.push({ nombre: r.datos.nombre, ejercicios });
+  guardar();
+  ir(`programa/mia/${estado.misSesiones.length - 1}`);
+  toast('Rutina copiada a Mis sesiones ⭐');
 }
 
 function ajBeta() {
@@ -3713,6 +3979,7 @@ async function entrarConNube(sesion) {
   recuperacionProc.ok = false; recuperacionProc.codigo = null; recuperacionProc.usuario = null; ui.recMetodo = null;
   await sincronizarDatosNube();
   cargarContenidos();
+  cargarCatalogos();
   ir(estado.plan ? 'hoy' : 'bienvenida');
 }
 
@@ -3731,6 +3998,7 @@ async function restaurarSesionNube() {
   arrancandoNube = false;
   render();
   cargarContenidos();
+  cargarCatalogos();
 }
 
 // Contenidos globales que publica el dueño. Se leen con la clave pública y la
@@ -3745,6 +4013,36 @@ async function cargarContenidos() {
     const r = ruta();
     if (r === '' || r === 'hoy' || r === 'inicio' || r === 'ajustes/contenidos') render();
   } catch { /* sin conexión: se conservan los contenidos ya cargados */ }
+}
+
+// Catálogos globales del dueño: ejercicios, alimentos y rutinas.
+// Se leen con la clave pública; la base de datos solo entrega los activos a
+// las cuentas normales. Si no están creadas las tablas, la app sigue funcionando
+// con su catálogo de serie y el panel avisa de qué falta.
+async function cargarCatalogos() {
+  if (!modoNube() || !haySesionNube()) return;
+  ui.catalogosEstado = 'cargando';
+  try {
+    const [ejercicios, alimentos, rutinas] = await Promise.all([
+      listarCatalogoNube('ejercicio'),
+      listarCatalogoNube('alimento'),
+      listarCatalogoNube('rutina'),
+    ]);
+    ui.catalogos = {
+      ejercicio: Array.isArray(ejercicios) ? ejercicios : [],
+      alimento: Array.isArray(alimentos) ? alimentos : [],
+      rutina: Array.isArray(rutinas) ? rutinas : [],
+    };
+    ui.catalogosEstado = 'listo';
+    ui.catalogosError = '';
+    sincronizarEjerciciosGlobales(ui.catalogos.ejercicio.filter(x => x.activo !== false).map(x => x.datos));
+    sincronizarAlimentosGlobales(ui.catalogos.alimento.filter(x => x.activo !== false).map(x => x.datos));
+  } catch (e) {
+    ui.catalogosEstado = 'error';
+    ui.catalogosError = traducirErrorNube(e.message);
+  }
+  const r = ruta();
+  if (/^ajustes\/admin|^programa\/mias$/.test(r)) render();
 }
 
 // Pantalla de acceso con cuentas reales.
@@ -5729,6 +6027,49 @@ document.addEventListener('click', async ev => {
       } catch (e) { toast(`No he podido borrarlo: ${e.message}`); }
       break;
     }
+    // ---- Panel de administración ----
+    case 'adminNuevo': ui.adminEdit = null; render(); break;
+    case 'adminEditar': ui.adminEdit = { tipo: d.tipo, id: d.id }; render(); break;
+    case 'catalogosRecargar':
+      await cargarCatalogos(); render(); toast('Catálogos actualizados');
+      break;
+    case 'adminQuitar': {
+      const si = await confirmar('¿Borrar este elemento del catálogo para todas las cuentas?', { titulo: 'Borrar del catálogo', ok: 'Borrar', peligro: true });
+      if (!si) break;
+      try {
+        await borrarCatalogoNube(d.tipo, d.id);
+        if (ui.adminEdit?.tipo === d.tipo && ui.adminEdit?.id === d.id) ui.adminEdit = null;
+        await cargarCatalogos(); render(); toast('Elemento borrado');
+      } catch (e) { toast(`No he podido borrarlo: ${e.message}`, { ms: 7000 }); }
+      break;
+    }
+    case 'adminRutinaAnadir': {
+      const form = $('#formAdminRutina');
+      if (!form) break;
+      const q = n => form.querySelector(`[name="${n}"]`)?.value;
+      const id = String(q('ejId') || '');
+      if (!id || !porId[id]) { toast('Elige un ejercicio de la lista.'); break; }
+      const fila = document.createElement('div');
+      fila.innerHTML = filaRutinaEj({ id, series: Number(q('series')) || 3, reps: String(q('reps') || '10'), descanso: Number(q('descanso')) || 90 });
+      $('#rutinaEjercicios')?.appendChild(fila.firstElementChild);
+      break;
+    }
+    case 'adminRutinaQuitar': b.closest('.rutina-ej')?.remove(); break;
+    case 'rutinaCopiar': rutinaCopiar(d.id); break;
+    case 'adminUsuarioEditar': modalUsuarioAdmin(d.id); break;
+    case 'adminUsuarioBorrar': {
+      const p = (perfilesNube || []).find(x => x.id === d.id);
+      if (!p || p.admin) break;
+      cerrarModal();
+      const si = await confirmar(`Se borrará la cuenta de «${p.nombre}» y todos sus datos en la nube. No se puede deshacer.`, { titulo: 'Borrar cuenta', ok: 'Borrar definitivamente', peligro: true });
+      if (!si) break;
+      try {
+        await borrarUsuarioAdminNube(d.id);
+        toast('Cuenta borrada');
+        await cargarPerfilesNube(true); render();
+      } catch (e) { toast(`No he podido borrarla: ${e.message}`, { ms: 7000 }); }
+      break;
+    }
     // ---- Nutrición: diario, alimentos, recetas y agua ----
     case 'nutriDia': ui.diaNutri = sumarDias(diaNutri(), Number(d.d)); render(); break;
     case 'addAlimento': elegirAlimento(d.comida); break;
@@ -6176,6 +6517,78 @@ document.addEventListener('submit', async ev => {
       await cargarContenidos();
       render(); toast('Contenido publicado 📢');
     } catch (e) { toast(`No he podido publicarlo: ${e.message}`, { ms: 7000 }); }
+    return;
+  }
+  // ---- Panel de administración ----
+  const adminForm = ['formAdminEjercicio', 'formAdminAlimento', 'formAdminRutina'].includes(ev.target.id);
+  if (adminForm) {
+    if (!soyDueno()) { toast('Solo el dueño puede publicar en el catálogo.'); return; }
+    const id = String(f.get('codigo') || f.get('idTexto') || '').trim().toLowerCase();
+    if (!/^[a-z0-9-]{1,40}$/.test(id)) { toast('El identificador solo admite letras minúsculas, números y guiones.'); return; }
+    const activo = String(f.get('activo') || '1') === '1';
+    const orden = Number(f.get('orden')) || 0;
+    let tipo = '', datos = {};
+    if (ev.target.id === 'formAdminEjercicio') {
+      tipo = 'ejercicio';
+      const videoCustom = String(f.get('videoCustom') || '').trim();
+      datos = {
+        id, nombre: String(f.get('nombre') || '').trim(), patron: String(f.get('patron') || ''),
+        musculos: f.getAll('musculos'), equipo: f.getAll('equipo'),
+        compuesto: String(f.get('compuesto')) === 'si',
+        tipo: String(f.get('tipo')) === 'tiempo' ? 'tiempo' : 'reps',
+        desc: String(f.get('desc') || '').trim(),
+        ...(videoCustom ? { videoCustom } : {}),
+      };
+      if (!datos.nombre) { toast('Escribe el nombre del ejercicio.'); return; }
+    } else if (ev.target.id === 'formAdminAlimento') {
+      tipo = 'alimento';
+      datos = {
+        id, nombre: String(f.get('nombre') || '').trim(), cat: String(f.get('cat') || 'bebidas'),
+        kcal: Number(f.get('kcal')) || 0, prot: Number(f.get('prot')) || 0,
+        carbs: Number(f.get('carbs')) || 0, grasa: Number(f.get('grasa')) || 0,
+        fibra: Number(f.get('fibra')) || 0, porcion: Number(f.get('porcion')) || 100,
+      };
+      if (!datos.nombre) { toast('Escribe el nombre del alimento.'); return; }
+    } else {
+      tipo = 'rutina';
+      const ejercicios = [...document.querySelectorAll('#rutinaEjercicios .rutina-ej')].map(row => {
+        const q = n => row.querySelector(`[name="${n}"]`)?.value;
+        return {
+          id: String(q('ejId') || ''), series: Number(q('series')) || 3,
+          descanso: Number(q('descanso')) || 90, ...repsRutina(q('reps')),
+        };
+      }).filter(e => e.id && porId[e.id]);
+      datos = {
+        id, nombre: String(f.get('nombre') || '').trim(),
+        desc: String(f.get('desc') || '').trim(), ejercicios,
+      };
+      if (!datos.nombre || !ejercicios.length) { toast('Escribe el nombre y añade al menos un ejercicio.'); return; }
+    }
+    try {
+      await guardarCatalogoNube({ tipo, id, datos, activo, orden });
+      ui.adminEdit = null;
+      await cargarCatalogos(); render(); toast('Publicado en el catálogo ✅');
+    } catch (e) { toast(`No he podido guardarlo: ${e.message}`, { ms: 7000 }); }
+    return;
+  }
+  if (ev.target.id === 'formAdminUsuario') {
+    if (!soyDueno()) { toast('Solo el dueño puede editar cuentas.'); return; }
+    const uid = ev.target.getAttribute('data-id');
+    const p = (perfilesNube || []).find(x => x.id === uid);
+    if (!p) return;
+    const nombre = String(f.get('nombre') || '').trim();
+    if (!nombre) { toast('Escribe el nombre.'); return; }
+    const campos = {
+      nombre, avatar: String(f.get('avatar') || '🙂').trim() || '🙂',
+      color: Number(f.get('color')) || 0,
+      plan: String(f.get('plan') || 'gratis') === 'premium' ? 'premium' : 'gratis',
+    };
+    if (!(p.admin && uid === usuarioNube()?.id)) campos.admin = String(f.get('admin')) === 'si';
+    try {
+      await actualizarPerfilNube(uid, campos);
+      cerrarModal(); toast('Cuenta actualizada');
+      await cargarPerfilesNube(true); render();
+    } catch (e) { toast(`No he podido guardarla: ${e.message}`, { ms: 7000 }); }
     return;
   }
   if (ev.target.id === 'formFotoProgreso') {

@@ -106,6 +106,31 @@ export const ALIMENTOS = [
   { id: 'miel', nombre: 'Miel', cat: 'bebidas', kcal: 304, prot: 0.3, carbs: 82, grasa: 0, fibra: 0.2, porcion: 20 },
 ];
 
+// Copia de la tabla de serie. Los alimentos globales del dueño se añaden
+// después y se pueden quitar sin tocar esta base.
+export const ALIMENTOS_BASE = ALIMENTOS.map(a => ({ ...a }));
+
+// Añade los alimentos que publica el dueño desde el panel de administración.
+// Se reconstruyen en cada carga para que los cambios lleguen a todas las
+// cuentas sin tocar los valores guardados por cada usuario.
+export function sincronizarAlimentosGlobales(lista = []) {
+  for (let i = ALIMENTOS.length - 1; i >= 0; i--) {
+    if (ALIMENTOS[i].global) ALIMENTOS.splice(i, 1);
+  }
+  for (const a of lista) {
+    if (!a?.id || !a?.nombre) continue;
+    const i = ALIMENTOS.findIndex(x => x.id === a.id);
+    if (i >= 0) ALIMENTOS.splice(i, 1);
+    ALIMENTOS.push({
+      id: a.id, nombre: a.nombre, cat: a.cat || 'bebidas',
+      kcal: Number(a.kcal) || 0, prot: Number(a.prot) || 0,
+      carbs: Number(a.carbs) || 0, grasa: Number(a.grasa) || 0,
+      fibra: Number(a.fibra) || 0, porcion: Number(a.porcion) || 100,
+      global: true,
+    });
+  }
+}
+
 export const alimentoPorId = id => ALIMENTOS.find(a => a.id === id) || null;
 
 // Macros de una cantidad concreta de un alimento (o de una lista de ingredientes).

@@ -17,7 +17,8 @@
   invitación y caducidad**, **gestión de betas a distancia**, **sincronización de
   datos entre dispositivos**, fotos de progreso, meta corporal, menú semanal y
   compra, escáner de alimentos, insignias y retos, informe semanal, planificación
-  adaptativa, coach mejorado, RGPD y **avisos globales publicados por el dueño**.
+  adaptativa, coach mejorado, RGPD, **avisos globales publicados por el dueño** y
+  **panel de administración con catálogos globales y gestión de cuentas cloud**.
 
 ### El límite actual
 Los datos viven en el dispositivo (funciona sin conexión) y **se copian a la cuenta**
@@ -104,12 +105,18 @@ la tabla `datos` de Supabase. Al abrir o volver a la app, se compara la fecha y 
 más nuevo. Botón «Sincronizar ahora» en *Ajustes → Tus datos*. Se sube todo salvo la
 contraseña local, las fotos de técnica y las fotos de progreso (se quedan en el
 dispositivo). Los avisos globales del dueño viven aparte, en la tabla `avisos`, y no
-forman parte de la copia de cada usuario.
+forman parte de la copia de cada usuario. Lo mismo pasa con los catálogos globales
+(`catalogos`): no se copian dentro de cada usuario, sino que se leen del servidor al
+abrir la app, para que un cambio del dueño llegue a todas las cuentas sin pisar sus
+datos. Las rutinas globales se añaden a «Mis sesiones» solo si el usuario pulsa *Copiar*.
 
 ### 8. Qué necesitas para montarlo (lista de la compra)
 
 - [ ] Una **cuenta gratis de Supabase** (https://supabase.com).
 - [ ] Crear el proyecto y ejecutar `supabase/esquema.sql` → ver `supabase/GUIA.md`.
+- [ ] En un proyecto que ya tuviera las tablas, ejecutar además
+      `supabase/esquema-admin.sql` para crear `catalogos` y `borrar_usuario_admin(uuid)`.
+      Es incremental y se puede ejecutar más de una vez.
 - [ ] El **Project URL** y la clave **anon public** (públicas: van dentro de la app).
 - [ ] (Opcional pero recomendado) un **dominio** propio para la web.
 - [ ] (Para más adelante) cuenta de **Google Play** y de **Apple**.
@@ -231,6 +238,9 @@ mayoría ya lo tienes).
 - [x] **Fase 3B — Funciones de producto y RGPD.** Fotos de progreso, meta corporal,
   menú y compra, escáner, logros/retos, informe semanal, planificación adaptativa,
   coach con ingesta real, consentimiento y avisos globales del dueño. *(hecha: v39)*
+- [x] **Fase 3C — Panel de administración completo.** Catálogos globales de ejercicios,
+  alimentos y rutinas, gestión de cuentas cloud y permisos reforzados en Supabase.
+  Requiere ejecutar `supabase/esquema-admin.sql` en el proyecto existente. *(hecha: app 2.01)*
 - [ ] **Fase 4 — Android.** Paquete TWA y publicación en Google Play (requiere dominio propio).
 - [ ] **Fase 5 — iOS.** Envoltorio con Capacitor y publicación en la App Store.
 - [ ] **Fase 6 — Monetización y relojes.** Suscripciones con el pago de las tiendas
