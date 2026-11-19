@@ -183,6 +183,25 @@ const chipBeta = u => esBeta(u)
   ? `<span class="chip-mini ${betaDeUsuario(u)?.expira && diasRestantes(betaDeUsuario(u).expira, hoy()) < 0 ? 'alt' : 'oro'}">beta</span>`
   : '';
 
+// Con cuántos días de antelación se avisa de que la beta está a punto de acabar.
+const DIAS_AVISO_BETA = 7;
+
+// Aviso en la pantalla de inicio cuando a la cuenta beta le queda poco tiempo.
+function avisoBeta() {
+  const u = usuarioActual();
+  if (!esBeta(u) || soyDueno()) return '';
+  const b = betaDeUsuario(u);
+  if (!b?.expira) return '';
+  const d = diasRestantes(b.expira, hoy());
+  if (d < 0 || d > DIAS_AVISO_BETA) return '';
+  const cuando = d === 0 ? 'Hoy es tu último día' : d === 1 ? 'Te queda 1 día' : `Te quedan ${d} días`;
+  return `<div class="alerta beta-aviso">
+    <b>🎟️ Tu acceso beta termina pronto</b>
+    <p>${cuando} de acceso (hasta el ${fmtDia(b.expira)}). Cuando acabe, la cuenta se bloqueará y podrás reactivarla con un código nuevo. Tus datos no se borran.</p>
+    <div class="botones"><button class="btn sec" data-a="exportar">⬇️ Descargar mi copia</button></div>
+  </div>`;
+}
+
 // Estado de interfaz que se reinicia al cambiar de usuario.
 const UI_INICIAL = { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, pasoEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, videoAbierto: null, verMaestro: false, recMetodo: null, incFiltro: 'nuevas', coachChat: [], coachPensando: false, coachIgnorados: [], coachIAOk: null, coachNanoOk: null, coachNanoDescargando: false };
 
@@ -637,7 +656,7 @@ function inicio() {
     <button class="avatar-btn" data-a="menuUsuarios" title="Cambiar de usuario">${avatarHTML(usuarioActual())}</button>`;
   if (estado.enCurso) {
     return `${cabecera(rachaBtn)}
-      ${avisoAvisos()}${avisoIncidencias()}
+      ${avisoBeta()}${avisoAvisos()}${avisoIncidencias()}
       <div class="hero"><p class="eyebrow">Sesión en curso</p><h2>${esc(estado.enCurso.nombre)}</h2>
       <p>${estado.enCurso.ejercicios.reduce((t, e) => t + e.series.filter(r => r.hecho).length, 0)} series hechas</p>
       <button class="btn" data-a="ir" data-v="sesion">Continuar entrenamiento</button></div>`;
@@ -659,7 +678,7 @@ function inicio() {
 
   return `
     ${cabecera(rachaBtn)}
-    ${avisoAvisos()}${avisoIncidencias()}
+    ${avisoBeta()}${avisoAvisos()}${avisoIncidencias()}
     ${tiraSemana(lunes(hoy()), true)}
     ${perdidas.length ? `<div class="alerta">
       <b>Tienes ${perdidas.length === 1 ? 'una sesión perdida' : `${perdidas.length} sesiones perdidas`} esta semana</b>
@@ -3335,6 +3354,10 @@ function betaFin() {
       <p class="tenue error" id="avisoBeta"></p>
       <button class="btn" type="submit">🎟️ Reactivar con este código</button>
     </form>
+    <div class="tarjeta">
+      <p class="tenue">¿Prefieres guardar tus datos aparte? Descarga una copia: podrás importarla más adelante y no perderás nada.</p>
+      <button class="btn sec" data-a="exportar">⬇️ Descargar mi copia de seguridad</button>
+    </div>
     <button class="btn sec" data-a="betaSalir">Cambiar de usuario</button>
     <p class="tenue centro">${esc(MARCA.nombre)} · ${esc(MARCA.eslogan || '')}</p>
   </div>`;

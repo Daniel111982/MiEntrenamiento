@@ -1,0 +1,230 @@
+# MiEntrenamiento — Plan de servidor, tiendas y monetización
+
+> Documento de trabajo. Explica **qué vamos a montar, en qué orden, cuánto cuesta y qué
+> necesitas**. Empieza por lo gratis y deja preparado el camino para crecer y publicar
+> en Google Play y en la App Store.
+
+---
+
+## Aplicación MiEntrenamiento
+
+- **Tecnología:** HTML · CSS · JavaScript ES6 (módulos). Sin npm ni compilación.
+- **Tipo:** PWA (web instalable). Hoy funciona 100 % en el dispositivo, sin servidor.
+- **Dónde vive ahora:** GitHub Pages → https://daniel111982.github.io/MiEntrenamiento/
+- **Qué ya hace:** programa personalizado, sesiones guiadas, nutrición, Running,
+  seguimiento, usuarios, avisos, ideas e incidencias y **cuentas beta con código de
+  invitación y caducidad**.
+
+### El límite actual
+Como no hay servidor, **cada móvil guarda sus propios datos** y no se hablan entre sí.
+Por eso el dueño no puede ver, ampliar ni cortar una beta a distancia. El servidor
+existe para resolver justo eso y para poder cobrar más adelante.
+
+---
+
+## Servidor y alojamiento web
+
+**Componentes:** Dominio HTTPS · Base de datos · Usuarios · Sincronización.
+
+### 1. Para qué sirve el servidor
+
+| Ahora (sin servidor) | Con servidor |
+| --- | --- |
+| Datos solo en cada móvil | Cuentas reales y datos centralizados |
+| No ves a los testers beta | Gestionas las betas a distancia (ver, ampliar, cortar, borrar) |
+| Nada se sincroniza | Sincronización entre móvil y ordenador |
+| Sin copias en la nube | Copia de seguridad y recuperación |
+| Imposible cobrar bien | Suscripciones controladas por el servidor |
+
+### 2. Arquitectura (en simple)
+
+```
+   Móvil / ordenador                Servidor                 Base de datos
+ ┌───────────────────┐        ┌───────────────────┐       ┌───────────────┐
+ │  App (la PWA)     │  HTTPS │  API (programa     │       │  Usuarios     │
+ │  HTML/CSS/JS      │ ─────► │  que atiende       │ ────► │  Datos        │
+ │  + llamadas a la  │ ◄───── │  peticiones)       │ ◄──── │  Betas        │
+ │    API            │  JSON  │                   │       │  Suscripciones│
+ └───────────────────┘        └───────────────────┘       └───────────────┘
+```
+
+La app sigue siendo la misma; se le añade una capa que "habla" con la API.
+
+### 3. Opciones de alojamiento (empezamos por lo gratis)
+
+| Opción | Coste | Ventajas | Inconvenientes |
+| --- | --- | --- | --- |
+| **Ordenador de casa + túnel** (recomendado para empezar) | 0 € | Gratis, privado, control total | Debe estar encendido; tú lo mantienes |
+| **VPS** (servidor en la nube) | ~5 €/mes | Siempre encendido, más fiable | Cuesta dinero cada mes |
+| **Servicio gestionado** (Supabase) | 0 € hasta cierto uso | Cero mantenimiento, base de datos lista | Menos control; límites del plan gratis |
+
+**Decidido:** montamos el backend en **Supabase (plan gratis)**. Nos da base de datos,
+cuentas de usuario y API **sin mantener ningún servidor**. Si la app crece mucho, se
+pasa al plan de pago de Supabase o se migra a otro sitio, **sin rehacer el código**.
+Los pasos están en **`supabase/GUIA.md`** y las tablas en **`supabase/esquema.sql`**.
+
+### 4. Dominio y HTTPS
+
+- **La API ya va por HTTPS** sola: Supabase sirve en `https://tuproyecto.supabase.co`.
+  No hay que configurar certificados ni túneles.
+- **El dominio propio** (~10 €/año, p. ej. `mientrenamiento.app`) sigue siendo útil para
+  **la web de la app**: da imagen profesional y es **obligatorio para publicar en Google
+  Play con TWA** (Android necesita que la web esté en tu dominio).
+- Mientras tanto, la web puede seguir en **GitHub Pages**, que ya da HTTPS gratis.
+
+### 5. Base de datos
+
+- **Al principio: SQLite.** Es un único archivo, cero instalación, cero mantenimiento.
+  De sobra para cientos o miles de usuarios.
+- **Si escala mucho: PostgreSQL.** Se cambia cuando haga falta; el código se escribe
+  para que el cambio sea sencillo.
+
+### 6. Usuarios y autenticación
+
+- Cuentas con **correo + contraseña** (la contraseña se guarda **cifrada**, nunca en
+  claro).
+- **Tokens de sesión** para que el móvil no pida la contraseña en cada visita.
+- Recuperación de contraseña por correo.
+- **Borrado de cuenta** (obligatorio para las tiendas).
+
+### 7. Sincronización
+
+- Cada dato lleva una **fecha de modificación**. Al sincronizar, gana el más reciente
+  ("última escritura gana") y lo demás se une.
+- Se sincroniza **por usuario** y solo lo que cambie, para gastar pocos datos.
+- La app **sigue funcionando sin conexión** y sincroniza cuando vuelve la red.
+
+### 8. Qué necesitas para montarlo (lista de la compra)
+
+- [ ] Una **cuenta gratis de Supabase** (https://supabase.com).
+- [ ] Crear el proyecto y ejecutar `supabase/esquema.sql` → ver `supabase/GUIA.md`.
+- [ ] El **Project URL** y la clave **anon public** (públicas: van dentro de la app).
+- [ ] (Opcional pero recomendado) un **dominio** propio para la web.
+- [ ] (Para más adelante) cuenta de **Google Play** y de **Apple**.
+
+> **Seguridad:** la clave **`service_role`** de Supabase **nunca** va en la app ni en el
+> proyecto publicado. La que va en la app es la **anon**, que es pública por diseño y
+> está protegida por las reglas de la base de datos.
+
+---
+
+## Web
+
+**Ordenador y navegador.** Es lo que ya tienes: la app se abre en cualquier navegador.
+
+- **Hoy:** servida por GitHub Pages (gratis).
+- **Más adelante:** se puede servir desde el propio servidor o desde Cloudflare Pages /
+  Netlify (gratis) para tener el dominio propio.
+- **Instalable:** al ser PWA, se puede "Añadir a pantalla de inicio" en móvil y
+  escritorio, y funciona sin conexión.
+- **Ventaja:** la web es la base de todo lo demás (Android e iOS reutilizan esta misma
+  app).
+
+---
+
+## Android
+
+**Google Play mediante TWA** (Trusted Web Activity).
+
+**Qué es:** Google permite publicar una PWA como app de Android "de verdad" envolviendo
+la web en un contenedor nativo (TWA). La app de la tienda **es** tu web, siempre
+actualizada.
+
+**Requisitos:**
+- Cuenta de **Google Play Console**: **25 $ pago único**.
+- Un **dominio con HTTPS** (por eso el dominio propio es importante aquí).
+- **Digital Asset Links**: un archivo `assetlinks.json` que se pone en el dominio para
+  demostrar que la app y la web son del mismo dueño.
+- **Iconos** (ya los tienes) y una **ficha** (descripción, capturas, política de
+  privacidad).
+- Política de privacidad y borrado de cuenta.
+
+**Cómo se genera (dos caminos):**
+1. **PWABuilder.com** (el más fácil): metes la URL y te descarga el paquete Android
+   listo para subir. Sin instalar nada.
+2. **Bubblewrap** (línea de comandos): más control, pero pide instalar Node, Java y el
+   Android SDK.
+
+**Ventaja:** muy poco mantenimiento y la web se actualiza sola.
+**Límite:** solo Android; y si algún día necesitas funciones nativas muy concretas,
+habría que pasar a **Capacitor** (envoltorio más completo).
+
+---
+
+## iOS
+
+**App Store.** Apple **no** admite TWA. Hay que envolver la web en un contenedor de iOS.
+
+**Requisitos:**
+- Cuenta de **Apple Developer Program**: **99 €/año**.
+- Un **Mac con Xcode** para compilar y subir la app.
+- Política de privacidad y borrado de cuenta.
+
+**Cómo se hace:** con **Capacitor** (o el paquete de iOS de PWABuilder) se envuelve la
+misma web en una app de iOS.
+
+**Aviso honesto:** Apple es más estricta. Puede **rechazar** una app que sea "solo una
+web" (norma 4.2). Para que la aprueben conviene que se note que es una app de verdad:
+funcionar sin conexión, notificaciones, guardar datos en el dispositivo, etc. (la
+mayoría ya lo tienes).
+
+---
+
+## Monetización
+
+**Modelo recomendado: suscripción** (mensual / anual) con una parte gratis.
+
+| Plan | Qué incluye (ejemplo) |
+| --- | --- |
+| **Gratis** | Programa, sesiones y seguimiento básico |
+| **Premium** | Nutrición avanzada, Running, sincronización en la nube, copias, sin límites |
+
+**Cómo se cobra:**
+- **Dentro de la app** hay que usar el sistema de pago de la tienda
+  (**Google Play Billing** / **Apple StoreKit**). Las tiendas se llevan una comisión
+  (15–30 %).
+- **En la web** se puede cobrar con **Stripe** (comisión menor), pero las tiendas
+  obligan a usar su pago para lo que se consuma dentro de la app.
+- **El servidor valida** la suscripción y decide qué ve cada usuario.
+
+**Qué necesitas:**
+- Productos creados en Play Console y en App Store Connect.
+- El servidor comprobando los recibos de compra.
+- Páginas de **términos** y **privacidad**.
+
+---
+
+## Costes (resumen)
+
+| Concepto | Ahora | Más adelante |
+| --- | --- | --- |
+| Supabase (plan gratis) | **0 €** | ~25 $/mes si escala mucho |
+| Dominio propio | 0 € (GitHub Pages) | ~10 €/año |
+| Google Play Console | 0 € | **25 $ una vez** |
+| Apple Developer Program | 0 € | **99 €/año** |
+| Comisión de las tiendas | — | 15–30 % de lo cobrado |
+
+---
+
+## Plan por fases
+
+- [ ] **Fase 1 — Servidor mínimo (gratis).** Proyecto en Supabase, cuentas reales y API
+  para **gestionar las betas a distancia**. La app se conecta.
+- [ ] **Fase 2 — Cuentas y sincronización.** Usuarios reales en el servidor y datos
+  sincronizados entre dispositivos.
+- [ ] **Fase 3 — Dominio propio.** Nombre bonito y HTTPS fijo.
+- [ ] **Fase 4 — Android.** Paquete TWA y publicación en Google Play.
+- [ ] **Fase 5 — iOS.** Envoltorio con Capacitor y publicación en la App Store.
+- [ ] **Fase 6 — Monetización.** Suscripciones con el pago de las tiendas.
+
+---
+
+## Decisiones que necesito de ti
+
+1. **Crear el proyecto en Supabase** y ejecutar `supabase/esquema.sql` (ver
+   `supabase/GUIA.md`), y mandarme el **Project URL** y la clave **anon public**.
+2. **¿Tienes dominio propio** o seguimos con GitHub Pages de momento.
+3. **¿Tienes un Mac** para el día de iOS? (si no, iOS se deja para el final)
+4. **Modelo de negocio:** ¿suscripción, pago único, o gratis con extras?
+
+Con el punto 1 conecto la app y construyo la **Fase 1**.

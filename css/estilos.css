@@ -208,6 +208,8 @@ button.tarjeta { cursor: pointer; }
 .mono { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; letter-spacing: .05em; }
 .beta-codigo .celda-t b { font-size: .86rem; word-break: break-all; }
 .campo .fila input { flex: 1 1 auto; min-width: 0; }
+.beta-aviso { background: color-mix(in srgb, var(--amarillo) 15%, var(--tarjeta)); border-color: color-mix(in srgb, var(--amarillo) 50%, transparent); }
+.beta-aviso b { color: var(--texto); }
 
 /* ---------- Barras por músculo ---------- */
 .barra-m { display: grid; grid-template-columns: 92px 1fr 46px; align-items: center; gap: 10px; margin: 10px 0; font-size: .88rem; }
