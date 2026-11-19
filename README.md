@@ -70,7 +70,7 @@ El proyecto guarda una copia completa de cada versión en `VERSIONES/`, para pod
 - `VERSIONES/nueva-version.cmd -Nota "..."` — guarda el estado actual como versión nueva.
 - `VERSIONES/restaurar.cmd -Version v1.00` — vuelve a una versión anterior.
 
-La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.01`). La caché del service worker es `dantal-v4.4` y los archivos estáticos usan `?v=4.4`. Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
+La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.02`). La caché del service worker es `dantal-v4.5` y los archivos estáticos usan `?v=4.5`. Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
 
 ## Privacidad y seguridad
 

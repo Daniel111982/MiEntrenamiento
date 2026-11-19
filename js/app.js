@@ -51,7 +51,7 @@ import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from 
 // =====================================================================
 // Cada usuario guarda sus datos por separado: 'mientrenamiento:u:<id>'.
 // La lista de usuarios y cuál está activo van en 'mientrenamiento:usuarios'.
-const APP_VERSION = '2.01'; // versión de la app (ver VERSIONES/HISTORIAL.md)
+const APP_VERSION = '2.02'; // versión de la app (ver VERSIONES/HISTORIAL.md)
 const CLAVE = 'mientrenamiento:v2'; // formato anterior, de un solo usuario
 const CLAVE_USUARIOS = 'mientrenamiento:usuarios';
 const claveDe = id => `mientrenamiento:u:${id}`;
@@ -2908,7 +2908,8 @@ async function cargarPerfilesNube(forzar = false) {
     perfilesNubeError = traducirErrorNube(e.message);
     perfilesNubeEstado = 'error';
   }
-  if (ruta() === 'ajustes/beta') render();
+  // La lista tambien se usa en el panel de administracion: actualiza ambas vistas.
+  if (ruta() === 'ajustes/beta' || ruta().startsWith('ajustes/admin')) render();
 }
 
 // Texto del estado beta de una cuenta del servidor.
