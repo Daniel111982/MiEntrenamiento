@@ -104,6 +104,14 @@ export const actualizarPerfilNube = (id, campos) =>
     cabeceras: { Prefer: 'return=representation' },
   });
 
+export const actualizarMiPerfilNube = campos =>
+  actualizarPerfilNube(usuarioNube()?.id, campos);
+
+// Canjea un código de invitación beta. Lo valida el SERVIDOR (función
+// canjear_beta) y, si es correcto, pone la fecha de fin en el perfil.
+export const canjearCodigoNube = codigo =>
+  peticion('/rest/v1/rpc/canjear_beta', { metodo: 'POST', cuerpo: { p_codigo: codigo } });
+
 // ---------------------------------------------------------------- Datos
 export async function leerDatosNube() {
   const uid = usuarioNube()?.id;

@@ -32,6 +32,11 @@ import {
 import {
   generarCodigo, leerCodigo, sumarDiasIso, estaCaducada, diasRestantes, etiquetaDuracion,
 } from './beta.js';
+import {
+  nubeConfigurada, usuarioNube, haySesionNube, registrarNube, entrarNube, refrescarNube, salirNube,
+  miPerfilNube, listarPerfilesNube, actualizarPerfilNube, actualizarMiPerfilNube,
+  canjearCodigoNube,
+} from './nube.js';
 
 // =====================================================================
 // Estado
@@ -81,6 +86,11 @@ sincronizarEjerciciosUsuario(estado.ejerciciosPropios);
 let desbloqueado = false;
 let usuarioLogin = null; // usuario elegido en la pantalla de acceso
 const estaBloqueado = () => !desbloqueado;
+// Modo nube: cuando hay servidor configurado, el acceso usa cuentas reales.
+const modoNube = () => nubeConfigurada();
+// Al abrir la app con una sesión de la nube guardada, se comprueba antes de
+// mostrar nada, para no pedir el acceso si ya se había entrado.
+let arrancandoNube = false;
 // Primera vez en este dispositivo: todavía no hay una cuenta real que se pueda abrir.
 const esCuentaNueva = () => usuarios.lista.length === 1 && !estado.plan && !estado.seguridad
   && !(estado.historial || []).length && usuarioActual().nombre === 'Usuario 1';
@@ -167,6 +177,11 @@ const esBeta = u => Boolean(u?.beta);
 const betaCaducada = () => {
   const b = usuarioActual()?.beta;
   return Boolean(b?.expira) && estaCaducada(b.expira, hoy());
+};
+// ¿La cuenta activa tiene beta en vigor? (sin beta, o ya caducada, = no).
+const betaActiva = () => {
+  const b = usuarioActual()?.beta;
+  return Boolean(b) && !(b.expira && estaCaducada(b.expira, hoy()));
 };
 const betaDeUsuario = u => u?.beta || null;
 // Texto corto del estado beta de una cuenta (para listados).
@@ -388,6 +403,7 @@ const RUTAS = [
   [/^ajustes\/coach$/, ajCoach, 'ajustes'],
   [/^bienvenida$/, bienvenida, 'bienvenida'],
   [/^login$/, login, 'login'],
+  [/^registro$/, registroNube, 'login'],
   [/^beta$/, betaCodigo, 'login'],
   [/^beta\/fin$/, betaFin, 'login'],
   [/^recuperar$/, recuperar, 'recuperar'],
@@ -401,10 +417,27 @@ function ir(v) { if (ruta() === v) render(); else location.hash = v; }
 window.addEventListener('hashchange', render);
 
 function render() {
+  if (arrancandoNube) {
+    document.body.dataset.vista = 'login';
+    $('#vista').innerHTML = `<div class="login">
+      ${isotipoCuadrado({ tam: 72, clase: 'login-logo' })}
+      <h1>${esc(MARCA.nombre)}</h1>
+      <p class="tenue">Un momento…</p>
+    </div>`;
+    $('.nav').hidden = true;
+    return;
+  }
   let r = ruta();
   if (estaBloqueado()) {
-    if (!/^(login|recuperar|beta|beta\/fin|usuarios|usuarios\/nuevo|usuario\/[\w-]+)$/.test(r)) r = 'login';
-    if (esCuentaNueva() && r === 'login') r = 'usuarios/nuevo';
+    // Con cuentas reales, estando fuera solo tienen sentido el acceso y el registro.
+    const permitidas = modoNube()
+      ? /^(login|registro)$/
+      : /^(login|recuperar|beta|beta\/fin|usuarios|usuarios\/nuevo|usuario\/[\w-]+)$/;
+    if (!permitidas.test(r)) r = 'login';
+    if (!modoNube() && esCuentaNueva() && r === 'login') r = 'usuarios/nuevo';
+  } else if (modoNube() && !soyDueno() && !betaActiva() && r !== 'beta/fin') {
+    // Con cuentas reales: sin código canjeado (o beta caducada) no se entra.
+    r = 'beta/fin';
   } else if (betaCaducada() && !soyDueno() && r !== 'beta/fin') {
     r = 'beta/fin';
   } else if (!estado.plan && !/^usuario/.test(r)) {
@@ -2678,24 +2711,29 @@ function ajustes() {
         <span class="celda-t"><b>${esc(usuarioActual().nombre)} · ${o.icono} ${o.nombre}</b><small>${p.nivel[0].toUpperCase() + p.nivel.slice(1)} · ${p.diasSemana.map(d => DIAS[d].slice(0, 3)).join(', ')} · ${frecTxt(p)} · ${p.duracion} min · ${p.lugar === 'gimnasio' ? 'Gimnasio' : 'Casa'}</small></span>
         <span class="chev">›</span>
       </a>
-      ${grupo('Usuarios', celda('usuarios', '👥', 'Gestor de usuarios', `Activo: ${esc(usuarioActual().nombre)}`, 'azul', usuarios.lista.length))}
+      ${modoNube() ? '' : grupo('Usuarios', celda('usuarios', '👥', 'Gestor de usuarios', `Activo: ${esc(usuarioActual().nombre)}`, 'azul', usuarios.lista.length))}
       ${grupo('Programa', celda('ajustes/perfil', '🎯', 'Perfil y programa', 'Objetivo, días, frecuencia, duración, material y enfoque', 'verde'))}
       ${grupo('Coach', celda('ajustes/coach', '🧠', 'Coach IA', motorCoach().tipo === 'clave' ? 'IA real conectada' : motorCoach().tipo === 'navegador' ? 'IA del navegador · gratis' : 'Motor local siempre activo', 'violeta', motorCoach().tipo === 'local' ? '' : 'IA'))}
       ${grupo('Aplicación',
         celda('ajustes/avisos', '📣', 'Avisos', 'Respuestas a tus ideas y problemas', 'rojo', avisosSinLeer() ? `${avisosSinLeer()} sin leer` : '') +
         celda('ajustes/recordatorios', '🔔', 'Recordatorios', 'Aviso los días de entrenamiento', 'naranja', estado.ajustes.recordatorio ? estado.ajustes.hora : 'No') +
-        celda('ajustes/seguridad', '🔒', 'Seguridad', estado.seguridad?.activa ? 'Bloqueo activo con contraseña' : 'Protege la app con una contraseña', 'violeta') +
-        celda('ajustes/datos', '💾', 'Tus datos', 'Copia de seguridad, CSV y borrado', 'azul'))}
+        (modoNube() ? '' : celda('ajustes/seguridad', '🔒', 'Seguridad', estado.seguridad?.activa ? 'Bloqueo activo con contraseña' : 'Protege la app con una contraseña', 'violeta')) +
+        celda('ajustes/datos', '💾', 'Tus datos', 'Copia de seguridad, CSV y borrado', 'azul') +
+        (modoNube() ? `<button class="celda" data-a="cerrarSesion"><span class="ic rojo">🚪</span><span class="celda-t"><b>Cerrar sesión</b><small>Salir de tu cuenta en este dispositivo</small></span></button>` : ''))}
       ${grupo('Ayuda',
         `<label class="celda"><span class="ic violeta">💡</span><span class="celda-t"><b>Iconos de ayuda ⓘ</b><small>Explicaciones en las zonas importantes</small></span>
           <span class="interruptor solo"><input type="checkbox" role="switch" data-a="ayudas" ${estado.ajustes.ayudas !== false ? 'checked' : ''} aria-label="Mostrar iconos de ayuda"></span></label>` +
         celda('ajustes/idea', '💡', '¿Una idea o un problema?', 'Cuéntame qué mejorar o qué no funciona', 'amarillo') +
         celda('ajustes/acerca', 'ℹ️', 'Cómo funciona', 'Ciclos, fases y cargas sugeridas', 'violeta'))}
-      ${soyDueno() || (!hayDueno() && !esBeta(usuarioActual())) ? grupo('Administración',
-        soyDueno()
-          ? celda('ajustes/incidencias', '📥', 'Ideas e incidencias', 'Lo que envían los usuarios de este dispositivo', 'rojo', contarNuevas() ? `${contarNuevas()} sin leer` : '') +
-            celda('ajustes/beta', '🎟️', 'Beta testers', 'Reparte códigos de invitación con duración', 'violeta', usuarios.lista.filter(esBeta).length || '')
-          : celda('ajustes/incidencias', '👑', 'Activar el modo dueño', 'Marca esta cuenta como administradora de la app', 'rojo')) : ''}
+      ${modoNube()
+        ? (soyDueno() ? grupo('Administración',
+            celda('ajustes/incidencias', '📥', 'Ideas e incidencias', 'Lo que envían los usuarios', 'rojo', contarNuevas() ? `${contarNuevas()} sin leer` : '') +
+            celda('ajustes/beta', '🎟️', 'Beta testers', 'Reparte y gestiona los accesos de prueba', 'violeta', '')) : '')
+        : (soyDueno() || (!hayDueno() && !esBeta(usuarioActual())) ? grupo('Administración',
+            soyDueno()
+              ? celda('ajustes/incidencias', '📥', 'Ideas e incidencias', 'Lo que envían los usuarios de este dispositivo', 'rojo', contarNuevas() ? `${contarNuevas()} sin leer` : '') +
+                celda('ajustes/beta', '🎟️', 'Beta testers', 'Reparte códigos de invitación con duración', 'violeta', usuarios.lista.filter(esBeta).length || '')
+              : celda('ajustes/incidencias', '👑', 'Activar el modo dueño', 'Marca esta cuenta como administradora de la app', 'rojo')) : '')}
     `,
   });
 }
@@ -2745,7 +2783,7 @@ function ajBeta() {
     cuerpo: `
       <div class="tarjeta">
         <h2>🎟️ Crear un código</h2>
-        <p class="tenue">Elige cuánto durará el acceso y pasa el código a quien quieras. La persona lo canjea desde <b>Tengo un código beta</b> en la pantalla de acceso. Funciona sin conexión y sin servidor.</p>
+        <p class="tenue">Elige cuánto durará el acceso y pasa el código a quien quieras. La persona lo canjea desde <b>Tengo un código beta</b> en la pantalla de acceso.${modoNube() ? ' El servidor comprueba el código y activa su cuenta.' : ' Funciona sin conexión y sin servidor.'}</p>
         <div class="chips">
           ${opciones.map(([d, t]) => `<button class="chip" data-a="betaGenerar" data-d="${d}">${t}</button>`).join('')}
         </div>
@@ -2759,13 +2797,15 @@ function ajBeta() {
           <button class="icono peq" data-a="betaCopiar" data-codigo="${esc(c.codigo)}" title="Copiar" aria-label="Copiar código">📋</button>
           <button class="icono peq" data-a="betaBorrar" data-codigo="${esc(c.codigo)}" title="Borrar" aria-label="Borrar código">🗑️</button>
         </div>`).join('')) : ''}
-      ${grupo('Cuentas beta en este dispositivo', betas.length ? betas.map(u => `
+      ${grupo(modoNube() ? 'Cuentas beta' : 'Cuentas beta en este dispositivo', betas.length ? betas.map(u => `
         <a class="celda" href="#usuario/${u.id}">
           ${avatarHTML(u)}
           <span class="celda-t"><b>${esc(u.nombre)}</b><small>${esc(textoBeta(u))}</small></span>
           <span class="chev">›</span>
-        </a>`).join('') : '<p class="tenue centro">Todavía no hay cuentas beta aquí. Cada tester canjea su código en su propio móvil y crea allí su cuenta.</p>')}
-      <p class="tenue">Las cuentas beta viven en el dispositivo de cada persona: aquí solo verás las que se hayan canjeado en este. Al terminar su tiempo, la cuenta se bloquea sola y sus datos se conservan.</p>
+        </a>`).join('') : `<p class="tenue centro">${modoNube() ? 'Aquí aparecerán las cuentas beta que hayan entrado en este dispositivo.' : 'Todavía no hay cuentas beta aquí. Cada tester canjea su código en su propio móvil y crea allí su cuenta.'}</p>`)}
+      <p class="tenue">${modoNube()
+        ? 'El acceso beta se guarda en la cuenta de cada tester, en el servidor. Al terminar su tiempo, la cuenta se bloquea sola y sus datos se conservan.'
+        : 'Las cuentas beta viven en el dispositivo de cada persona: aquí solo verás las que se hayan canjeado en este. Al terminar su tiempo, la cuenta se bloquea sola y sus datos se conservan.'}</p>
     `,
   });
 }
@@ -2788,7 +2828,7 @@ function ajAcerca() {
         <p>Puedes proteger la app con una contraseña que se guarda cifrada (SHA-256 con salt) en este dispositivo. Si la olvidas, tienes tres formas de recuperar el acceso: la pregunta de seguridad, un código por correo o el código maestro.</p></div>
       <div class="tarjeta"><h2>🎨 Iconos</h2>
         <p>Los iconos de los avatares y de la interfaz son del set <a href="https://lucide.dev" target="_blank" rel="noopener">Lucide</a> (licencia ISC).</p></div>
-      <p class="tenue centro">${MARCA.nombre} · versión ${APP_VERSION} · funciona sin conexión · tus datos no salen de tu dispositivo</p>
+      <p class="tenue centro">${MARCA.nombre} · versión ${APP_VERSION} · ${modoNube() ? 'funciona sin conexión · tus entrenamientos siguen en tu dispositivo' : 'funciona sin conexión · tus datos no salen de tu dispositivo'}</p>
     `,
   });
 }
@@ -3254,7 +3294,131 @@ async function crearSeguridad(datos) {
   estado.seguridad = await construirSeguridad(datos);
 }
 
+// --- Acceso con cuentas reales (Supabase) ---------------------------
+// Traduce los errores más habituales del servidor a un mensaje claro.
+function traducirErrorNube(msg) {
+  const m = String(msg || '').toLowerCase();
+  if (m.includes('invalid login')) return 'Correo o contraseña incorrectos.';
+  if (m.includes('email not confirmed')) return 'Todavía no has confirmado tu correo. Revisa tu bandeja de entrada.';
+  if (m.includes('already registered') || m.includes('already been registered')) return 'Ya hay una cuenta con ese correo. Prueba a entrar.';
+  if (m.includes('password') && m.includes('at least')) return 'La contraseña es demasiado corta (mínimo 6 caracteres).';
+  if (m.includes('unable to validate email')) return 'Ese correo no parece válido.';
+  if (m.includes('rate limit') || m.includes('too many')) return 'Demasiados intentos seguidos. Espera un momento y vuelve a probar.';
+  if (m.includes('failed to fetch') || m.includes('networkerror') || m.includes('load failed')) return 'No hay conexión con el servidor. Revisa tu internet.';
+  if (m.includes('user already registered')) return 'Ya hay una cuenta con ese correo. Prueba a entrar.';
+  return msg ? `No he podido completar la operación: ${msg}` : 'No he podido completar la operación. Inténtalo de nuevo.';
+}
+
+// Crea o actualiza el usuario local a partir del perfil de la nube.
+function adoptarPerfilNube(uid, perfil, authUser) {
+  const p = perfil || {};
+  const meta = authUser?.user_metadata || {};
+  const correo = authUser?.email || p.correo || '';
+  const nombre = p.nombre || meta.nombre || String(correo).split('@')[0] || 'Usuario';
+  let u = usuarios.lista.find(x => x.id === uid);
+  if (!u) {
+    // Primera vez: si había un único usuario local con datos (el dueño antes de
+    // tener cuenta), se adoptan para no perder su programa ni su historial.
+    const previos = usuarios.lista.filter(x => !x.nube);
+    const hereda = previos.length === 1 ? previos[0] : null;
+    if (hereda) {
+      try { localStorage.setItem(claveDe(uid), JSON.stringify(cargar(hereda.id))); } catch { /* sin espacio */ }
+      usuarios.lista = usuarios.lista.filter(x => x.id !== hereda.id);
+      try { localStorage.removeItem(claveDe(hereda.id)); } catch { /* da igual */ }
+    }
+    u = { id: uid, nombre, avatar: p.avatar || hereda?.avatar || '🙂', color: p.color ?? hereda?.color ?? 0, creado: p.creado || new Date().toISOString(), nube: true };
+    usuarios.lista.push(u);
+  } else {
+    u.nube = true;
+    if (p.nombre) u.nombre = p.nombre;
+    if (p.avatar) u.avatar = p.avatar;
+    if (p.color !== undefined && p.color !== null) u.color = p.color;
+  }
+  u.admin = Boolean(p.admin);
+  u.beta = p.beta
+    ? { etiqueta: p.beta_etiqueta || '', inicio: p.beta_inicio || null, expira: p.beta_expira || null }
+    : null;
+  usuarios.activo = uid;
+  usuarioLogin = uid;
+  guardarUsuarios();
+  estado = cargar(uid);
+}
+
+// Entra con una sesión de la nube ya iniciada.
+async function entrarConNube(sesion) {
+  const uid = sesion?.user?.id;
+  if (!uid) return;
+  let perfil = null;
+  try { perfil = await miPerfilNube(); } catch { perfil = null; }
+  if (!perfil) { await new Promise(r => setTimeout(r, 900)); try { perfil = await miPerfilNube(); } catch { /* sigue sin perfil */ } }
+  adoptarPerfilNube(uid, perfil, sesion.user);
+  desbloqueado = true;
+  recuperacionProc.ok = false; recuperacionProc.codigo = null; recuperacionProc.usuario = null; ui.recMetodo = null;
+  ir(estado.plan ? 'hoy' : 'bienvenida');
+}
+
+// Al abrir la app: si hay una sesión de la nube guardada, se recupera sola
+// (y se refresca el token si hacía falta), para no pedir el acceso cada vez.
+async function restaurarSesionNube() {
+  const uid = usuarioNube()?.id;
+  let perfil = null;
+  if (uid) {
+    try { perfil = await miPerfilNube(); }
+    catch {
+      try { await refrescarNube(); perfil = await miPerfilNube(); } catch { perfil = null; }
+    }
+    if (perfil) { adoptarPerfilNube(uid, perfil, usuarioNube()); desbloqueado = true; }
+  }
+  arrancandoNube = false;
+  render();
+}
+
+// Pantalla de acceso con cuentas reales.
+function loginNube() {
+  return `<div class="login">
+    ${isotipoCuadrado({ tam: 72, clase: 'login-logo' })}
+    <h1>${MARCA.nombre}</h1>
+    <p class="tenue">Entra con tu cuenta.</p>
+    <form id="formNubeLogin" class="tarjeta" novalidate>
+      <label class="campo">Correo
+        <input type="email" name="correo" autocomplete="email" required autofocus spellcheck="false" autocapitalize="off" placeholder="tucorreo@ejemplo.com"></label>
+      <label class="campo">Contraseña
+        <span class="clave-fila"><input type="password" name="clave" autocomplete="current-password" required>
+          <button type="button" class="icono peq" data-a="verClave" data-f="clave" aria-label="Mostrar u ocultar la contraseña" title="Mostrar u ocultar">${ICO_OJO}</button></span></label>
+      <p class="tenue error" id="avisoLogin"></p>
+      <button class="btn" type="submit">🔓 Entrar</button>
+    </form>
+    <a class="btn sec" href="#registro">＋ Crear cuenta</a>
+    <p class="tenue centro">Tu cuenta se guarda en la nube. Tus datos de entrenamiento siguen en este dispositivo.</p>
+  </div>`;
+}
+
+// Pantalla para crear una cuenta nueva.
+function registroNube() {
+  if (!modoNube()) return login(); // el registro con cuenta real solo existe con servidor
+  return `<div class="login">
+    ${isotipoCuadrado({ tam: 64, clase: 'login-logo' })}
+    <h1>Crear cuenta</h1>
+    <p class="tenue">Crea tu cuenta para entrar. Si eres tester, después podrás canjear tu código de invitación beta.</p>
+    <form id="formNubeRegistro" class="tarjeta" novalidate>
+      <label class="campo">Tu nombre<input type="search" name="nombre" maxlength="24" required autofocus autocomplete="off" placeholder="Por ejemplo: Ana"></label>
+      <label class="campo">Correo
+        <input type="email" name="correo" autocomplete="email" required spellcheck="false" autocapitalize="off" placeholder="tucorreo@ejemplo.com"></label>
+      <label class="campo">Contraseña
+        <span class="clave-fila"><input type="password" name="clave" minlength="6" autocomplete="new-password" required placeholder="Al menos 6 caracteres">
+          <button type="button" class="icono peq" data-a="verClave" data-f="clave" aria-label="Mostrar u ocultar la contraseña" title="Mostrar u ocultar">${ICO_OJO}</button></span></label>
+      <label class="campo">Repite la contraseña
+        <span class="clave-fila"><input type="password" name="clave2" minlength="6" autocomplete="new-password" required>
+          <button type="button" class="icono peq" data-a="verClave" data-f="clave2" aria-label="Mostrar u ocultar la contraseña" title="Mostrar u ocultar">${ICO_OJO}</button></span></label>
+      <p class="tenue error" id="avisoRegistro"></p>
+      <button class="btn" type="submit">Crear cuenta</button>
+    </form>
+    <a class="btn sec" href="#login">Volver al acceso</a>
+  </div>`;
+}
+
 function login() {
+  if (modoNube()) return loginNube();
   const lista = usuarios.lista;
   const sel = lista.some(u => u.id === usuarioLogin) ? usuarioLogin : usuarios.activo;
   const u = lista.find(x => x.id === sel) || lista[0];
@@ -3339,26 +3503,32 @@ function betaCodigo() {
   </div>`;
 }
 
-// Pantalla que ve una cuenta beta cuando su tiempo ha terminado.
+// Pantalla que ve una cuenta beta cuando su tiempo ha terminado (o cuando
+// todavía no ha canjeado ningún código).
 function betaFin() {
   const u = usuarioActual();
   const b = betaDeUsuario(u) || {};
+  const sinCodigo = !b.expira && !b.inicio; // cuenta nueva: aún no ha canjeado nada
+  const titulo = sinCodigo ? 'Necesitas un código' : 'Tu beta ha terminado';
+  const texto = sinCodigo
+    ? `Tu cuenta <b>${esc(u.nombre)}</b> ya está creada. Para empezar, canjea el código de invitación que te hayan dado.`
+    : `El acceso de prueba de <b>${esc(u.nombre)}</b>${b.expira ? ` terminó el ${fmtDia(b.expira)}` : ''}. Tus datos siguen guardados en este dispositivo, no se ha borrado nada.`;
   return `<div class="login">
     ${isotipoCuadrado({ tam: 72, clase: 'login-logo' })}
-    <h1>Tu beta ha terminado</h1>
-    <p class="tenue">El acceso de prueba de <b>${esc(u.nombre)}</b>${b.expira ? ` terminó el ${fmtDia(b.expira)}` : ''}. Tus datos siguen guardados en este dispositivo, no se ha borrado nada.</p>
+    <h1>${titulo}</h1>
+    <p class="tenue">${texto}</p>
     <form id="formBetaRenovar" class="tarjeta" novalidate>
-      <p>¿Tienes un código nuevo? Canjéalo aquí y tu cuenta se reactiva conservando todo tu progreso.</p>
+      <p>${sinCodigo ? 'Pega aquí tu código de invitación para activar el acceso.' : '¿Tienes un código nuevo? Canjéalo aquí y tu cuenta se reactiva conservando todo tu progreso.'}</p>
       <label class="campo">Código de invitación
         <input type="text" name="codigo" placeholder="DTB-030-XXXXXXXX-XXXX" autocomplete="off" spellcheck="false" autocapitalize="characters" required></label>
       <p class="tenue error" id="avisoBeta"></p>
-      <button class="btn" type="submit">🎟️ Reactivar con este código</button>
+      <button class="btn" type="submit">🎟️ ${sinCodigo ? 'Activar con este código' : 'Reactivar con este código'}</button>
     </form>
     <div class="tarjeta">
       <p class="tenue">¿Prefieres guardar tus datos aparte? Descarga una copia: podrás importarla más adelante y no perderás nada.</p>
       <button class="btn sec" data-a="exportar">⬇️ Descargar mi copia de seguridad</button>
     </div>
-    <button class="btn sec" data-a="betaSalir">Cambiar de usuario</button>
+    <button class="btn sec" data-a="betaSalir">${modoNube() ? 'Cerrar sesión' : 'Cambiar de usuario'}</button>
     <p class="tenue centro">${esc(MARCA.nombre)} · ${esc(MARCA.eslogan || '')}</p>
   </div>`;
 }
@@ -4843,7 +5013,7 @@ document.addEventListener('click', async ev => {
       if (inp) { inp.type = inp.type === 'password' ? 'text' : 'password'; b.innerHTML = inp.type === 'password' ? ICO_OJO : ICO_OJO_OFF; }
       break;
     }
-    case 'bloquearAhora': desbloqueado = false; ui.recMetodo = null; recuperacionProc.ok = false; recuperacionProc.usuario = null; ir('login'); toast('App bloqueada 🔒'); break;
+    case 'bloquearAhora': if (modoNube()) salirNube().catch(() => { /* da igual */ }); desbloqueado = false; ui.recMetodo = null; recuperacionProc.ok = false; recuperacionProc.usuario = null; ir('login'); toast('App bloqueada 🔒'); break;
     case 'cambiarClaveBtn': modalCambiarClave(); break;
     case 'cambiarPreguntaBtn': modalCambiarPregunta(); break;
     case 'verMaestro': ui.verMaestro = !ui.verMaestro; render(); break;
@@ -4903,7 +5073,11 @@ document.addEventListener('click', async ev => {
       estado.beta.codigos = estado.beta.codigos.filter(c => c.codigo !== d.codigo);
       guardar(); render(); toast('Código borrado');
       break;
-    case 'betaSalir': desbloqueado = false; ir('login'); break;
+    case 'betaSalir': if (modoNube()) salirNube().catch(() => { /* da igual */ }); desbloqueado = false; ir('login'); break;
+    case 'cerrarSesion':
+      confirmar('Se cerrará tu sesión en este dispositivo. Tus datos de entrenamiento se quedan guardados aquí.', { titulo: '¿Cerrar sesión?', ok: 'Cerrar sesión', peligro: true })
+        .then(async ok => { if (!ok) return; try { await salirNube(); } catch { /* da igual */ } desbloqueado = false; ir('login'); toast('Sesión cerrada'); });
+      break;
     // ---- Ideas e incidencias ----
     case 'incFiltro': ui.incFiltro = d.f; render(); break;
     case 'incLeida': conDeshacerInc('Marcada como leída', () => cambiarEstadoInc(d.id, 'leida')); break;
@@ -5185,6 +5359,35 @@ document.addEventListener('submit', async ev => {
   ev.preventDefault();
   const f = new FormData(ev.target);
   // ---- Acceso y recuperación ----
+  if (ev.target.id === 'formNubeLogin') {
+    const aviso = t => { const el = $('#avisoLogin'); if (el) el.textContent = t; };
+    const correo = String(f.get('correo') || '').trim();
+    const clave = String(f.get('clave') || '');
+    if (!correo || !clave) { aviso('Escribe tu correo y tu contraseña.'); return; }
+    try {
+      const d = await entrarNube(correo, clave);
+      await entrarConNube(d);
+      toast(`Hola de nuevo, ${usuarioActual().nombre} 👋`);
+    } catch (e) { aviso(traducirErrorNube(e.message)); }
+    return;
+  }
+  if (ev.target.id === 'formNubeRegistro') {
+    const aviso = t => { const el = $('#avisoRegistro'); if (el) el.textContent = t; };
+    const nombre = String(f.get('nombre') || '').trim();
+    const correo = String(f.get('correo') || '').trim();
+    const clave = String(f.get('clave') || ''), clave2 = String(f.get('clave2') || '');
+    if (!nombre) { aviso('Escribe tu nombre.'); return; }
+    if (!correo) { aviso('Escribe tu correo.'); return; }
+    if (clave.length < 6) { aviso('Usa al menos 6 caracteres en la contraseña.'); return; }
+    if (clave !== clave2) { aviso('Las dos contraseñas no coinciden.'); return; }
+    try {
+      const d = await registrarNube(correo, clave, nombre);
+      if (!d?.access_token) { aviso('Cuenta creada. Revisa tu correo para confirmarla y luego entra.'); return; }
+      await entrarConNube(d);
+      toast('¡Cuenta creada! 🎉');
+    } catch (e) { aviso(traducirErrorNube(e.message)); }
+    return;
+  }
   if (ev.target.id === 'formLogin') {
     const u = usuarioPorNombre(f.get('usuarioNombre')) || usuarioPorCorreo(f.get('correo'));
     if (!u) { $('#avisoLogin').textContent = 'No encuentro ese usuario. Revisa el nombre o el correo.'; return; }
@@ -5246,6 +5449,19 @@ document.addEventListener('submit', async ev => {
   }
   if (ev.target.id === 'formBetaRenovar') {
     const aviso = t => { const el = $('#avisoBeta'); if (el) el.textContent = t; };
+    const codigo = String(f.get('codigo') || '').trim();
+    if (modoNube()) {
+      if (!codigo) { aviso('Pega tu código de invitación.'); return; }
+      try {
+        const r = await canjearCodigoNube(codigo);
+        let perfil = null;
+        try { perfil = await miPerfilNube(); } catch { perfil = null; }
+        adoptarPerfilNube(usuarios.activo, perfil, usuarioNube());
+        ir(estado.plan ? 'hoy' : 'bienvenida');
+        toast(r?.dias ? `¡Beta activada! Tienes ${etiquetaDuracion(r.dias)} de acceso 🎟️` : '¡Beta activada sin límite! 🎟️', { ms: 7000 });
+      } catch (e) { aviso(traducirErrorNube(e.message)); }
+      return;
+    }
     const lectura = await leerCodigo(f.get('codigo'));
     if (!lectura.ok) { aviso(lectura.error); return; }
     const u = usuarioActual();
@@ -5706,8 +5922,10 @@ function consejoAyudas(tab) {
 // Arranque
 // =====================================================================
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
+arrancandoNube = modoNube() && haySesionNube();
 render();
 comprobarRecordatorio();
+if (arrancandoNube) restaurarSesionNube();
 // La IA integrada del navegador (Gemini Nano) tarda un instante en responder:
 // cuando sepamos si está disponible, refresco las pantallas donde se muestra.
 detectarNano().then(est => {
