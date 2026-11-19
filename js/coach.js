@@ -194,6 +194,25 @@ export function resumenParaIA(ctx) {
   return l.join('\n');
 }
 
+// Resumen muy corto para la IA integrada del navegador. Su ventana de
+// contexto es pequeña: si le pasamos el resumen completo responde
+// "The input is too large" y el chat cae al motor local sin avisar.
+export function resumenCortoParaIA(ctx) {
+  const p = ctx.perfil || {};
+  const c = ctx.consumoHoy || {};
+  const l = [
+    `Objetivo: ${ctx.objetivo?.nombre || '—'}. Nivel: ${p.nivel || '—'}. Semana ${ctx.semana} (${ctx.fase?.nombre || '—'}).`,
+    `Sesiones: ${ctx.sesiones}. Racha: ${ctx.racha}. Adherencia: ${ctx.adherencia?.pct ?? 0}%. Volumen semana: ${n0(ctx.volumenSemana)} kg.`,
+  ];
+  if (ctx.ultima) l.push(`Última sesión: ${ctx.ultima.nombre} (${ctx.ultima.valoracion || 'sin valorar'}).`);
+  if (ctx.proxima) l.push(`Próxima: ${ctx.planSesiones[ctx.proxima.sesion]?.nombre || '—'} el ${ctx.proxima.fecha}.`);
+  if (ctx.fatigados.length) l.push(`Cargados: ${nombresMus(ctx.fatigados)}.`);
+  if (ctx.nutricion?.kcal) l.push(`Metas: ${n0(ctx.nutricion.kcal)} kcal, ${ctx.nutricion.protG} g proteína.`);
+  l.push(`Hoy registrado: ${n0(c.kcal)} kcal, ${c.prot || 0} g proteína, ${c.vasos || 0} vasos.`);
+  if (ctx.estancamiento?.length) l.push(`Estancamiento: ${ctx.estancamiento.slice(0, 2).map(e => e.nombre).join(', ')}.`);
+  return l.join('\n').slice(0, 700);
+}
+
 // =====================================================================
 // Explicación de un ejercicio («cuánto y por qué»)
 // =====================================================================

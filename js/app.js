@@ -20,7 +20,7 @@ import { analizar, promptClasificar, interpretarIA } from './asistente.js';
 import { interpretarSalud, fusionarMedidas, fusionarActividad } from './salud.js';
 import { htmlCiencia } from './ciencia.js';
 import {
-  construirContextoCoach, resumenParaIA, explicarEjercicio, sugerenciaEnVivo, sugerenciasSesion, sugerenciasSemana, preguntasSugeridas, responder,
+  construirContextoCoach, resumenParaIA, resumenCortoParaIA, explicarEjercicio, sugerenciaEnVivo, sugerenciasSesion, sugerenciasSemana, preguntasSugeridas, responder,
 } from './coach.js';
 import { PROVEEDORES, leerConfig, guardarConfig, borrarConfig, chatear, probar, detectarNano, nanoActivo, nanoEstadoSync, activarNano, probarNano } from './llm.js';
 import { ICONOS_AVATAR, LISTA_ICONOS } from './avatares.js';
@@ -51,7 +51,7 @@ import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from 
 // =====================================================================
 // Cada usuario guarda sus datos por separado: 'mientrenamiento:u:<id>'.
 // La lista de usuarios y cuál está activo van en 'mientrenamiento:usuarios'.
-const APP_VERSION = '2.02'; // versión de la app (ver VERSIONES/HISTORIAL.md)
+const APP_VERSION = '2.03'; // versión de la app (ver VERSIONES/HISTORIAL.md)
 const CLAVE = 'mientrenamiento:v2'; // formato anterior, de un solo usuario
 const CLAVE_USUARIOS = 'mientrenamiento:usuarios';
 const claveDe = id => `mientrenamiento:u:${id}`;
@@ -1075,10 +1075,12 @@ function coachContexto(extras = {}) {
 }
 
 // Qué motor de conversación está disponible ahora mismo:
-// 'clave' (modelo real con tu clave) > 'navegador' (IA integrada gratis) > 'local'.
+// 'clave' (modelo propio) > 'servidor' (IA incluida con tu cuenta) >
+// 'navegador' (IA integrada gratis) > 'local'.
 function motorCoach() {
   const cfg = leerConfig();
   if (cfg.proveedor && cfg.clave) return { tipo: 'clave', nombre: PROVEEDORES[cfg.proveedor]?.nombre || 'IA real' };
+  if (haySesionNube()) return { tipo: 'servidor' };
   if (nanoActivo()) return { tipo: 'navegador' };
   return { tipo: 'local' };
 }
@@ -1215,8 +1217,9 @@ function burbujaChat(m) {
   else if (m.html) cuerpo = m.html;
   else cuerpo = markdownSeguro(m.texto);
   const etiqueta = m.local ? 'Motor local · funciona sin conexión'
-    : m.fuente === 'navegador' ? 'IA del navegador · gratis y sin clave'
-      : m.fuente === 'clave' ? 'IA real · modelo conectado' : '';
+    : m.fuente === 'servidor' ? 'IA de DanTal · servidor'
+      : m.fuente === 'navegador' ? 'IA del navegador · gratis y sin clave'
+        : m.fuente === 'clave' ? 'IA real · modelo conectado' : '';
   return `<div class="chat-b coach">${cuerpo}${etiqueta ? `<span class="chat-fuente">${etiqueta}</span>` : ''}</div>`;
 }
 
@@ -1248,7 +1251,11 @@ async function coachEnviar(texto) {
   const mensajes = ui.coachChat.filter(m => m.texto).map(m => ({ rol: m.rol, texto: m.texto }));
   ui.coachPensando = true;
   render();
-  const res = await chatear({ mensajes, contexto: resumenParaIA(ctx) });
+  const res = await chatear({
+    mensajes,
+    contexto: resumenParaIA(ctx),
+    contextoCorto: resumenCortoParaIA(ctx),
+  });
   ui.coachPensando = false;
   if (res.ok) ui.coachChat.push({ rol: 'coach', texto: res.texto, fuente: res.fuente });
   else { ui.coachChat.push({ rol: 'coach', error: true, texto: `${res.error} Te respondo con el motor local.` }); ui.coachChat.push(local()); }
@@ -1264,14 +1271,18 @@ function coach() {
   const semana = sugerenciasSemana(ctx).filter(x => !ui.coachIgnorados.includes(x.id));
   const chips = preguntasSugeridas(ctx).filter(q => !ui.coachChat.some(m => m.rol === 'usuario' && m.texto === q));
   const sub = motor.tipo === 'clave' ? `IA real conectada · ${esc(motor.nombre)}`
-    : motor.tipo === 'navegador' ? 'IA del navegador · gratis y sin clave'
-      : 'Tu entrenador, siempre disponible';
+    : motor.tipo === 'servidor' ? 'IA de DanTal incluida · servidor seguro'
+      : motor.tipo === 'navegador' ? 'IA del navegador · gratis y sin clave'
+        : 'Tu entrenador, siempre disponible';
   const cta = motor.tipo !== 'local' ? ''
     : nano === 'downloadable' || nano === 'downloading'
       ? `<a class="tarjeta enlace-tarjeta coach-cta" href="#ajustes/coach">
         <span class="celda-t"><b>Activa la IA gratis de tu navegador ✨</b><small>Sin clave y sin salir del dispositivo. Solo hay que descargarla una vez.</small></span><span class="chev">›</span></a>`
-      : `<a class="tarjeta enlace-tarjeta coach-cta" href="#ajustes/coach">
-        <span class="celda-t"><b>¿Quieres conversar con un modelo real?</b><small>Conecta tu clave de OpenAI, Gemini o Claude. Es opcional.</small></span><span class="chev">›</span></a>`;
+      : !haySesionNube()
+        ? `<a class="tarjeta enlace-tarjeta coach-cta" href="#login">
+          <span class="celda-t"><b>Entra en tu cuenta para usar la IA incluida ✨</b><small>Sin claves ni configuración: responde desde el servidor de DanTal.</small></span><span class="chev">›</span></a>`
+        : `<a class="tarjeta enlace-tarjeta coach-cta" href="#ajustes/coach">
+          <span class="celda-t"><b>¿Quieres conversar con un modelo real?</b><small>Conecta tu clave de OpenAI, Gemini o Claude. Es opcional.</small></span><span class="chev">›</span></a>`;
   return pagina({
     titulo: 'Coach DanTal',
     sub,
@@ -1302,7 +1313,7 @@ function tarjetaNano() {
   const ok = ui.coachNanoOk;
   let cuerpo;
   if (activo) {
-    cuerpo = `<p class="tenue">✅ Activada. El chat usará la IA del propio navegador: <b>gratis, sin clave</b> y sin enviar tus datos a ningún servidor.</p>`;
+    cuerpo = `<p class="tenue">✅ Activada. Se usa cuando no hay cuenta cloud o si el servidor no responde: <b>gratis, sin clave</b> y sin enviar tus datos a ningún servidor.</p>`;
   } else if (descargando) {
     cuerpo = `<p class="tenue">Descargando el modelo… puede tardar unos minutos y solo ocurre una vez.</p>
       <div class="nano-barra" id="nanoProg"><i style="width:2%"></i></div>`;
@@ -1312,7 +1323,7 @@ function tarjetaNano() {
   } else if (est === 'desconocido') {
     cuerpo = `<p class="tenue">Comprobando si tu navegador tiene IA integrada…</p>`;
   } else {
-    cuerpo = `<p class="tenue">Tu navegador no ofrece IA integrada. Está disponible en <b>Chrome de escritorio</b> (versión 148 o superior); en el móvil, el coach sigue funcionando en local sin problema.</p>`;
+    cuerpo = `<p class="tenue">Tu navegador no ofrece IA integrada. Está disponible en <b>Chrome de escritorio</b> (versión 148 o superior). En el móvil, entra con tu cuenta para usar la IA del servidor; sin cuenta, el coach sigue funcionando en local.</p>`;
   }
   return `<div class="tarjeta">
     <div class="fila"><h2>✨ IA gratis del navegador</h2><span class="chip-mini ${activo ? 'ok' : 'mudo'}">${activo ? 'Activa' : 'Opcional'}</span></div>
@@ -1328,17 +1339,19 @@ function ajCoach() {
   const ok = ui.coachIAOk;
   const motor = motorCoach();
   return pagina({
-    titulo: 'Coach IA', padre: 'ajustes', sub: 'Opcional: mejora el chat con IA real',
+    titulo: 'Coach IA', padre: 'ajustes', sub: 'Chat con IA incluida en tu cuenta',
     cuerpo: `
       <div class="tarjeta">
         <h2>🧠 Cómo funciona</h2>
         <p>El coach de DanTal <b>ya funciona sin configurar nada</b>: te explica el cuánto y el porqué y adapta tus cargas con reglas basadas en tus datos.</p>
-        <p>Además, puedes <b>conversar en lenguaje natural</b>. Hay dos formas de mejorar el chat, de más sencilla a más potente:</p>
+        <p>Para <b>conversar en lenguaje natural</b>, el chat prueba los motores en este orden:</p>
         <ol class="ciencia-puntos">
+          <li><b>Tu propia clave</b> de OpenAI, Gemini, Claude… Si la configuras, esa manda.</li>
+          <li><b>IA de DanTal</b> en el servidor: incluida al entrar con tu cuenta, sin claves y con un límite diario para cuidar el plan gratuito.</li>
           <li><b>IA del navegador</b> (abajo): gratis, sin clave y sin salir del dispositivo. Solo en Chrome de escritorio.</li>
-          <li><b>Tu propia clave</b> de OpenAI, Gemini, Claude… Funciona en cualquier dispositivo, pero tiene coste por uso.</li>
+          <li><b>Motor local</b>: responde siempre, incluso sin conexión.</li>
         </ol>
-        <p class="tenue">Si configuras una clave, esa manda; si no, se usa la IA del navegador cuando existe; y si no, el motor local. En cualquier caso, nada cambia en tu programa sin tu permiso.</p>
+        <p class="tenue">El navegador solo se usa si no hay cuenta o si el servidor falla. En cualquier caso, nada cambia en tu programa sin tu permiso.</p>
       </div>
       ${tarjetaNano()}
       <form id="formCoachIA" class="tarjeta">
@@ -1367,8 +1380,8 @@ function ajCoach() {
         </div>
         ${ok ? `<p class="aviso-ia ${ok.ok ? 'ok' : 'mal'}">${ok.ok ? '✅ Funciona: el modelo ha respondido.' : `⚠️ ${esc(ok.error)}`}</p>` : ''}
       </form>
-      <p class="tenue">Tu clave se guarda <b>solo en este navegador</b>. No forma parte de tus datos, no se exporta y no se comparte. DanTal no tiene servidor propio: tus preguntas van directamente del navegador al proveedor que elijas. Las claves son personales y pueden tener coste por uso.</p>
-      <p class="tenue">Estado actual: <b>${motor.tipo === 'clave' ? `IA real (${esc(motor.nombre)})` : motor.tipo === 'navegador' ? 'IA del navegador' : 'motor local'}</b>.</p>
+      <p class="tenue">Tu clave se guarda <b>solo en este navegador</b>. No forma parte de tus datos, no se exporta y no se comparte. Si la usas, tus preguntas van directamente al proveedor que elijas y puede tener coste. Sin clave, la IA de DanTal usa una clave única guardada como secreto en el servidor: nunca aparece en la app ni en tu dispositivo.</p>
+      <p class="tenue">Estado actual: <b>${motor.tipo === 'clave' ? `IA real (${esc(motor.nombre)})` : motor.tipo === 'servidor' ? 'IA de DanTal · servidor' : motor.tipo === 'navegador' ? 'IA del navegador' : 'motor local'}</b>.</p>
     `,
   });
 }
@@ -1400,7 +1413,8 @@ function tarjetaCoach() {
     : ctx.sesiones ? `Llevas ${ctx.sesiones} sesiones y ${ctx.racha} semanas de racha. Pregúntame el cuánto y el porqué.`
       : 'Te explico cuánto entrenar y por qué, y adapto tus cargas según cómo vas.';
   const chip = motor.tipo === 'clave' ? 'IA real conectada'
-    : motor.tipo === 'navegador' ? 'IA del navegador · gratis' : 'Siempre disponible';
+    : motor.tipo === 'servidor' ? 'IA de DanTal · incluida'
+      : motor.tipo === 'navegador' ? 'IA del navegador · gratis' : 'Siempre disponible';
   return `<a class="tarjeta enlace-tarjeta" href="#coach">
     <div class="fila"><h2>🧠 Coach DanTal</h2><span class="chev">›</span></div>
     <p class="tenue">${texto}</p>

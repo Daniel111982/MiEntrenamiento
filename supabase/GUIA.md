@@ -49,13 +49,11 @@ Sigue estos pasos. Tardarás unos 10 minutos.
 > desde **Ajustes → Contenidos de la app** y aparece en la pantalla «Hoy». Verificado por
 > API: usuario normal 200 al leer y 403 al escribir, anon 401, dueño 201/204.
 >
-> **Pendiente de ejecutar:** `esquema-admin.sql` (paso 6). Mientras no esté, la app
-> funciona igual con sus catálogos de serie y **Ajustes → Administración** muestra un
-> aviso con este archivo. Cuando se ejecute, el dueño podrá publicar ejercicios,
-> alimentos y rutinas globales y editar o borrar cuentas desde el panel. La RLS hará
-> que las cuentas normales solo lean los elementos activos, `anon` no tenga acceso y
-> solo `public.es_admin()` pueda escribir o borrar usuarios. La app **no necesita
-> `service_role`** para nada de esto.
+> **Ya ejecutado el 19-11-2026:** `esquema-admin.sql`. El dueño puede publicar
+> ejercicios, alimentos y rutinas globales y editar o borrar cuentas desde el panel.
+> La RLS hace que las cuentas normales solo lean los elementos activos, `anon` no
+> tenga acceso y solo `public.es_admin()` pueda escribir o borrar usuarios. La app
+> **no necesita `service_role`** para nada de esto.
 
 ## Paso 4 — Ajustar el acceso (recomendado)
 
@@ -81,15 +79,37 @@ Sigue estos pasos. Tardarás unos 10 minutos.
 > ⚠️ **NUNCA** compartas ni pegues en la app la clave **`service_role`**. Esa es la
 > maestra y salta toda la seguridad. Se queda solo para ti, en el panel.
 
+## Paso 6 — Coach IA incluido (ya desplegado)
+
+1. En **SQL Editor → New query**, pega **`supabase/esquema-ia.sql`** y pulsa **Run**.
+   Crea `public.ia_uso` y la función `registrar_ia_uso()`, que limita cada cuenta a
+   25 consultas al día. Sin políticas RLS: solo la función `security definer` toca la
+   tabla, usando `auth.uid()`.
+2. Consigue una clave gratuita en **https://aistudio.google.com/apikey**. Las nuevas
+   claves empiezan por `AQ.` y son válidas; copia la clave completa desde *Copy key*.
+3. En **Edge Functions → Secrets**, añade el secreto **`IA_CLAVE`** con esa clave.
+   No hace falta marcar `IA_MODELO`: la función usa `gemini-3.5-flash-lite` y prueba
+   `gemini-2.5-flash-lite` si el primero no existiera.
+4. Despliega la función `coach-ia` desde **`supabase/functions/coach-ia/index.ts`**
+   con `verify_jwt = true`. La clave nunca se incluye en el código ni viaja a la app.
+
+> **Ya ejecutado y verificado el 19-11-2026** en el proyecto real: SQL aplicado,
+> secreto `IA_CLAVE` creado y función `coach-ia` activa. Comprobado con la cuenta del
+> dueño: responde con etiqueta «IA de DanTal · servidor», `anon` recibe 401 y el
+> límite diario devuelve el aviso correcto. Los datos de prueba se borraron.
+>
+> Si usaste un token de Management API para desplegarlo, **revócalo** en
+> https://supabase.com/dashboard/account/tokens cuando termines.
+
 ---
 
 ## Estado actual
 
 Ya están hechas la **Fase 1** (cuentas reales y betas a distancia), la **Fase 2**
-(sincronización), la **Fase 3** (URL propia gratis en Cloudflare Pages) y la **Fase 3C**
-(panel de administración; falta el paso 6 de SQL en el proyecto real). La app usa
-esta misma clave pública para avisos, catálogos, betas, sync y borrado de cuenta. Para
-publicar, basta con hacer `push` a `main`: Cloudflare Pages actualiza la web sola.
+(sincronización), la **Fase 3** (URL propia gratis en Cloudflare Pages), la **Fase 3C**
+(panel de administración) y la **Fase 3D** (coach IA con servidor). La app usa esta
+misma clave pública para avisos, catálogos, betas, sync, borrado de cuenta y coach IA.
+Para publicar, basta con hacer `push` a `main`: Cloudflare Pages actualiza la web sola.
 
 ---
 
@@ -112,7 +132,8 @@ publicar, basta con hacer `push` a `main`: Cloudflare Pages actualiza la web sol
 
 1. ~~Crear el proyecto en Supabase y ejecutar `esquema.sql` (pasos 1–3).~~ **Hecho.**
 2. ~~Mandarme el **Project URL** y la **clave anon public** (paso 5).~~ **Hecho.**
-3. **Pegar `esquema-admin.sql` en SQL Editor → New query → Run** (paso 6). Es lo
-   único que falta para estrenar el panel de administración completo.
+3. ~~Ejecutar `esquema-admin.sql` y estrenar el panel completo.~~ **Hecho.**
+4. ~~Crear la clave de Gemini, el secreto `IA_CLAVE` y desplegar `coach-ia`.~~ **Hecho.**
 
-Con eso, sigo yo.
+**Único pendiente:** revocar el token de Management API que se usó para desplegar,
+si ya no lo necesitas. Con eso, el servidor queda con solo la clave pública en la app.

@@ -33,7 +33,7 @@ export const usuarioNube = () => sesion?.user || null;
 export const haySesionNube = () => Boolean(sesion?.access_token);
 
 // Petición genérica. `auth: false` para las rutas públicas (registro y acceso).
-async function peticion(ruta, { metodo = 'GET', cuerpo, auth = true, cabeceras = {} } = {}) {
+export async function peticion(ruta, { metodo = 'GET', cuerpo, auth = true, cabeceras = {} } = {}) {
   if (!nubeConfigurada()) throw new Error('La nube no está configurada todavía.');
   const h = { apikey: NUBE.anon, 'Content-Type': 'application/json', ...cabeceras };
   if (auth && sesion?.access_token) h.Authorization = `Bearer ${sesion.access_token}`;
@@ -106,6 +106,27 @@ export const actualizarPerfilNube = (id, campos) =>
 
 export const actualizarMiPerfilNube = campos =>
   actualizarPerfilNube(usuarioNube()?.id, campos);
+
+// ---------------------------------------------------------------- Coach IA
+// La Edge Function de DanTal comprueba la sesión y el límite diario.
+// La clave de Gemini vive solo en Supabase: nunca llega a la app.
+export async function consultarCoachIA({ mensajes = [], contexto = '' } = {}) {
+  if (!haySesionNube()) throw new Error('Entra con tu cuenta para usar la IA de DanTal.');
+  const historial = (mensajes || [])
+    .filter(m => m && m.texto)
+    .slice(-12)
+    .map(m => ({
+      rol: m.rol === 'coach' || m.rol === 'assistant' ? 'assistant' : 'user',
+      texto: String(m.texto).slice(0, 4000),
+    }));
+  if (!historial.length) throw new Error('No hay nada que preguntar.');
+  const res = await peticion('/functions/v1/coach-ia', {
+    metodo: 'POST',
+    cuerpo: { mensajes: historial, contexto: String(contexto || '').slice(0, 6000) },
+  });
+  if (!res?.texto) throw new Error(res?.error || 'El servidor de IA no ha devuelto respuesta.');
+  return res.texto;
+}
 
 // Canjea un código de invitación beta. Lo valida el SERVIDOR (función
 // canjear_beta) y, si es correcto, pone la fecha de fin en el perfil.

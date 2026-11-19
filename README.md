@@ -57,8 +57,9 @@ y abre http://localhost:8765.
 | `js/menu.js`, `js/escaner.js` | Menú semanal, compra y escáner de alimentos |
 | `js/planificador.js` | Reorganización y ajuste de sesiones |
 | `js/rgpd.js` | Política de privacidad y consentimiento |
-| `js/coach.js`, `js/llm.js` | Coach local y conexión opcional con IA |
-| `supabase/esquema.sql`, `supabase/esquema-admin.sql`, `supabase/GUIA.md` | Tablas, permisos y pasos del backend gratis (el segundo es el paso incremental del panel admin) |
+| `js/coach.js`, `js/llm.js` | Coach local y chat IA: clave propia, servidor de DanTal, navegador y motor local |
+| `supabase/esquema.sql`, `supabase/esquema-admin.sql`, `supabase/esquema-ia.sql`, `supabase/GUIA.md` | Tablas, permisos, límite de uso del coach y pasos del backend gratis |
+| `supabase/functions/coach-ia/index.ts` | Edge Function que sirve Gemini con una clave única guardada como secreto |
 | `sw.js` | Funcionamiento sin conexión |
 | `VERSIONES/` | Copias completas por versión, historial y scripts para guardar o restaurar |
 
@@ -70,7 +71,7 @@ El proyecto guarda una copia completa de cada versión en `VERSIONES/`, para pod
 - `VERSIONES/nueva-version.cmd -Nota "..."` — guarda el estado actual como versión nueva.
 - `VERSIONES/restaurar.cmd -Version v1.00` — vuelve a una versión anterior.
 
-La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.02`). La caché del service worker es `dantal-v4.5` y los archivos estáticos usan `?v=4.5`. Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
+La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.03`). La caché del service worker es `dantal-v4.6` y los archivos estáticos usan `?v=4.6`. Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
 
 ## Privacidad y seguridad
 
@@ -79,5 +80,6 @@ La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahor
 - Los reportes de «Ideas e incidencias» son privados del dueño.
 - Los avisos globales se guardan en la tabla `avisos` de Supabase: lectura para cuentas autenticadas, escritura solo para el administrador.
 - Los catálogos globales viven en la tabla `catalogos`: las cuentas normales solo leen los activos; el dueño ve también los ocultos y puede escribir. Las cuentas normales no pueden borrar usuarios: la función `borrar_usuario_admin(uuid)` comprueba `es_admin()` en la base de datos.
-- Si las tablas nuevas aún no están creadas, la app sigue funcionando con sus catálogos de serie y el panel indica que falta ejecutar `supabase/esquema-admin.sql`.
+- Las tablas nuevas ya están creadas en el proyecto real; si faltaran, la app sigue funcionando con sus catálogos de serie y el panel indica qué archivo SQL hay que ejecutar.
+- El coach IA del servidor usa una sola clave de Gemini como secreto `IA_CLAVE` en Supabase. Nunca viaja a la app ni se guarda en el dispositivo. Cada cuenta tiene un límite de 25 consultas al día (`public.ia_uso` / `registrar_ia_uso()`). Si no hay cuenta o el servidor falla, se usa la IA del navegador y, por último, el motor local.
 - Política y consentimiento RGPD disponibles en **Ajustes → Privacidad y RGPD**.

@@ -6,8 +6,11 @@
 // SOLO en este navegador, en la clave de dispositivo «mientrenamiento:coachIA».
 // No forma parte de tus datos de usuario, no se exporta y no se sincroniza.
 //
-// Sin clave, el chat sigue funcionando con el motor local (js/coach.js).
+// Sin clave, el chat usa la IA del servidor de DanTal (si hay cuenta),
+// después la IA integrada del navegador y, por último, el motor local
+// (js/coach.js). Así siempre hay respuesta.
 // =====================================================================
+import { consultarCoachIA, haySesionNube } from './nube.js';
 
 export const CLAVE_IA = 'mientrenamiento:coachIA';
 
@@ -107,6 +110,10 @@ let nanoDescargando = false;
 
 const soportaNano = () => typeof globalThis.LanguageModel !== 'undefined';
 
+// Algunos Chromium de pruebas exponen la API pero no traen el modelo:
+// devuelven el propio prompt con este aviso. No es una respuesta real.
+const esEcoNano = texto => /On-device model is not available|just echoing back/i.test(String(texto));
+
 // Idiomas: el español llegó en Chrome 149; si no está, se prueba sin idioma.
 const OPCIONES_ES = {
   expectedInputs: [{ type: 'text', languages: ['es'] }],
@@ -159,9 +166,17 @@ export async function activarNano(onProgreso) {
   nanoDescargando = true;
   try {
     const sesion = await crearSesionNano(null, onProgreso);
-    sesion.destroy?.();
-    nanoEstado = 'available';
-    return { ok: true };
+    try {
+      const prueba = await sesion.prompt('Di solo la palabra: listo');
+      if (esEcoNano(prueba)) {
+        nanoEstado = 'unavailable';
+        return { ok: false, error: 'Tu navegador ofrece la API, pero no tiene el modelo real. Entra con tu cuenta para usar la IA de DanTal.' };
+      }
+      nanoEstado = 'available';
+      return { ok: true };
+    } finally {
+      sesion.destroy?.();
+    }
   } catch (e) {
     nanoEstado = await consultarNano();
     return { ok: false, error: e?.message || 'No he podido activar la IA del navegador.' };
@@ -171,14 +186,17 @@ export async function activarNano(onProgreso) {
 }
 
 async function chatearNano({ mensajes, contexto, onProgreso }) {
-  const recientes = mensajes.slice(-8);
+  // Gemini Nano tiene una ventana de contexto muy pequeña: recortamos el
+  // historial y cada mensaje para que no responda "The input is too large".
+  const recientes = mensajes.slice(-4).map(m => ({ ...m, texto: String(m.texto).slice(0, 350) }));
   const sesion = await crearSesionNano([
-    { role: 'system', content: instrucciones(contexto) },
+    { role: 'system', content: instrucciones(contexto, { compacta: true }) },
     ...recientes.slice(0, -1).map(m => ({ role: m.rol, content: m.texto })),
   ], onProgreso);
   try {
     const salida = await sesion.prompt(recientes[recientes.length - 1].texto);
     const texto = String(salida || '').trim();
+    if (esEcoNano(texto)) throw new Error('Tu navegador no tiene el modelo real. Usa la IA de DanTal con tu cuenta.');
     if (!texto) throw new Error('El modelo integrado no devolvió texto.');
     return texto;
   } finally {
@@ -193,7 +211,9 @@ export async function probarNano() {
     const sesion = await crearSesionNano([{ role: 'system', content: 'Responde muy breve, en español.' }]);
     const salida = await sesion.prompt('Di solo la palabra: listo');
     sesion.destroy?.();
-    return { ok: true, texto: String(salida || '').trim() };
+    const texto = String(salida || '').trim();
+    if (esEcoNano(texto)) return { ok: false, error: 'Tu navegador ofrece la API, pero no tiene el modelo real. Usa la IA de DanTal con tu cuenta.' };
+    return { ok: true, texto };
   } catch (e) {
     return { ok: false, error: e?.message || 'La IA del navegador ha fallado.' };
   }
@@ -202,7 +222,15 @@ export async function probarNano() {
 // ---------------------------------------------------------------------
 // Instrucciones del sistema (quién es y cómo responde)
 // ---------------------------------------------------------------------
-export function instrucciones(contexto = '') {
+export function instrucciones(contexto = '', { compacta = false } = {}) {
+  if (compacta) {
+    return [
+      'Eres DanTal, entrenador de entrenamiento y nutrición. Habla en español de España, cercano y breve (2-4 frases).',
+      'Explica CUÁNTO y POR QUÉ con cifras concretas. No inventes datos: si faltan, dilo. Distingue dato real de estimación.',
+      'Ante dolor o lesión, recomienda consultar a un profesional. Usa listas cortas y **negritas**, sin títulos.',
+      'DATOS: ' + String(contexto || '(sin datos)').slice(0, 700),
+    ].join('\n');
+  }
   return [
     'Eres DanTal, el entrenador personal y de nutrición de esta app de entrenamiento.',
     'Hablas siempre en español de España, cercano, claro y directo, tuteando al usuario.',
@@ -303,10 +331,11 @@ async function pedir(cfg, mensajes, { system, timeoutMs = 45000 } = {}) {
  * @param {object} o
  * @param {Array<{rol:string,texto:string}>} o.mensajes  Historial (sin el sistema).
  * @param {string} o.contexto  Resumen de datos del usuario (resumenParaIA).
+ * @param {string} [o.contextoCorto]  Resumen breve para la IA del navegador.
  * @param {object} [o.cfg]  Configuración; por defecto, la guardada.
- * @returns {Promise<{ok:boolean, texto?:string, error?:string}>}
+ * @returns {Promise<{ok:boolean, texto?:string, error?:string, fuente?:string}>}
  */
-export async function chatear({ mensajes, contexto = '', cfg = leerConfig() } = {}) {
+export async function chatear({ mensajes, contexto = '', contextoCorto = '', cfg = leerConfig() } = {}) {
   const msgs = normalizar(mensajes);
   if (!msgs.length) return { ok: false, error: 'No hay nada que preguntar.' };
 
@@ -320,17 +349,30 @@ export async function chatear({ mensajes, contexto = '', cfg = leerConfig() } = 
     }
   }
 
-  // 2) Sin clave: si el navegador trae IA integrada, se usa (gratis, sin salir del dispositivo).
-  if (nanoEstado === 'available') {
+  // 2) IA del servidor de DanTal: incluida, sin clave y para todas las cuentas.
+  let errorServidor = '';
+  if (haySesionNube()) {
     try {
-      const texto = await chatearNano({ mensajes: msgs, contexto });
-      return { ok: true, texto, fuente: 'navegador' };
+      const texto = await consultarCoachIA({ mensajes: msgs, contexto });
+      return { ok: true, texto, fuente: 'servidor' };
     } catch (e) {
-      return { ok: false, error: e?.message || 'La IA del navegador ha fallado.' };
+      errorServidor = /failed to fetch|networkerror/i.test(e?.message || '')
+        ? 'No he podido conectar con el servidor de IA.'
+        : (e?.message || 'El servidor de IA no responde.');
     }
   }
 
-  return { ok: false, error: 'Configura tu clave en Ajustes → Coach IA.' };
+  // 3) IA integrada del navegador: gratis y sin salir del dispositivo.
+  if (nanoEstado === 'available') {
+    try {
+      const texto = await chatearNano({ mensajes: msgs, contexto: contextoCorto || contexto });
+      return { ok: true, texto, fuente: 'navegador' };
+    } catch (e) {
+      errorServidor = errorServidor || (e?.message || 'La IA del navegador ha fallado.');
+    }
+  }
+
+  return { ok: false, error: errorServidor || 'El coach IA no está disponible ahora.' };
 }
 
 /** Comprueba que la clave y el modelo funcionan (mensaje mínimo). */

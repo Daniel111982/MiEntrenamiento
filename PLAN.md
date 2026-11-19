@@ -17,8 +17,9 @@
   invitación y caducidad**, **gestión de betas a distancia**, **sincronización de
   datos entre dispositivos**, fotos de progreso, meta corporal, menú semanal y
   compra, escáner de alimentos, insignias y retos, informe semanal, planificación
-  adaptativa, coach mejorado, RGPD, **avisos globales publicados por el dueño** y
-  **panel de administración con catálogos globales y gestión de cuentas cloud**.
+  adaptativa, coach con IA incluida desde el servidor, RGPD, **avisos globales
+  publicados por el dueño** y **panel de administración con catálogos globales y
+  gestión de cuentas cloud**.
 
 ### El límite actual
 Los datos viven en el dispositivo (funciona sin conexión) y **se copian a la cuenta**
@@ -241,6 +242,10 @@ mayoría ya lo tienes).
 - [x] **Fase 3C — Panel de administración completo.** Catálogos globales de ejercicios,
   alimentos y rutinas, gestión de cuentas cloud y permisos reforzados en Supabase.
   Requiere ejecutar `supabase/esquema-admin.sql` en el proyecto existente. *(hecha: app 2.01)*
+- [x] **Fase 3D — Coach IA incluido.** Edge Function `coach-ia` en Supabase con una
+  clave de Gemini guardada como secreto, límite de 25 consultas por cuenta y día,
+  arreglo de la IA del navegador (prompt compacto y detección de modelos que solo
+  hacen eco). Orden: clave propia > servidor > navegador > motor local. *(hecha: app 2.03)*
 - [ ] **Fase 4 — Android.** Paquete TWA y publicación en Google Play (requiere dominio propio).
 - [ ] **Fase 5 — iOS.** Envoltorio con Capacitor y publicación en la App Store.
 - [ ] **Fase 6 — Monetización y relojes.** Suscripciones con el pago de las tiendas
