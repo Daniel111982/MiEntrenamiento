@@ -35,7 +35,7 @@ import {
 import {
   nubeConfigurada, usuarioNube, haySesionNube, registrarNube, entrarNube, refrescarNube, salirNube,
   miPerfilNube, listarPerfilesNube, actualizarPerfilNube, actualizarMiPerfilNube,
-  canjearCodigoNube,
+  canjearCodigoNube, leerDatosNube, guardarDatosNube,
 } from './nube.js';
 
 // =====================================================================
@@ -91,6 +91,9 @@ const modoNube = () => nubeConfigurada();
 // Al abrir la app con una sesión de la nube guardada, se comprueba antes de
 // mostrar nada, para no pedir el acceso si ya se había entrado.
 let arrancandoNube = false;
+// Sincronización de datos con el servidor (Fase 2).
+let nubeGuardarTimer = null;   // espera para no subir en cada tecla
+let nubeSilencio = false;      // evita reenviar mientras se aplican datos del servidor
 // Primera vez en este dispositivo: todavía no hay una cuenta real que se pueda abrir.
 const esCuentaNueva = () => usuarios.lista.length === 1 && !estado.plan && !estado.seguridad
   && !(estado.historial || []).length && usuarioActual().nombre === 'Usuario 1';
@@ -137,7 +140,11 @@ function cargar(id = usuarios.activo) {
   } catch { /* datos corruptos */ }
   return vacio();
 }
-function guardar() { localStorage.setItem(claveDe(usuarios.activo), JSON.stringify(estado)); }
+function guardar() {
+  estado.actualizado = new Date().toISOString();
+  localStorage.setItem(claveDe(usuarios.activo), JSON.stringify(estado));
+  programarGuardadoNube();
+}
 
 const usuarioActual = () => usuarios.lista.find(u => u.id === usuarios.activo) || usuarios.lista[0];
 const esImagenAvatar = a => /^(data:image\/|https?:\/\/|blob:)/i.test(String(a || ''));
@@ -2755,8 +2762,12 @@ function ajRecordatorios() {
 
 function ajDatos() {
   return pagina({
-    titulo: 'Tus datos', padre: 'ajustes', sub: 'Todo se guarda solo en este dispositivo',
+    titulo: 'Tus datos', padre: 'ajustes',
+    sub: modoNube() ? 'Se guarda en tu dispositivo y se copia a tu cuenta' : 'Todo se guarda solo en este dispositivo',
     cuerpo: `
+      ${modoNube() ? grupo('Nube', `
+        <button class="celda" data-a="syncNube"><span class="ic azul">☁️</span><span class="celda-t"><b>Sincronizar ahora</b><small>Sube y baja tus datos de tu cuenta cuando quieras</small></span></button>
+        <p class="tenue">Tus entrenamientos se guardan en este dispositivo y se copian a tu cuenta para tenerlos en cualquier móvil. Las fotos de progreso se quedan en este dispositivo.</p>`) : ''}
       ${grupo('Copia de seguridad', `
         <button class="celda" data-a="exportar"><span class="ic azul">⬇️</span><span class="celda-t"><b>Exportar copia</b><small>Archivo JSON con todo: perfil, programa e historial</small></span></button>
         <label class="celda"><span class="ic verde">⬆️</span><span class="celda-t"><b>Importar copia</b><small>Recupera los datos desde un archivo exportado</small></span><input type="file" accept="application/json" data-a="importar" hidden></label>
@@ -3478,6 +3489,66 @@ function adoptarPerfilNube(uid, perfil, authUser) {
   perfilesNubeError = '';
 }
 
+// --- Sincronización de los datos con el servidor (Fase 2) ---------------
+// El dispositivo sigue siendo la fuente principal (funciona sin conexión);
+// la nube es una copia para poder continuar en otro móvil. Gana el cambio
+// más reciente según la marca de tiempo `actualizado`.
+//
+// Lo que se sube: todo menos lo que no conviene enviar. La contraseña local
+// (seguridad) no se usa con cuentas reales, y las fotos ocupan mucho y se
+// quedan en el dispositivo.
+const datosLocales = e => { const c = { ...e }; delete c.seguridad; delete c.fotos; return c; };
+
+function programarGuardadoNube() {
+  if (!modoNube() || nubeSilencio || !haySesionNube() || !usuarioActual()?.nube) return;
+  clearTimeout(nubeGuardarTimer);
+  nubeGuardarTimer = setTimeout(() => { nubeGuardarTimer = null; guardarEnNube(); }, 1500);
+}
+
+async function guardarEnNube() {
+  if (!modoNube() || !haySesionNube() || !usuarioActual()?.nube) return false;
+  if (!usuarioNube()?.id) return false;
+  if (!estado.actualizado) estado.actualizado = new Date().toISOString();
+  try { await guardarDatosNube(datosLocales(estado)); return true; }
+  catch { return false; }
+}
+
+// Trae los datos del servidor y decide quién manda según la fecha.
+// Devuelve 'bajado' | 'subido' | 'igual' | 'error' | null.
+async function sincronizarDatosNube() {
+  if (!modoNube() || !haySesionNube() || !usuarioActual()?.nube) return null;
+  const uid = usuarioNube()?.id;
+  if (!uid) return null;
+  let remoto = null;
+  try { remoto = await leerDatosNube(); } catch { remoto = null; }
+  const local = estado;
+  const contenido = remoto?.contenido;
+  const hayRemoto = Boolean(contenido && Object.keys(contenido).length);
+  const tLocal = Date.parse(local?.actualizado || '') || 0;
+  const tRemoto = Date.parse(contenido?.actualizado || '') || 0;
+
+  if (hayRemoto && tRemoto > tLocal) {
+    // En el servidor hay algo más nuevo: se adopta, conservando lo propio del
+    // dispositivo (contraseña local y fotos).
+    nubeSilencio = true;
+    estado = { ...vacio(), ...contenido };
+    estado.seguridad = local?.seguridad || null;
+    estado.fotos = local?.fotos || {};
+    estado.actualizado = contenido.actualizado || new Date().toISOString();
+    localStorage.setItem(claveDe(uid), JSON.stringify(estado));
+    nubeSilencio = false;
+    sincronizarPropios();
+    return 'bajado';
+  }
+  if (!hayRemoto || tLocal > tRemoto) {
+    // Este dispositivo tiene lo más nuevo (o el servidor está vacío): se sube.
+    estado.actualizado = new Date().toISOString();
+    localStorage.setItem(claveDe(uid), JSON.stringify(estado));
+    return (await guardarEnNube()) ? 'subido' : 'error';
+  }
+  return 'igual';
+}
+
 // Entra con una sesión de la nube ya iniciada.
 async function entrarConNube(sesion) {
   const uid = sesion?.user?.id;
@@ -3488,6 +3559,7 @@ async function entrarConNube(sesion) {
   adoptarPerfilNube(uid, perfil, sesion.user);
   desbloqueado = true;
   recuperacionProc.ok = false; recuperacionProc.codigo = null; recuperacionProc.usuario = null; ui.recMetodo = null;
+  await sincronizarDatosNube();
   ir(estado.plan ? 'hoy' : 'bienvenida');
 }
 
@@ -3501,7 +3573,7 @@ async function restaurarSesionNube() {
     catch {
       try { await refrescarNube(); perfil = await miPerfilNube(); } catch { perfil = null; }
     }
-    if (perfil) { adoptarPerfilNube(uid, perfil, usuarioNube()); desbloqueado = true; }
+    if (perfil) { adoptarPerfilNube(uid, perfil, usuarioNube()); desbloqueado = true; await sincronizarDatosNube(); }
   }
   arrancandoNube = false;
   render();
@@ -5218,6 +5290,16 @@ document.addEventListener('click', async ev => {
       break;
     }
     case 'betaNubeQuitar': quitarBetaNube(d.id); break;
+    case 'syncNube': {
+      toast('Sincronizando…');
+      sincronizarDatosNube().then(r => {
+        if (r === 'bajado') { render(); toast('Datos actualizados desde la nube ☁️'); }
+        else if (r === 'subido') toast('Copia subida a la nube ☁️');
+        else if (r === 'igual') toast('Todo al día ✅');
+        else toast('No he podido sincronizar. Revisa tu conexión.');
+      });
+      break;
+    }
     case 'betaSalir': if (modoNube()) salirNube().catch(() => { /* da igual */ }); desbloqueado = false; ir('login'); break;
     case 'cerrarSesion':
       confirmar('Se cerrará tu sesión en este dispositivo. Tus datos de entrenamiento se quedan guardados aquí.', { titulo: '¿Cerrar sesión?', ok: 'Cerrar sesión', peligro: true })
@@ -6051,8 +6133,17 @@ async function pantallaEncendida() {
 }
 document.addEventListener('visibilitychange', () => {
   pantallaEncendida();
-  // Si la beta ha caducado mientras la app estaba abierta, se bloquea al volver.
-  if (document.visibilityState === 'visible' && betaCaducada() && !soyDueno() && ruta() !== 'beta/fin') render();
+  if (document.visibilityState === 'hidden') {
+    // Al salir, se envía lo que quede pendiente para no perder nada.
+    if (nubeGuardarTimer) { clearTimeout(nubeGuardarTimer); nubeGuardarTimer = null; guardarEnNube(); }
+  } else if (document.visibilityState === 'visible') {
+    // Al volver, se comprueba si hay cambios más nuevos en la nube.
+    if (modoNube() && desbloqueado && usuarioActual()?.nube && !estado.enCurso) {
+      sincronizarDatosNube().then(r => { if (r === 'bajado') { render(); toast('Datos actualizados desde la nube ☁️'); } });
+    }
+    // Si la beta ha caducado mientras la app estaba abierta, se bloquea al volver.
+    if (betaCaducada() && !soyDueno() && ruta() !== 'beta/fin') render();
+  }
 });
 
 // La primera vez que se usa la app explica cómo ver las ayudas.

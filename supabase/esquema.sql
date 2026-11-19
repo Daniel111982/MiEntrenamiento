@@ -253,6 +253,22 @@ $$;
 
 grant execute on function public.canjear_beta(text) to authenticated;
 
+-- ---------------------------------------------------------------------
+-- 10. Ping: mantiene despierto el proyecto (evita la pausa por inactividad).
+--     Lo llama una tarea programada (GitHub Actions) a diario. Cualquier
+--     visita a la API cuenta como actividad; con esto sobra.
+-- ---------------------------------------------------------------------
+create or replace function public.ping()
+returns json
+language sql
+security definer
+set search_path = public
+as $$
+  select json_build_object('ok', true, 'hora', now());
+$$;
+
+grant execute on function public.ping() to anon, authenticated;
+
 -- =====================================================================
 -- ¡Listo! Deberías ver "Success. No rows returned".
 -- =====================================================================
