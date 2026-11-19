@@ -2768,6 +2768,135 @@ function ajDatos() {
   });
 }
 
+// --- Gestión de betas desde el servidor (solo el dueño) ----------------
+// Caché de las cuentas del servidor para gestionar sus betas a distancia.
+let perfilesNube = null;
+let perfilesNubeEstado = 'inicial'; // inicial | cargando | listo | error
+let perfilesNubeError = '';
+const DIAS_BETA_OPCIONES = [[7, '1 semana'], [14, '2 semanas'], [30, '1 mes'], [90, '3 meses'], [180, '6 meses'], [365, '1 año'], [0, 'Sin límite']];
+
+async function cargarPerfilesNube(forzar = false) {
+  if (perfilesNubeEstado === 'cargando') return;
+  if (perfilesNubeEstado === 'listo' && !forzar) return;
+  perfilesNubeEstado = 'cargando';
+  perfilesNubeError = '';
+  try {
+    perfilesNube = await listarPerfilesNube();
+    perfilesNubeEstado = 'listo';
+  } catch (e) {
+    perfilesNubeError = traducirErrorNube(e.message);
+    perfilesNubeEstado = 'error';
+  }
+  if (ruta() === 'ajustes/beta') render();
+}
+
+// Texto del estado beta de una cuenta del servidor.
+function estadoBetaNube(p) {
+  if (!p.beta) return 'Sin acceso beta';
+  if (!p.beta_expira) return 'Beta activa · sin límite';
+  const d = diasRestantes(p.beta_expira, hoy());
+  if (d < 0) return `Beta caducada el ${fmtDia(p.beta_expira)}`;
+  if (d === 0) return 'Beta · termina hoy';
+  return `Beta activa · hasta el ${fmtDia(p.beta_expira)}`;
+}
+
+function filaCuentaNube(p) {
+  const activa = p.beta && (!p.beta_expira || !estaCaducada(p.beta_expira, hoy()));
+  const color = p.admin ? 'rojo' : activa ? 'verde' : 'azul';
+  const icono = p.admin ? '👑' : activa ? '🎟️' : '🙂';
+  return `<button class="celda" data-a="betaCuenta" data-id="${esc(p.id)}">
+    <span class="ic ${color}">${icono}</span>
+    <span class="celda-t"><b>${esc(p.nombre || 'Sin nombre')}${p.admin ? ' · dueño' : ''}</b><small>${esc(p.correo || '')} · ${esc(estadoBetaNube(p))}</small></span>
+    <span class="chev">›</span>
+  </button>`;
+}
+
+// Panel de betas con cuentas reales: se gestionan en el servidor.
+function ajBetaNube() {
+  if (perfilesNubeEstado === 'inicial') cargarPerfilesNube();
+  const cuentas = (perfilesNube || []).slice();
+  const conBeta = cuentas.filter(p => p.beta);
+  const activas = conBeta.filter(p => !p.beta_expira || !estaCaducada(p.beta_expira, hoy()));
+  const codigos = estado.beta?.codigos || [];
+  const cargando = perfilesNubeEstado === 'cargando';
+  return pagina({
+    titulo: 'Beta testers', padre: 'ajustes', sub: 'Reparte códigos y gestiona los accesos desde el servidor',
+    cuerpo: `
+      <div class="tarjeta">
+        <h2>🎟️ Crear un código</h2>
+        <p class="tenue">Elige cuánto durará el acceso y pasa el código a quien quieras. La persona lo canjea desde <b>Tengo un código beta</b> en la pantalla de acceso. El servidor comprueba el código y activa su cuenta.</p>
+        <div class="chips">
+          ${DIAS_BETA_OPCIONES.map(([d, t]) => `<button class="chip" data-a="betaGenerar" data-d="${d}">${t}</button>`).join('')}
+        </div>
+        <label class="campo">Días personalizados
+          <span class="fila"><input type="number" name="betaDiasCustom" min="1" max="3650" placeholder="Por ejemplo: 45" data-a="betaDiasCustom" class="hora"><button class="btn sec" data-a="betaGenerarCustom">Crear</button></span></label>
+      </div>
+      ${codigos.length ? grupo('Códigos creados', codigos.map(c => `
+        <div class="celda beta-codigo">
+          <span class="ic violeta">🎟️</span>
+          <span class="celda-t"><b class="mono">${esc(c.codigo)}</b><small>${esc(etiquetaDuracion(c.dias))} · creado el ${fmtCorta(c.creado)}</small></span>
+          <button class="icono peq" data-a="betaCopiar" data-codigo="${esc(c.codigo)}" title="Copiar" aria-label="Copiar código">📋</button>
+          <button class="icono peq" data-a="betaBorrar" data-codigo="${esc(c.codigo)}" title="Borrar" aria-label="Borrar código">🗑️</button>
+        </div>`).join('')) : ''}
+      <div class="tarjeta">
+        <h2>👥 Cuentas (${cuentas.length})</h2>
+        <p class="tenue">${cargando ? 'Cargando las cuentas del servidor…' : `${activas.length} con acceso activo · ${conBeta.length - activas.length} caducadas`}</p>
+        ${perfilesNubeError ? `<p class="tenue error">${esc(perfilesNubeError)}</p>` : ''}
+        <div class="botones"><button class="btn sec" data-a="betaRecargar">🔄 ${cargando ? 'Cargando…' : 'Recargar'}</button></div>
+      </div>
+      ${cuentas.length ? grupo('Todas las cuentas', cuentas.map(filaCuentaNube).join('')) : ''}
+      <p class="tenue">Toca una cuenta para darle, ampliarle o quitarle el acceso beta. Los cambios se guardan en el servidor y llegan al tester al abrir la app.</p>
+    `,
+  });
+}
+
+// Ventana para gestionar la beta de una cuenta del servidor.
+function modalBetaCuenta(id) {
+  const p = (perfilesNube || []).find(x => x.id === id);
+  if (!p) return;
+  modal(`
+    <h2>${p.admin ? '👑' : '🎟️'} ${esc(p.nombre || 'Sin nombre')}</h2>
+    <p class="tenue">${esc(p.correo || '')}</p>
+    <p><b>Estado:</b> ${esc(estadoBetaNube(p))}${p.admin ? ' · cuenta del dueño (siempre tiene acceso)' : ''}</p>
+    ${p.admin ? '' : `
+      <p class="tenue">Dar o ampliar el acceso (si ya tiene, se suman los días):</p>
+      <div class="chips">
+        ${DIAS_BETA_OPCIONES.map(([d, t]) => `<button class="chip" data-a="betaNubeDar" data-id="${esc(p.id)}" data-d="${d}">${t}</button>`).join('')}
+      </div>
+      <label class="campo">Días personalizados
+        <span class="fila"><input type="number" name="betaNubeDias" min="1" max="3650" placeholder="Por ejemplo: 45" class="hora"><button class="btn sec" data-a="betaNubeDarCustom" data-id="${esc(p.id)}">Dar</button></span></label>
+      ${p.beta ? `<div class="botones"><button class="btn rojo" data-a="betaNubeQuitar" data-id="${esc(p.id)}">Quitar acceso beta</button></div>` : ''}`}
+  `);
+}
+
+// Da o amplía el acceso beta de una cuenta (en el servidor).
+async function fijarBetaNube(id, dias) {
+  const p = (perfilesNube || []).find(x => x.id === id) || {};
+  const base = p.beta_expira && !estaCaducada(p.beta_expira, hoy()) ? p.beta_expira : hoy();
+  const expira = dias > 0 ? sumarDiasIso(base, dias) : null;
+  try {
+    await actualizarPerfilNube(id, {
+      beta: true,
+      beta_inicio: p.beta_inicio || hoy(),
+      beta_expira: expira,
+      beta_etiqueta: dias > 0 ? etiquetaDuracion(dias) : 'Sin límite',
+    });
+    cerrarModal();
+    toast(dias > 0 ? `Acceso beta hasta el ${fmtDia(expira)} 🎟️` : 'Acceso beta sin límite 🎟️');
+    await cargarPerfilesNube(true);
+  } catch (e) { toast(traducirErrorNube(e.message)); }
+}
+
+// Quita el acceso beta de una cuenta (en el servidor).
+async function quitarBetaNube(id) {
+  try {
+    await actualizarPerfilNube(id, { beta: false, beta_inicio: null, beta_expira: null, beta_etiqueta: null });
+    cerrarModal();
+    toast('Acceso beta retirado');
+    await cargarPerfilesNube(true);
+  } catch (e) { toast(traducirErrorNube(e.message)); }
+}
+
 function ajBeta() {
   if (!soyDueno()) {
     return pagina({
@@ -2775,6 +2904,7 @@ function ajBeta() {
       cuerpo: vacioMsg('🔒', 'Sección privada', 'Solo la cuenta marcada como administradora puede repartir códigos beta.'),
     });
   }
+  if (modoNube()) return ajBetaNube();
   const codigos = estado.beta?.codigos || [];
   const betas = usuarios.lista.filter(esBeta);
   const opciones = [[7, '1 semana'], [14, '2 semanas'], [30, '1 mes'], [90, '3 meses'], [180, '6 meses'], [365, '1 año'], [0, 'Sin límite']];
@@ -3342,6 +3472,10 @@ function adoptarPerfilNube(uid, perfil, authUser) {
   usuarioLogin = uid;
   guardarUsuarios();
   estado = cargar(uid);
+  // La lista de cuentas del servidor se vuelve a pedir para la nueva sesión.
+  perfilesNube = null;
+  perfilesNubeEstado = 'inicial';
+  perfilesNubeError = '';
 }
 
 // Entra con una sesión de la nube ya iniciada.
@@ -5073,6 +5207,17 @@ document.addEventListener('click', async ev => {
       estado.beta.codigos = estado.beta.codigos.filter(c => c.codigo !== d.codigo);
       guardar(); render(); toast('Código borrado');
       break;
+    case 'betaRecargar': cargarPerfilesNube(true); break;
+    case 'betaCuenta': modalBetaCuenta(d.id); break;
+    case 'betaNubeDar': fijarBetaNube(d.id, Number(d.d)); break;
+    case 'betaNubeDarCustom': {
+      const inp = $('#modal [name=betaNubeDias]');
+      const dias = Math.floor(Number(inp?.value) || 0);
+      if (dias < 1) { toast('Escribe cuántos días quieres'); break; }
+      fijarBetaNube(d.id, dias);
+      break;
+    }
+    case 'betaNubeQuitar': quitarBetaNube(d.id); break;
     case 'betaSalir': if (modoNube()) salirNube().catch(() => { /* da igual */ }); desbloqueado = false; ir('login'); break;
     case 'cerrarSesion':
       confirmar('Se cerrará tu sesión en este dispositivo. Tus datos de entrenamiento se quedan guardados aquí.', { titulo: '¿Cerrar sesión?', ok: 'Cerrar sesión', peligro: true })
