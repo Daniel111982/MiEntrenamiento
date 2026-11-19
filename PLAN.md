@@ -253,7 +253,11 @@ disponible como copia.
    - **Build command:** `exit 0`
    - **Build output directory:** `/`
 5. **Save and Deploy.** El despliegue terminó correctamente.
-6. A partir de ahí, **cada `push` a `main` se publica solo**.
+6. A partir de ahí, **cada `push` a `main` se publica solo** (comprobado con el commit
+   `133b927`).
+7. En Supabase se actualizó **Authentication → URL Configuration**: Site URL
+   `https://dantal-app.pages.dev` y *Redirect URLs* para Cloudflare y GitHub Pages.
+   Así los futuros correos de acceso apuntan al dominio bueno.
 
 > El día que se quiera un dominio real, se compra (Cloudflare Registrar lo vende casi a
 > precio, ~10 €/año) y se añade en *Custom domains* sin rehacer nada.
