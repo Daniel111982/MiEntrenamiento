@@ -227,13 +227,28 @@ mayoría ya lo tienes).
 ### Mantener despierto el proyecto (anti-pausa)
 
 El plan gratis de Supabase **pausa el proyecto tras 7 días sin ninguna visita**. Para
-una beta con uso intermitente, hay una **tarea diaria** en GitHub Actions
-(`.github/workflows/ping-supabase.yml`) que entra a la API y lo mantiene despierto.
-Usa la clave **pública** (anon), nunca la `service_role`.
+una beta con uso intermitente, se usa un **servicio externo de ping** (por ejemplo
+[cron-job.org](https://cron-job.org), gratis) que entra a la API **una vez al día** y lo
+mantiene despierto. No depende del repositorio ni de GitHub.
 
-> Si el repositorio pasa **60 días sin cambios**, GitHub desactiva las tareas
-> programadas. Se reactivan desde la pestaña **Actions** del repositorio (o se lanza a
-> mano con «Run workflow»).
+**Cómo se configura (una sola vez):**
+
+1. Crear una cuenta gratis en https://cron-job.org.
+2. *Create cronjob* con estos datos:
+   - **Título:** Ping Supabase DanTal
+   - **URL:**
+     `https://xeblpmdrqbaalkkwqaxh.supabase.co/rest/v1/rpc/ping`
+   - **Schedule:** cada día (p. ej. a las 06:00).
+   - **Advanced → Request method:** `POST`
+   - **Advanced → Headers:**
+     - `apikey: sb_publishable_x_jgGp3cBoqYr-E9vCK6hQ_PJjBW3T9`
+     - `Authorization: Bearer sb_publishable_x_jgGp3cBoqYr-E9vCK6hQ_PJjBW3T9`
+     - `Content-Type: application/json`
+   - **Advanced → Request body:** `{}`
+3. Guardar. La primera ejecución se puede probar con *Run now*.
+
+La clave que se usa es la **pública** (anon), la misma que va dentro de la app; nunca la
+`service_role`.
 
 ---
 

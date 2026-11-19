@@ -68,10 +68,9 @@ móvil, sin depender de cada dispositivo).
 - **Se pausa por inactividad:** si el proyecto **no recibe ninguna visita en 7 días**,
   Supabase lo pausa. Se reactiva solo al entrar al panel, pero mientras tanto la app no
   podría conectar. **Ya resuelto (Fase 2):** hay una función `ping()` en la base de datos
-  y una **tarea diaria** en GitHub Actions (`.github/workflows/ping-supabase.yml`) que
-  entra a la API, así el proyecto nunca se queda 7 días sin visitas.
-  *Nota:* si el repositorio pasa 60 días sin cambios, GitHub desactiva las tareas
-  programadas; se reactivan desde la pestaña **Actions**.
+  y un **servicio externo de ping** (cron-job.org, gratis) que entra a la API **una vez
+  al día**, así el proyecto nunca se queda 7 días sin visitas. Los pasos están en
+  `PLAN.md` («Mantener despierto el proyecto»).
 - **Si algún día crece:** se pasa al plan de pago (unos 25 $/mes) o se migra a otro
   sitio, sin rehacer el código.
 
