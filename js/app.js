@@ -35,8 +35,15 @@ import {
 import {
   nubeConfigurada, usuarioNube, haySesionNube, registrarNube, entrarNube, refrescarNube, salirNube,
   miPerfilNube, listarPerfilesNube, actualizarPerfilNube, actualizarMiPerfilNube,
-  canjearCodigoNube, leerDatosNube, guardarDatosNube,
+  canjearCodigoNube, leerDatosNube, guardarDatosNube, borrarCuentaNube,
+  listarContenidosNube, guardarContenidoNube, borrarContenidoNube,
 } from './nube.js';
+import { LOGROS, RETOS, retoDelMes, calcularLogros, progresoReto } from './logros.js';
+import { informeSemanal, textoInforme } from './informe.js';
+import { generarMenu, listaCompra, textoListaCompra, planAlimentacion } from './menu.js';
+import { soportaCodigos, escanearCodigo, buscarAlimento, urlProducto } from './escaner.js';
+import { reorganizarSemana, ajustarSesion, huecosLibres } from './planificador.js';
+import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from './rgpd.js';
 
 // =====================================================================
 // Estado
@@ -56,6 +63,13 @@ const vacio = () => ({
   comidas: {}, agua: {}, ejerciciosPropios: [], seguridad: null, avisos: [],
   carrera: null, carreraEnCurso: null,
   beta: { codigos: [] },
+  // Novedades de esta fase (todas locales y opcionales).
+  progresoFotos: {},      // galería corporal privada: { id: {fecha, angulo, nota, datos} }
+  metaCorporal: null,     // {peso, grasa, fecha}
+  menu: null,             // menú semanal generado
+  logrosVistos: [],       // ids de logros ya celebrados
+  rgpd: null,             // registro de consentimiento
+  coachChat: [],          // historial persistente del coach
 });
 const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const AVATARES = [
@@ -136,6 +150,12 @@ function cargar(id = usuarios.activo) {
       carrera: d.carrera && typeof d.carrera === 'object' ? d.carrera : null,
       carreraEnCurso: d.carreraEnCurso && typeof d.carreraEnCurso === 'object' ? d.carreraEnCurso : null,
       beta: { codigos: Array.isArray(d.beta?.codigos) ? d.beta.codigos : [] },
+      progresoFotos: d.progresoFotos && typeof d.progresoFotos === 'object' ? d.progresoFotos : {},
+      metaCorporal: d.metaCorporal && typeof d.metaCorporal === 'object' ? d.metaCorporal : null,
+      menu: d.menu && typeof d.menu === 'object' ? d.menu : null,
+      logrosVistos: Array.isArray(d.logrosVistos) ? d.logrosVistos : [],
+      rgpd: d.rgpd && typeof d.rgpd === 'object' ? d.rgpd : null,
+      coachChat: Array.isArray(d.coachChat) ? d.coachChat.slice(-60) : [],
     };
   } catch { /* datos corruptos */ }
   return vacio();
@@ -225,7 +245,15 @@ function avisoBeta() {
 }
 
 // Estado de interfaz que se reinicia al cambiar de usuario.
-const UI_INICIAL = { semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null, medidaEdit: null, pasoEdit: null, metricaMedida: 'peso', diaNutri: null, comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, videoAbierto: null, verMaestro: false, recMetodo: null, incFiltro: 'nuevas', coachChat: [], coachPensando: false, coachIgnorados: [], coachIAOk: null, coachNanoOk: null, coachNanoDescargando: false };
+const UI_INICIAL = {
+  semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null,
+  medidaEdit: null, pasoEdit: null, metricaMedida: 'peso', periodoMedida: 'todo', diaNutri: null,
+  comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, videoAbierto: null,
+  verMaestro: false, recMetodo: null, incFiltro: 'nuevas', coachChat: [], coachPensando: false,
+  coachIgnorados: [], coachIAOk: null, coachNanoOk: null, coachNanoDescargando: false,
+  informeOffset: 0, escanerResultado: null, escanerComida: 'comida', menuSemilla: 0,
+  contenidos: [], contenidoEdit: null,
+};
 
 // Cambia de usuario. Sin `entrar`, la sesión queda bloqueada y se pide la contraseña.
 function cambiarUsuario(id, { entrar: entrarYa = false } = {}) {
@@ -235,6 +263,8 @@ function cambiarUsuario(id, { entrar: entrarYa = false } = {}) {
   usuarios.activo = id;
   guardarUsuarios();
   estado = cargar(id);
+  // El historial del coach viaja con el usuario, no con la pestaña.
+  ui.coachChat = estado.coachChat || [];
   desbloqueado = Boolean(entrarYa);
   usuarioLogin = id;
   recuperacionProc.ok = false; recuperacionProc.codigo = null; recuperacionProc.usuario = null;
@@ -376,6 +406,10 @@ const RUTAS = [
   [/^seguimiento\/records$/, segRecords, 'seguimiento'],
   [/^seguimiento\/historial$/, segHistorial, 'seguimiento'],
   [/^seguimiento\/calculadora$/, segCalculadora, 'seguimiento'],
+  [/^seguimiento\/logros$/, segLogros, 'seguimiento'],
+  [/^seguimiento\/informe$/, segInforme, 'seguimiento'],
+  [/^seguimiento\/fotos$/, segFotos, 'seguimiento'],
+  [/^seguimiento\/objetivo$/, segObjetivo, 'seguimiento'],
   [/^historial\/(\d+)$/, historialDetalle, 'seguimiento'],
   [/^carrera$/, carrera, 'carrera'],
   [/^carrera\/nueva$/, carreraNueva, 'carrera'],
@@ -391,6 +425,8 @@ const RUTAS = [
   [/^nutricion\/hidratacion$/, nutricionAgua, 'nutricion'],
   [/^nutricion\/ia$/, nutricionIA, 'nutricion'],
   [/^nutricion\/objetivos$/, nutricionObjetivos, 'nutricion'],
+  [/^nutricion\/menu$/, nutricionMenu, 'nutricion'],
+  [/^nutricion\/escaner$/, nutricionEscaner, 'nutricion'],
   [/^ejercicios$/, ejercicios, 'ejercicios'],
   [/^ejercicios\/nuevo$/, ejercicioNuevo, 'ejercicios'],
   [/^ejercicios\/mios$/, ejerciciosPropios, 'ejercicios'],
@@ -405,9 +441,12 @@ const RUTAS = [
   [/^ajustes\/idea$/, ajIdea, 'ajustes'],
   [/^ajustes\/incidencias$/, ajIncidencias, 'ajustes'],
   [/^ajustes\/beta$/, ajBeta, 'ajustes'],
+  [/^ajustes\/contenidos$/, ajContenidos, 'ajustes'],
   [/^ajustes\/avisos$/, ajAvisos, 'ajustes'],
   [/^ajustes\/salud$/, ajSalud, 'ajustes'],
   [/^ajustes\/coach$/, ajCoach, 'ajustes'],
+  [/^ajustes\/privacidad$/, ajPrivacidad, 'ajustes'],
+  [/^privacidad$/, ajPrivacidad, 'ajustes'],
   [/^bienvenida$/, bienvenida, 'bienvenida'],
   [/^login$/, login, 'login'],
   [/^registro$/, registroNube, 'login'],
@@ -438,8 +477,8 @@ function render() {
   if (estaBloqueado()) {
     // Con cuentas reales, estando fuera solo tienen sentido el acceso y el registro.
     const permitidas = modoNube()
-      ? /^(login|registro)$/
-      : /^(login|recuperar|beta|beta\/fin|usuarios|usuarios\/nuevo|usuario\/[\w-]+)$/;
+      ? /^(login|registro|privacidad)$/
+      : /^(login|recuperar|beta|beta\/fin|privacidad|usuarios|usuarios\/nuevo|usuario\/[\w-]+)$/;
     if (!permitidas.test(r)) r = 'login';
     if (!modoNube() && esCuentaNueva() && r === 'login') r = 'usuarios/nuevo';
   } else if (modoNube() && !soyDueno() && !betaActiva() && r !== 'beta/fin') {
@@ -527,7 +566,11 @@ const ICONO_PATRON = {
 };
 const vacioMsg = (icono, titulo, texto, boton = '') => `<div class="vacio"><div class="vacio-ic">${icono}</div><h2>${titulo}</h2><p class="tenue">${texto}</p>${boton}</div>`;
 const subnav = (items, actual) => `<nav class="subnav">${items.map(([h, t]) => `<a href="#${h}" class="${h === actual ? 'on' : ''}">${t}</a>`).join('')}</nav>`;
-const SUBNAV_NUTRICION = [['nutricion', 'Diario'], ['nutricion/recetas', 'Recetas'], ['nutricion/hidratacion', 'Agua'], ['nutricion/ia', 'Asistente'], ['nutricion/objetivos', 'Objetivos']];
+const SUBNAV_NUTRICION = [
+  ['nutricion', 'Diario'], ['nutricion/recetas', 'Recetas'], ['nutricion/menu', 'Menú semanal'],
+  ['nutricion/escaner', 'Escáner'], ['nutricion/hidratacion', 'Agua'],
+  ['nutricion/ia', 'Asistente'], ['nutricion/objetivos', 'Objetivos'],
+];
 
 // =====================================================================
 // Nutrición: objetivos, consumo del día y agua
@@ -564,6 +607,15 @@ const vasosDia = (fecha = diaNutri()) => Number((estado.agua || {})[fecha]) || 0
 
 function macrosEntrada(en) {
   if (!en) return ceroMacros();
+  // Alimentos leídos por código de barras: guardamos los macros por 100 g.
+  if (en.macros100) {
+    const k = (Number(en.gramos) || 0) / 100;
+    const m = en.macros100;
+    return {
+      kcal: (m.kcal || 0) * k, prot: (m.prot || 0) * k, carbs: (m.carbs || 0) * k,
+      grasa: (m.grasa || 0) * k, fibra: (m.fibra || 0) * k,
+    };
+  }
   if (en.tipo === 'receta') {
     const r = RECETAS.find(x => x.id === en.id);
     if (!r) return ceroMacros();
@@ -696,7 +748,7 @@ function inicio() {
     <button class="avatar-btn" data-a="menuUsuarios" title="Cambiar de usuario">${avatarHTML(usuarioActual())}</button>`;
   if (estado.enCurso) {
     return `${cabecera(rachaBtn)}
-      ${avisoBeta()}${avisoAvisos()}${avisoIncidencias()}
+      ${avisoBeta()}${avisoContenidoGlobal()}${avisoAvisos()}${avisoIncidencias()}
       <div class="hero"><p class="eyebrow">Sesión en curso</p><h2>${esc(estado.enCurso.nombre)}</h2>
       <p>${estado.enCurso.ejercicios.reduce((t, e) => t + e.series.filter(r => r.hecho).length, 0)} series hechas</p>
       <button class="btn" data-a="ir" data-v="sesion">Continuar entrenamiento</button></div>`;
@@ -718,7 +770,7 @@ function inicio() {
 
   return `
     ${cabecera(rachaBtn)}
-    ${avisoBeta()}${avisoAvisos()}${avisoIncidencias()}
+    ${avisoBeta()}${avisoContenidoGlobal()}${avisoAvisos()}${avisoIncidencias()}
     ${tiraSemana(lunes(hoy()), true)}
     ${perdidas.length ? `<div class="alerta">
       <b>Tienes ${perdidas.length === 1 ? 'una sesión perdida' : `${perdidas.length} sesiones perdidas`} esta semana</b>
@@ -790,6 +842,17 @@ function programa() {
         </div>
         ${barraCiclo(sem)}
         <p class="tenue">${f.descarga ? 'Semana de descarga: una serie menos y un 10 % menos de carga para recuperarte.' : TEXTO_FASE[f.nombre]}</p>
+      </div>
+      <div class="tarjeta">
+        <div class="fila"><div><h2>🔄 Planificación adaptativa</h2>
+          <p class="tenue">¿No pudiste entrenar? Muevo las sesiones perdidas a huecos libres de los próximos días.</p></div>
+          <button class="btn sec" data-a="reorganizar">Reorganizar semana</button></div>
+        ${(() => {
+          const libres = huecosLibres(estado);
+          return libres.length
+            ? `<p class="tenue">Huecos libres esta semana: <b>${libres.map(h => DIAS[h.dia]).join(', ')}</b>. También ajusto cada sesión a tu material y al tiempo disponible.</p>`
+            : '<p class="tenue">No tienes huecos libres esta semana con tus días habituales.</p>';
+        })()}
       </div>
       ${vistaCalendario()}
       ${grupo('Tu programa',
@@ -1165,6 +1228,8 @@ async function coachEnviar(texto) {
   };
   if (motorCoach().tipo === 'local') {
     ui.coachChat.push(local());
+    estado.coachChat = ui.coachChat.slice(-60);
+    guardar();
     render();
     return;
   }
@@ -1175,6 +1240,8 @@ async function coachEnviar(texto) {
   ui.coachPensando = false;
   if (res.ok) ui.coachChat.push({ rol: 'coach', texto: res.texto, fuente: res.fuente });
   else { ui.coachChat.push({ rol: 'coach', error: true, texto: `${res.error} Te respondo con el motor local.` }); ui.coachChat.push(local()); }
+  estado.coachChat = ui.coachChat.slice(-60);
+  guardar();
   render();
 }
 
@@ -1532,6 +1599,11 @@ function seguimiento() {
         celda('seguimiento/pasos', '👟', 'Actividad diaria', 'Pasos, distancia y calorías del día', 'azul', (estado.actividad || []).length || '') +
         celda('seguimiento/medidas', '⚖️', 'Peso y medidas', 'Peso, grasa y perímetros en el tiempo', 'verde', (estado.medidas || []).length || '') +
         celda('seguimiento/nutricion', '🍎', 'Calorías y proteína', 'Gasto diario, macros, fibra y agua', 'naranja'))}
+      ${grupo('Motivación e informes',
+        celda('seguimiento/logros', '🏅', 'Logros y retos', 'Insignias y reto mensual', 'amarillo') +
+        celda('seguimiento/informe', '📊', 'Informe semanal', 'Avances, dificultades y recomendaciones', 'violeta') +
+        celda('seguimiento/fotos', '📸', 'Fotos de progreso', 'Galería privada de tu evolución', 'verde') +
+        celda('seguimiento/objetivo', '🎯', 'Meta corporal', 'Peso o grasa objetivo con fecha', 'naranja'))}
       ${grupo('Registro',
         celda('seguimiento/historial', '🗂️', 'Historial de sesiones', 'Todas tus sesiones con detalle', 'azul', hist.length || '') +
         celda('seguimiento/calculadora', '🧮', 'Calculadora de 1RM', 'Estima tu máximo y tus porcentajes', 'naranja'))}
@@ -1672,9 +1744,16 @@ function segMedidas() {
       <div class="tarjeta">
         <div class="fila chart-cab">
           <h2>📈 Evolución</h2>
-          <select class="sel-mini" data-a="metrica" aria-label="Dato que quieres ver en la gráfica">
-            ${Object.entries(MEDIDAS_CAMPOS).map(([k, c]) => `<option value="${k}" ${ui.metricaMedida === k ? 'selected' : ''}>${c.nombre}</option>`).join('')}
-          </select>
+          <div class="acciones">
+            <select class="sel-mini" data-a="periodoMedida" aria-label="Periodo de la gráfica">
+              <option value="todo" ${ui.periodoMedida === 'todo' ? 'selected' : ''}>Todo</option>
+              <option value="semanal" ${ui.periodoMedida === 'semanal' ? 'selected' : ''}>Semanal</option>
+              <option value="mensual" ${ui.periodoMedida === 'mensual' ? 'selected' : ''}>Mensual</option>
+            </select>
+            <select class="sel-mini" data-a="metrica" aria-label="Dato que quieres ver en la gráfica">
+              ${Object.entries(MEDIDAS_CAMPOS).map(([k, c]) => `<option value="${k}" ${ui.metricaMedida === k ? 'selected' : ''}>${c.nombre}</option>`).join('')}
+            </select>
+          </div>
         </div>
         <div id="graficaMedidas"></div>
       </div>
@@ -1885,11 +1964,24 @@ async function sincronizarSalud({ silencioso = false } = {}) {
   } finally { syncEnCurso = false; }
 }
 
+// Agrupa las mediciones por semana o mes (media del periodo) para poder comparar.
+function puntosPorPeriodo(puntos, periodo) {
+  if (periodo !== 'semanal' && periodo !== 'mensual') return puntos;
+  const grupos = new Map();
+  for (const p of puntos) {
+    const d = deIso(p.fecha);
+    const fecha = periodo === 'semanal' ? lunes(p.fecha) : iso(new Date(d.getFullYear(), d.getMonth(), 1));
+    if (!grupos.has(fecha)) grupos.set(fecha, []);
+    grupos.get(fecha).push(p.v);
+  }
+  return [...grupos].map(([fecha, vals]) => ({ fecha, v: Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * 100) / 100 }));
+}
+
 function dibujarGraficaMedidas() {
   const cont = $('#graficaMedidas');
   if (!cont) return;
   const campo = MEDIDAS_CAMPOS[ui.metricaMedida] ? ui.metricaMedida : 'peso';
-  const puntos = valoresMedida(campo);
+  const puntos = puntosPorPeriodo(valoresMedida(campo), ui.periodoMedida);
   const meta = MEDIDAS_CAMPOS[campo];
   if (!puntos.length) {
     cont.innerHTML = `<p class="tenue centro">Aún no hay datos de ${meta.nombre.toLowerCase()}. Anota una medición para ver la evolución.</p>`;
@@ -2177,7 +2269,7 @@ function itemComida(en, clave, idx) {
   const receta = esReceta ? RECETAS.find(r => r.id === en.id) : null;
   const al = esReceta ? null : alimentoPorId(en.id);
   const macros = macrosEntrada(en);
-  const nombre = esReceta ? (receta?.nombre || en.id) : (al?.nombre || en.id);
+  const nombre = esReceta ? (receta?.nombre || en.id) : (al?.nombre || en.nombre || en.id);
   const sub = esReceta ? `${fmtDec(en.racion || 1)} ${Number(en.racion || 1) === 1 ? 'ración' : 'raciones'}` : `${en.gramos} g`;
   return `<div class="alimento-item">
     <div class="ai-t"><b>${esc(nombre)}</b><small>${sub}</small></div>
@@ -2726,6 +2818,7 @@ function ajustes() {
         celda('ajustes/recordatorios', '🔔', 'Recordatorios', 'Aviso los días de entrenamiento', 'naranja', estado.ajustes.recordatorio ? estado.ajustes.hora : 'No') +
         (modoNube() ? '' : celda('ajustes/seguridad', '🔒', 'Seguridad', estado.seguridad?.activa ? 'Bloqueo activo con contraseña' : 'Protege la app con una contraseña', 'violeta')) +
         celda('ajustes/datos', '💾', 'Tus datos', 'Copia de seguridad, CSV y borrado', 'azul') +
+        celda('ajustes/privacidad', '🛡️', 'Privacidad y RGPD', 'Política, consentimiento y borrado de cuenta', 'verde', consentimiento(estado) ? 'Aceptada' : 'Pendiente') +
         (modoNube() ? `<button class="celda" data-a="cerrarSesion"><span class="ic rojo">🚪</span><span class="celda-t"><b>Cerrar sesión</b><small>Salir de tu cuenta en este dispositivo</small></span></button>` : ''))}
       ${grupo('Ayuda',
         `<label class="celda"><span class="ic violeta">💡</span><span class="celda-t"><b>Iconos de ayuda ⓘ</b><small>Explicaciones en las zonas importantes</small></span>
@@ -2735,7 +2828,8 @@ function ajustes() {
       ${modoNube()
         ? (soyDueno() ? grupo('Administración',
             celda('ajustes/incidencias', '📥', 'Ideas e incidencias', 'Lo que envían los usuarios', 'rojo', contarNuevas() ? `${contarNuevas()} sin leer` : '') +
-            celda('ajustes/beta', '🎟️', 'Beta testers', 'Reparte y gestiona los accesos de prueba', 'violeta', '')) : '')
+            celda('ajustes/beta', '🎟️', 'Beta testers', 'Reparte y gestiona los accesos de prueba', 'violeta', '') +
+            celda('ajustes/contenidos', '📢', 'Contenidos de la app', 'Publica avisos para todas las cuentas', 'verde', ui.contenidos.length || '')) : '')
         : (soyDueno() || (!hayDueno() && !esBeta(usuarioActual())) ? grupo('Administración',
             soyDueno()
               ? celda('ajustes/incidencias', '📥', 'Ideas e incidencias', 'Lo que envían los usuarios de este dispositivo', 'rojo', contarNuevas() ? `${contarNuevas()} sin leer` : '') +
@@ -2906,6 +3000,49 @@ async function quitarBetaNube(id) {
     toast('Acceso beta retirado');
     await cargarPerfilesNube(true);
   } catch (e) { toast(traducirErrorNube(e.message)); }
+}
+
+function ajContenidos() {
+  if (!soyDueno()) {
+    return pagina({
+      titulo: 'Contenidos de la app', padre: 'ajustes',
+      cuerpo: vacioMsg('🔒', 'Sección privada', 'Solo la cuenta marcada como administradora puede publicar contenidos.'),
+    });
+  }
+  const ed = ui.contenidoEdit || {};
+  const lista = ui.contenidos || [];
+  return pagina({
+    titulo: 'Contenidos de la app', padre: 'ajustes',
+    sub: 'Avisos para todas las cuentas · solo el dueño puede escribir',
+    cuerpo: `
+      <div class="tarjeta">
+        <h2>${ed.id ? '✏️ Editar aviso' : '➕ Nuevo aviso'}</h2>
+        <p class="tenue">El mensaje aparecerá en la pantalla «Hoy» de todos los usuarios. La base de datos impide que nadie más lo modifique.</p>
+        <form id="formContenido">
+          <label class="campo">Identificador (letras, números y guiones)
+            <input type="text" name="codigo" pattern="[a-z0-9\\-]+" maxlength="40" value="${esc(ed.id || '')}" ${ed.id ? 'readonly' : ''} placeholder="ej. bienvenida" required></label>
+          <label class="campo">Título<input type="text" name="titulo" maxlength="80" value="${esc(ed.titulo || '')}" placeholder="Ej. Novedades de DanTal" required></label>
+          <label class="campo">Texto<textarea name="texto" rows="3" maxlength="400" placeholder="Escribe el mensaje que verán todos…" required>${esc(ed.texto || '')}</textarea></label>
+          <div class="medida-grid">
+            <label class="campo">Orden<input type="number" name="orden" step="1" value="${ed.orden ?? 0}"></label>
+            <label class="campo">Estado<select name="activo"><option value="1" ${ed.activo !== false ? 'selected' : ''}>Publicado</option><option value="0" ${ed.activo === false ? 'selected' : ''}>Oculto</option></select></label>
+          </div>
+          <div class="botones"><button class="btn" type="submit">${ed.id ? 'Guardar cambios' : 'Publicar aviso'}</button>
+            ${ed.id ? '<button class="btn sec" type="button" data-a="contenidoNuevo">Cancelar edición</button>' : ''}
+            <button class="btn sec" type="button" data-a="contenidosRecargar">🔄 Recargar</button></div>
+        </form>
+      </div>
+      ${lista.length ? `<div class="celdas">${lista.map(c => `
+        <div class="tarjeta">
+          <div class="fila"><div><h2>📢 ${esc(c.titulo)}</h2><p class="tenue"><code>${esc(c.id)}</code> · ${c.activo === false ? 'Oculto' : 'Publicado'}</p></div>
+            <span class="chip">${esc(c.activo === false ? 'oculto' : 'activo')}</span></div>
+          <p style="white-space:pre-wrap">${esc(c.texto)}</p>
+          <div class="botones"><button class="btn sec" data-a="contenidoEditar" data-id="${esc(c.id)}">✎ Editar</button>
+            <button class="btn sec" data-a="contenidoQuitar" data-id="${esc(c.id)}">🗑️ Borrar</button></div>
+        </div>`).join('')}</div>`
+        : vacioMsg('📭', 'Sin contenidos publicados', 'Publica el primer aviso para que aparezca en la pantalla de inicio de todos.')}
+    `,
+  });
 }
 
 function ajBeta() {
@@ -3208,6 +3345,15 @@ function marcarAvisosLeidos() {
   if (cambio) { guardar(); pintarBadges(); }
 }
 
+// Avisos que el dueño publica para todas las cuentas (tabla `avisos` de Supabase).
+function avisoContenidoGlobal() {
+  return (ui.contenidos || []).slice(0, 2).map(c => `
+    <div class="tarjeta aviso-global">
+      <b>📢 ${esc(c.titulo || 'Aviso')}</b>
+      <p class="tenue">${esc(c.texto || '')}</p>
+    </div>`).join('');
+}
+
 function avisoAvisos() {
   const n = avisosSinLeer();
   if (!n) return '';
@@ -3497,7 +3643,13 @@ function adoptarPerfilNube(uid, perfil, authUser) {
 // Lo que se sube: todo menos lo que no conviene enviar. La contraseña local
 // (seguridad) no se usa con cuentas reales, y las fotos ocupan mucho y se
 // quedan en el dispositivo.
-const datosLocales = e => { const c = { ...e }; delete c.seguridad; delete c.fotos; return c; };
+const datosLocales = e => {
+  const c = { ...e };
+  delete c.seguridad;
+  delete c.fotos;          // fotos de técnica: privadas del dispositivo
+  delete c.progresoFotos;  // fotos corporales: nunca salen del dispositivo
+  return c;
+};
 
 function programarGuardadoNube() {
   if (!modoNube() || nubeSilencio || !haySesionNube() || !usuarioActual()?.nube) return;
@@ -3560,6 +3712,7 @@ async function entrarConNube(sesion) {
   desbloqueado = true;
   recuperacionProc.ok = false; recuperacionProc.codigo = null; recuperacionProc.usuario = null; ui.recMetodo = null;
   await sincronizarDatosNube();
+  cargarContenidos();
   ir(estado.plan ? 'hoy' : 'bienvenida');
 }
 
@@ -3577,6 +3730,21 @@ async function restaurarSesionNube() {
   }
   arrancandoNube = false;
   render();
+  cargarContenidos();
+}
+
+// Contenidos globales que publica el dueño. Se leen con la clave pública y la
+// seguridad la pone la base de datos: los usuarios normales solo pueden leer.
+async function cargarContenidos() {
+  if (!modoNube() || !haySesionNube()) return;
+  try {
+    const lista = await listarContenidosNube();
+    const activos = (Array.isArray(lista) ? lista : []).filter(a => a.activo !== false);
+    if (JSON.stringify(activos) === JSON.stringify(ui.contenidos)) return;
+    ui.contenidos = activos;
+    const r = ruta();
+    if (r === '' || r === 'hoy' || r === 'inicio' || r === 'ajustes/contenidos') render();
+  } catch { /* sin conexión: se conservan los contenidos ya cargados */ }
 }
 
 // Pantalla de acceso con cuentas reales.
@@ -4432,6 +4600,14 @@ function empezarCita(citaId, minutos) {
   const s = estado.plan.sesiones[c.sesion];
   let ejs = s.ejercicios.map(e => prescribir(e, c.semana));
   if (minutos) ejs = ajustarDuracion(ejs, minutos);
+  // Disponibilidad real: filtra por el material y el lugar marcados en el perfil.
+  const ajustada = ajustarSesion({ ejercicios: ejs }, {
+    minutos: minutos || 999,
+    equipo: estado.perfil?.equipo || [],
+    lugar: estado.perfil?.lugar || 'gimnasio',
+  });
+  ejs = ajustada.ejercicios;
+  if (ajustada.ajuste && (minutos || estado.perfil?.lugar === 'casa')) toast(ajustada.ajuste, { ms: 6000 });
   iniciarSesion({ nombre: s.nombre, ejercicios: ejs, semana: null, citaId, faseSes: fase(c.semana) });
 }
 
@@ -4978,6 +5154,296 @@ function guardarCarreraHecha({ sesionId = null, fecha = hoy(), km = 0, seg = nul
 }
 
 // =====================================================================
+// Nuevas pantallas: motivación, informes, menú, escáner y privacidad
+// =====================================================================
+const copiarTexto = texto => {
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(texto)
+      .then(() => toast('Copiado al portapapeles'), () => toast('No he podido copiarlo. Selecciónalo a mano.'));
+  } else toast('Tu navegador no permite copiar automáticamente.');
+};
+const descargarTexto = (nombre, texto) => {
+  const url = URL.createObjectURL(new Blob([texto], { type: 'text/plain;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = nombre; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
+function segLogros() {
+  const reto = retoDelMes();
+  const prog = progresoReto(estado, reto);
+  const logros = calcularLogros(estado);
+  const conseguidos = logros.filter(l => l.conseguido).length;
+  const pct = Math.min(100, Math.max(0, Math.round(prog.porcentaje || 0)));
+  return pagina({
+    titulo: 'Logros y retos', padre: 'seguimiento',
+    sub: 'Constancia que se ve',
+    cuerpo: `
+      <div class="tarjeta reto-mes">
+        <p class="eyebrow">Reto de ${new Date().toLocaleDateString('es-ES', { month: 'long' })}</p>
+        <div class="fila">
+          <div><h2>${reto.icono} ${esc(reto.titulo)}</h2><p class="tenue">${esc(reto.desc)}</p></div>
+          <div class="anillo-mini" style="--p:${pct / 100}"><b>${pct}%</b></div>
+        </div>
+        <div class="barra-m"><span>${fmtNum(prog.actual)} / ${fmtNum(prog.meta)} ${esc(reto.unidad)}</span>
+          <div><i style="width:${pct}%;background:var(--acento)"></i></div><b>${prog.diasRestantes} ${prog.diasRestantes === 1 ? 'día' : 'días'}</b></div>
+        ${prog.completado ? '<div class="hero ok"><h2>¡Reto completado! 🎉</h2><p>Mes redondo. El próximo reto te espera.</p></div>' : ''}
+      </div>
+      <div class="tiles">
+        ${tile('🏅', `${conseguidos}/${logros.length}`, 'insignias', 'amarillo')}
+        ${tile('📅', racha(estado.historial), 'semanas de racha', 'violeta')}
+        ${tile('🔥', prog.actual, reto.unidad, 'naranja')}
+      </div>
+      <div class="celdas">${logros.map(l => {
+        const p = Math.min(100, Math.max(0, Math.round(l.progreso || 0)));
+        return `<div class="celda ${l.conseguido ? 'logro-on' : 'logro-off'}">
+          <span class="ic ${l.conseguido ? 'amarillo' : ''}">${l.icono}</span>
+          <span class="celda-t"><b>${esc(l.nombre)}</b><small>${esc(l.desc)} · ${fmtNum(l.actual)}/${fmtNum(l.meta)} ${esc(l.unidad || '')}</small>
+          <span class="barra-logro"><i style="width:${p}%"></i></span></span>
+          <span class="estado-${l.conseguido ? 'hecha' : 'pendiente'}">${l.conseguido ? '✓' : `${p}%`}</span>
+        </div>`;
+      }).join('')}</div>
+      <p class="tenue centro">Los logros se calculan con tus registros reales. No son consejos médicos.</p>
+    `,
+  });
+}
+
+function fechaInforme() {
+  const d = new Date();
+  d.setDate(d.getDate() + (ui.informeOffset || 0) * 7);
+  return d;
+}
+
+function segInforme() {
+  const inf = informeSemanal(estado, { fecha: fechaInforme() });
+  const lista = (titulo, icono, items) => items.length ? `
+    <div class="tarjeta"><h2>${icono} ${titulo}</h2>
+      ${items.map(x => `<div class="fila informe-linea"><span>${x.icono || '•'} ${esc(x.texto)}</span></div>`).join('')}
+    </div>` : '';
+  return pagina({
+    titulo: 'Informe semanal', padre: 'seguimiento',
+    sub: `${fmtCorta(inf.periodo.desde)} – ${fmtCorta(inf.periodo.hasta)}`,
+    cuerpo: `
+      <div class="fila nav-semana">
+        <button class="icono" data-a="informeSemana" data-d="-1" aria-label="Semana anterior">‹</button>
+        <b>${ui.informeOffset ? `Semana del ${fmtCorta(inf.periodo.desde)}` : 'Esta semana'}</b>
+        <button class="icono" data-a="informeSemana" data-d="1" aria-label="Semana siguiente">›</button>
+      </div>
+      <div class="tiles">
+        ${tile('🏋️', inf.numeros.sesiones, `de ${inf.numeros.planificadas} previstas`, 'azul')}
+        ${tile('⏱', fmtNum(inf.numeros.minutos), 'minutos', 'violeta')}
+        ${tile('📦', fmtNum(inf.numeros.volumen), 'kg movidos', 'verde')}
+        ${tile('🏆', inf.numeros.racha, 'semanas de racha', 'amarillo')}
+        ${tile('⚖️', inf.numeros.deltaPeso == null ? '—' : fmtDeltaMedida(inf.numeros.deltaPeso, 'peso'), 'peso', 'naranja')}
+        ${tile('💧', fmtDec(inf.numeros.vasosPromedio || 0), 'vasos/día', 'azul')}
+      </div>
+      ${lista('Avances', '📈', inf.avances)}
+      ${lista('Dificultades', '🧗', inf.dificultades)}
+      ${lista('Recomendaciones', '💡', inf.recomendaciones)}
+      ${!inf.avances.length && !inf.dificultades.length ? vacioMsg('📊', 'Aún sin datos', 'Registra una sesión esta semana para ver tu informe.') : ''}
+      <div class="botones">
+        <button class="btn sec" data-a="copiarInforme">📋 Copiar informe</button>
+        <button class="btn sec" data-a="descargarInforme">⬇️ Descargar</button>
+      </div>
+      <p class="tenue centro">El informe se genera con tus datos reales y se queda en tu dispositivo.</p>
+    `,
+  });
+}
+
+async function fotoADataURL(file, max = 900) {
+  const img = await createImageBitmap(file);
+  const k = Math.min(1, max / Math.max(img.width, img.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.75);
+}
+
+function segFotos() {
+  const fotos = Object.entries(estado.progresoFotos || {})
+    .map(([id, f]) => ({ id, ...f }))
+    .sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || '')));
+  return pagina({
+    titulo: 'Fotos de progreso', padre: 'seguimiento',
+    sub: 'Galería privada · solo en este dispositivo',
+    cuerpo: `
+      <div class="alerta"><b>Tu privacidad primero</b>
+        <p class="tenue">Estas fotos no se suben a la nube ni salen de este dispositivo. Si borras los datos del sitio, se pierden. Puedes exportarlas desde Ajustes → Tus datos.</p>
+      </div>
+      <form id="formFotoProgreso" class="tarjeta">
+        <h2>➕ Nueva foto</h2>
+        <div class="medida-grid">
+          <label class="campo">Fecha<input type="date" name="fecha" value="${hoy()}" max="${hoy()}" required></label>
+          <label class="campo">Ángulo<select name="angulo">
+            <option>Frente</option><option>Perfil</option><option>Espalda</option><option>Otro</option>
+          </select></label>
+        </div>
+        <label class="campo">Nota (opcional)<input type="text" name="nota" maxlength="90" placeholder="Empiezo de cero, mismo horario…"></label>
+        <label class="campo">Foto<input type="file" name="foto" accept="image/*" required></label>
+        <button class="btn" type="submit">Guardar foto</button>
+      </form>
+      ${fotos.length ? `<div class="celdas fotos-progreso">${fotos.map(f => `
+        <div class="tarjeta foto-progreso">
+          <img class="foto-ej" src="${f.datos}" alt="Foto de progreso del ${fmtCorta(f.fecha)}">
+          <div class="fila"><b>${fmtCorta(f.fecha)} · ${esc(f.angulo || 'Frente')}</b>
+            <button class="icono peq" data-a="fotoProgresoQuitar" data-id="${f.id}" title="Borrar foto">🗑️</button></div>
+          ${f.nota ? `<p class="tenue">${esc(f.nota)}</p>` : ''}
+        </div>`).join('')}</div>`
+        : vacioMsg('📸', 'Todavía no hay fotos', 'Guarda una foto cada 2-4 semanas, siempre con la misma luz y ángulo.')}
+    `,
+  });
+}
+
+function segObjetivo() {
+  const m = estado.metaCorporal || {};
+  const peso = ultimoPeso();
+  const grasa = ultimaMedida('grasa');
+  const delta = m.peso && peso ? Number(peso.v) - Number(m.peso) : null;
+  return pagina({
+    titulo: 'Meta corporal', padre: 'seguimiento',
+    sub: 'Un objetivo medible y con fecha',
+    cuerpo: `
+      <div class="tiles">
+        ${tile('⚖️', peso ? fmtMedida(peso.v, 'peso') : '—', `actual · ${peso ? fmtCorta(peso.fecha) : 'sin registrar'}`, 'verde')}
+        ${tile('🎯', m.peso ? fmtMedida(Number(m.peso), 'peso') : '—', m.fecha ? `meta · ${fmtCorta(m.fecha)}` : 'sin meta', 'naranja')}
+        ${tile('📉', grasa ? fmtMedida(grasa.v, 'grasa') : '—', 'grasa actual', 'violeta')}
+      </div>
+      ${delta != null ? `<div class="tarjeta"><p class="tenue">Te faltan <b>${fmtDec(Math.abs(delta))} kg</b> ${delta > 0 ? 'por perder' : 'por ganar'} para alcanzar tu meta.</p></div>` : ''}
+      <form id="formMetaCorporal" class="tarjeta">
+        <h2>🎯 Mi objetivo</h2>
+        <p class="tenue">Es una referencia personal, no un diagnóstico. Si tienes alguna condición médica, consulta con un profesional.</p>
+        <div class="medida-grid">
+          <label class="campo">Peso objetivo (kg)<input type="number" name="peso" inputmode="decimal" step="0.1" min="20" max="400" value="${m.peso ?? ''}" placeholder="Ej. 75"></label>
+          <label class="campo">Grasa objetivo (%)<input type="number" name="grasa" inputmode="decimal" step="0.1" min="3" max="70" value="${m.grasa ?? ''}" placeholder="Ej. 18"></label>
+        </div>
+        <label class="campo">Fecha objetivo<input type="date" name="fecha" value="${m.fecha || ''}" min="${hoy()}"></label>
+        <div class="botones"><button class="btn" type="submit">Guardar meta</button>
+          ${m.peso || m.grasa || m.fecha ? '<button class="btn sec" type="button" data-a="metaQuitar">Quitar meta</button>' : ''}</div>
+      </form>
+      <div class="botones"><a class="btn sec" href="#seguimiento/medidas">⚖️ Registrar mi peso</a></div>
+    `,
+  });
+}
+
+function nutricionMenu() {
+  const metas = metasNutricion();
+  const kcal = Math.round(metas?.kcal || 2000);
+  const objetivo = estado.nutricion?.objetivo || 'mantener';
+  const menu = estado.menu || generarMenu({ kcal, objetivo, semilla: ui.menuSemilla });
+  const compra = listaCompra(menu);
+  const diaHoy = menu[Math.min(menu.length - 1, Math.max(0, (new Date().getDay() + 6) % 7))];
+  return pagina({
+    titulo: 'Menú semanal', padre: 'nutricion',
+    sub: `${kcal} kcal/día · objetivo ${OBJETIVOS_NUTRI[objetivo]?.nombre || objetivo}`,
+    cuerpo: `
+      ${subnav(SUBNAV_NUTRICION, 'nutricion/menu')}
+      <div class="tarjeta">
+        <div class="fila"><div><h2>🗓️ Tu semana</h2><p class="tenue">Recetas equilibradas ajustadas a tus calorías. Cámbialas cuando quieras.</p></div>
+          <button class="btn sec" data-a="menuGenerar">🔄 Otras recetas</button></div>
+      </div>
+      <div class="celdas">${menu.map((dia, i) => `
+        <div class="tarjeta ${diaHoy === dia ? 'menu-hoy' : ''}">
+          <div class="fila"><h2>${DIAS[i]}</h2><span class="tenue">${fmtNum(dia.macros.kcal)} kcal · ${Math.round(dia.macros.prot)} g P</span></div>
+          ${Object.entries(dia.comidas).filter(([, c]) => c).map(([comida, c]) => `
+            <div class="fila info-comida"><span>${c.receta?.icono || '🍽️'} <b>${esc(c.receta?.nombre || comida)}</b>
+              <small class="tenue"> · ${fmtNum(c.macros?.kcal || 0)} kcal</small></span>
+              <button class="enlace" data-a="menuAnadir" data-dia="${i}" data-comida="${comida}" title="Añadir a mi diario">＋</button></div>`).join('')}
+        </div>`).join('')}</div>
+      <div class="tarjeta">
+        <div class="fila"><h2>🛒 Lista de la compra</h2><span class="tenue">${compra.length} alimentos</span></div>
+        ${compra.length ? `<ul class="lista-compra">${compra.map(x => `<li><b>${fmtNum(x.gramos)} g</b> ${esc(x.nombre)} <small class="tenue">${esc(x.categoria || '')}</small></li>`).join('')}</ul>`
+          : '<p class="tenue">Genera el menú para ver la lista.</p>'}
+        <div class="botones">
+          <button class="btn sec" data-a="copiarCompra">📋 Copiar lista</button>
+          <button class="btn sec" data-a="descargarCompra">⬇️ Descargar</button>
+          <button class="btn" data-a="menuGuardar">💾 Guardar este menú</button>
+        </div>
+      </div>
+      <p class="tenue centro">El menú es una orientación. Ajusta las cantidades a tu hambre, entrenamiento y preferencias.</p>
+    `,
+  });
+}
+
+function nutricionEscaner() {
+  const r = ui.escanerResultado;
+  return pagina({
+    titulo: 'Escáner de alimentos', padre: 'nutricion',
+    sub: 'Código de barras con confirmación',
+    cuerpo: `
+      ${subnav(SUBNAV_NUTRICION, 'nutricion/escaner')}
+      <div class="alerta"><b>Solo leemos el código</b>
+        <p class="tenue">Se envía únicamente el número de barras a Open Food Facts para consultar el producto. No se envían tus datos de salud ni tu historial. Siempre podrás revisar y corregir lo encontrado antes de añadirlo.</p>
+      </div>
+      <div class="tarjeta">
+        <h2>📷 Escanear</h2>
+        <label class="campo">Añadir a la comida
+          <select data-a="escanerComida">${Object.entries(COMIDAS).map(([k, c]) => `<option value="${k}" ${ui.escanerComida === k ? 'selected' : ''}>${c.nombre}</option>`).join('')}</select>
+        </label>
+        <div class="botones">
+          <button class="btn" data-a="escanear" ${soportaCodigos() ? '' : 'disabled'}>${soportaCodigos() ? '📷 Abrir cámara' : '📷 Cámara no disponible'}</button>
+        </div>
+        ${soportaCodigos() ? '' : '<p class="tenue">Este navegador no reconoce códigos de barras. Escribe el número a continuación: suele estar debajo del código.</p>'}
+        <form id="formCodigo" class="campo">
+          <input type="text" name="codigo" inputmode="numeric" maxlength="20" placeholder="Ej. 8436542012345" value="${esc(ui.escanerCodigo || '')}" required>
+          <button class="btn" type="submit">Buscar código</button>
+        </form>
+      </div>
+      ${r ? `<div class="tarjeta escaneado">
+        <p class="eyebrow">${esc(r.fuente || 'Open Food Facts')} · ${esc(r.codigo)}</p>
+        <div class="fila"><div><h2>${r.imagen ? `<img class="mini-producto" src="${r.imagen}" alt=""> ` : ''}${esc(r.nombre || 'Producto sin nombre')}</h2>
+          <p class="tenue">${esc(r.marca || '')} · ración ${fmtNum(r.porcion || 100)} g</p></div></div>
+        <div class="tiles">
+          ${tile('🔥', fmtNum(r.kcal), 'kcal/100 g', 'naranja')}
+          ${tile('🥩', fmtDec(r.prot), 'g proteína', 'verde')}
+          ${tile('🍚', fmtDec(r.carbs), 'g hidratos', 'azul')}
+          ${tile('🧈', fmtDec(r.grasa), 'g grasa', 'amarillo')}
+        </div>
+        <p class="tenue"><b>Confirma antes de guardar.</b> Las cifras pueden estar desactualizadas o corresponder a otro formato del producto.</p>
+        <label class="campo">Gramos que vas a tomar<input type="number" name="gramos" id="scanGramos" inputmode="numeric" min="1" step="1" value="${fmtNum(r.porcion || 100)}"></label>
+        <div class="botones">
+          <button class="btn" data-a="aniadirEscaneado">Añadir a ${COMIDAS[ui.escanerComida]?.nombre || 'mi diario'}</button>
+          <a class="btn sec" href="${urlProducto(r.codigo)}" target="_blank" rel="noopener">🔎 Ver ficha</a>
+        </div>
+      </div>` : ''}
+    `,
+  });
+}
+
+function ajPrivacidad() {
+  const c = consentimiento(estado);
+  return pagina({
+    titulo: 'Privacidad y RGPD', padre: 'ajustes',
+    sub: `Política v${POLITICA.version}`,
+    cuerpo: `
+      <div class="tarjeta">
+        <div class="fila"><div><h2>🛡️ Tus datos son tuyos</h2>
+          <p class="tenue">${c ? `Consentimiento registrado el ${fmtCorta(c.fecha)} · versión ${esc(c.version)}` : 'Aún no has registrado tu consentimiento.'}</p></div>
+          <span class="chip">${c?.aceptado ? 'Aceptado' : c ? 'Rechazado' : 'Pendiente'}</span></div>
+        <div class="botones">
+          <button class="btn" data-a="consentir" data-v="si">✅ Aceptar y continuar</button>
+          <button class="btn sec" data-a="consentir" data-v="no">Solo lo esencial</button>
+        </div>
+        ${c?.finalidades?.length ? `<p class="tenue">Finalidades aceptadas: ${c.finalidades.map(f => esc(POLITICA.finalidades.find(x => x.id === f)?.titulo || f)).join(', ')}</p>` : ''}
+      </div>
+      <details class="tarjeta politica">
+        <summary><h2 style="display:inline">📄 Política de privacidad</h2></summary>
+        ${politicaHTML()}
+      </details>
+      <div class="tarjeta">
+        <h2>📤 Copia de seguridad</h2>
+        <p class="tenue">Puedes descargar todos tus datos antes de borrar la cuenta.</p>
+        <div class="botones"><a class="btn sec" href="#ajustes/datos">Ir a Tus datos</a></div>
+      </div>
+      <div class="tarjeta peligro">
+        <h2>🗑️ Borrar mi cuenta</h2>
+        <p class="tenue">Borra tu acceso y todos tus datos guardados en la nube. En este dispositivo también se eliminarán tus registros. Esta acción no se puede deshacer.</p>
+        <button class="btn rojo" data-a="borrarCuenta">Borrar mi cuenta y mis datos</button>
+      </div>
+    `,
+  });
+}
+
+// =====================================================================
 // Eventos
 // =====================================================================
 document.addEventListener('click', async ev => {
@@ -5159,6 +5625,108 @@ document.addEventListener('click', async ev => {
     case 'restRec': {
       const s = estado.plan?.sesiones[Number(d.i)];
       if (s?.ejercicios[Number(d.j)]) { s.ejercicios[Number(d.j)].descanso = Number(d.d); guardar(); render(); }
+      break;
+    }
+    // ---- Novedades: logros, informe, fotos, menú, escáner y RGPD ----
+    case 'informeSemana':
+      ui.informeOffset = Math.max(-52, Math.min(52, (ui.informeOffset || 0) + Number(d.d)));
+      render();
+      break;
+    case 'copiarInforme': copiarTexto(textoInforme(informeSemanal(estado, { fecha: fechaInforme() }))); break;
+    case 'descargarInforme':
+      descargarTexto(`dantal-informe-${hoy()}.txt`, textoInforme(informeSemanal(estado, { fecha: fechaInforme() })));
+      break;
+    case 'fotoProgresoQuitar': {
+      const f = estado.progresoFotos || {};
+      if (f[d.id]) { delete f[d.id]; guardar(); render(); toast('Foto borrada de este dispositivo'); }
+      break;
+    }
+    case 'metaQuitar': estado.metaCorporal = null; guardar(); render(); toast('Meta corporal eliminada'); break;
+    case 'menuGenerar':
+      ui.menuSemilla = (ui.menuSemilla || 0) + 1;
+      estado.menu = generarMenu({ kcal: Math.round(metasNutricion()?.kcal || 2000), objetivo: estado.nutricion?.objetivo || 'mantener', semilla: ui.menuSemilla });
+      guardar(); render(); toast('Menú y lista de la compra actualizados');
+      break;
+    case 'menuGuardar':
+      estado.menu = estado.menu || generarMenu({ kcal: Math.round(metasNutricion()?.kcal || 2000), objetivo: estado.nutricion?.objetivo || 'mantener', semilla: ui.menuSemilla });
+      guardar(); toast('Menú guardado en tu dispositivo');
+      break;
+    case 'menuAnadir': {
+      const menu = estado.menu || generarMenu({ kcal: Math.round(metasNutricion()?.kcal || 2000), objetivo: estado.nutricion?.objetivo || 'mantener', semilla: ui.menuSemilla });
+      const receta = menu[Number(d.dia)]?.comidas?.[d.comida]?.receta;
+      if (!receta) { toast('No hay receta para ese día.'); break; }
+      anadirEntrada(d.comida, { tipo: 'receta', id: receta.id, racion: 1 });
+      toast(`${receta.nombre} añadida a tu diario`);
+      break;
+    }
+    case 'copiarCompra': copiarTexto(textoListaCompra(listaCompra(estado.menu || generarMenu({ kcal: Math.round(metasNutricion()?.kcal || 2000) })))); break;
+    case 'descargarCompra':
+      descargarTexto(`dantal-compra-${hoy()}.txt`, textoListaCompra(listaCompra(estado.menu || generarMenu({ kcal: Math.round(metasNutricion()?.kcal || 2000) }))));
+      break;
+    case 'escanear': {
+      toast('Abriendo la cámara…');
+      const codigo = await escanearCodigo();
+      if (!codigo) { toast('No he leído ningún código. Escríbelo a mano.', { ms: 6000 }); break; }
+      ui.escanerCodigo = codigo;
+      toast('Código leído. Buscando el producto…');
+      ui.escanerResultado = await buscarAlimento(codigo);
+      if (!ui.escanerResultado) toast('No he encontrado ese producto. Prueba a buscarlo por nombre.', { ms: 6000 });
+      render();
+      break;
+    }
+    case 'aniadirEscaneado': {
+      const r = ui.escanerResultado;
+      if (!r) break;
+      const gramos = Math.max(1, Math.round(Number($('#scanGramos')?.value) || r.porcion || 100));
+      anadirEntrada(ui.escanerComida || 'comida', {
+        id: `scan-${r.codigo}`, nombre: r.nombre, gramos,
+        macros100: { kcal: r.kcal, prot: r.prot, carbs: r.carbs, grasa: r.grasa, fibra: 0 },
+      });
+      ui.escanerResultado = null;
+      ir('nutricion');
+      toast('Producto añadido a tu diario. Revisa las cantidades.');
+      break;
+    }
+    case 'consentir': {
+      const si = d.v === 'si';
+      estado.rgpd = registrarConsentimiento(si, { finalidades: si ? ['sincronizacion', 'analitica_ia'] : [] });
+      guardar(); render();
+      toast(si ? 'Gracias. Consentimiento registrado.' : 'Solo se usarán los datos esenciales.');
+      break;
+    }
+    case 'borrarCuenta':
+      modal(`<h2>Borrar mi cuenta</h2>
+        <p class="tenue">Esto borrará tu cuenta y todos tus datos en la nube. Escribe <b>BORRAR</b> para confirmar.</p>
+        <form id="formBorrarCuenta"><label class="campo">Confirmación<input type="text" name="conf" autocomplete="off" required></label>
+          <div class="botones"><button class="btn sec" type="button" data-a="cerrar">Cancelar</button>
+          <button class="btn rojo" type="submit">Borrar definitivamente</button></div></form>`);
+      setTimeout(() => $('#formBorrarCuenta input')?.focus(), 50);
+      break;
+    case 'reorganizar': {
+      if (!estado.plan?.agenda) break;
+      const r = reorganizarSemana(estado);
+      if (!r.cambios?.length) { toast(r.mensaje || 'No hay sesiones que reorganizar esta semana.'); break; }
+      const si = await confirmar(`${r.mensaje} ¿Aplico los cambios?`, { titulo: 'Reorganizar la semana', ok: 'Reorganizar' });
+      if (si) { estado.plan.agenda = r.agenda; guardar(); render(); toast('Semana reorganizada 🔄'); }
+      break;
+    }
+    case 'contenidoNuevo': ui.contenidoEdit = null; render(); break;
+    case 'contenidoEditar':
+      ui.contenidoEdit = (ui.contenidos || []).find(c => c.id === d.id) || null;
+      render();
+      break;
+    case 'contenidosRecargar':
+      await cargarContenidos(); render(); toast('Contenidos actualizados');
+      break;
+    case 'contenidoQuitar': {
+      const si = await confirmar('¿Borrar este aviso para todas las cuentas?', { titulo: 'Borrar contenido', ok: 'Borrar', peligro: true });
+      if (!si) break;
+      try {
+        await borrarContenidoNube(d.id);
+        await cargarContenidos();
+        if (ui.contenidoEdit?.id === d.id) ui.contenidoEdit = null;
+        render(); toast('Contenido borrado');
+      } catch (e) { toast(`No he podido borrarlo: ${e.message}`); }
       break;
     }
     // ---- Nutrición: diario, alimentos, recetas y agua ----
@@ -5360,7 +5928,9 @@ document.addEventListener('click', async ev => {
     case 'coachAccion': coachAplicar(d); break;
     case 'coachIgnorar': coachIgnorar(d.sug); break;
     case 'coachPreg': coachEnviar(d.q); break;
-    case 'coachLimpiar': ui.coachChat = []; ui.coachIgnorados = []; render(); break;
+    case 'coachLimpiar':
+      ui.coachChat = []; estado.coachChat = []; guardar(); ui.coachIgnorados = []; render();
+      break;
     case 'coachIAProbar': {
       ui.coachIAOk = null; render();
       toast('Probando la conexión…');
@@ -5525,6 +6095,8 @@ document.addEventListener('change', async ev => {
   }
   if (t.dataset.a === 'selEj') { ui.ejSel = t.value; dibujarGrafica(); }
   if (t.dataset.a === 'metrica') { ui.metricaMedida = MEDIDAS_CAMPOS[t.value] ? t.value : 'peso'; dibujarGraficaMedidas(); }
+  if (t.dataset.a === 'periodoMedida') { ui.periodoMedida = ['semanal', 'mensual'].includes(t.value) ? t.value : 'todo'; dibujarGraficaMedidas(); }
+  if (t.dataset.a === 'escanerComida') { ui.escanerComida = t.value; }
   if (t.dataset.a === 'nutricion') { guardarNutricion(); actualizarNutricion(); }
   if ((t.dataset.a === 'importar' || t.dataset.a === 'importarTodos') && t.files[0]) { importar(t.files[0]); t.value = ''; }
   if (t.dataset.a === 'importarSalud' && t.files[0]) { importarSalud(t.files[0]); t.value = ''; }
@@ -5585,6 +6157,82 @@ document.addEventListener('change', async ev => {
 document.addEventListener('submit', async ev => {
   ev.preventDefault();
   const f = new FormData(ev.target);
+
+  // ---- Novedades ----
+  if (ev.target.getAttribute('id') === 'formContenido') {
+    if (!soyDueno()) { toast('Solo el dueño puede publicar contenidos.'); return; }
+    const id = String(f.get('codigo') || '').trim().toLowerCase();
+    const titulo = String(f.get('titulo') || '').trim();
+    const texto = String(f.get('texto') || '').trim();
+    if (!/^[a-z0-9-]{1,40}$/.test(id)) { toast('El identificador solo admite letras minúsculas, números y guiones.'); return; }
+    if (!titulo || !texto) { toast('Escribe el título y el texto.'); return; }
+    try {
+      await guardarContenidoNube({
+        id, titulo, texto,
+        activo: String(f.get('activo') || '1') === '1',
+        orden: Number(f.get('orden')) || 0,
+      });
+      ui.contenidoEdit = null;
+      await cargarContenidos();
+      render(); toast('Contenido publicado 📢');
+    } catch (e) { toast(`No he podido publicarlo: ${e.message}`, { ms: 7000 }); }
+    return;
+  }
+  if (ev.target.id === 'formFotoProgreso') {
+    const archivo = f.get('foto');
+    if (!archivo || !archivo.size) { toast('Selecciona una foto.'); return; }
+    try {
+      const datos = await fotoADataURL(archivo);
+      estado.progresoFotos = { ...(estado.progresoFotos || {}), [nuevoId()]: {
+        fecha: String(f.get('fecha') || hoy()), angulo: String(f.get('angulo') || 'Frente'),
+        nota: String(f.get('nota') || '').trim(), datos,
+      } };
+      guardar(); render(); toast('Foto guardada en este dispositivo 📸');
+    } catch { toast('No he podido leer esa imagen.'); }
+    return;
+  }
+  if (ev.target.id === 'formMetaCorporal') {
+    const peso = f.get('peso') === '' ? null : Number(f.get('peso'));
+    const grasa = f.get('grasa') === '' ? null : Number(f.get('grasa'));
+    const fecha = String(f.get('fecha') || '');
+    if (peso == null && grasa == null && !fecha) { toast('Escribe al menos un objetivo.'); return; }
+    estado.metaCorporal = { peso, grasa, fecha: fecha || null };
+    guardar(); render(); toast('Meta corporal guardada 🎯');
+    return;
+  }
+  if (ev.target.id === 'formCodigo') {
+    const codigo = String(f.get('codigo') || '').trim();
+    if (!codigo) return;
+    ui.escanerCodigo = codigo;
+    toast('Buscando el producto…');
+    ui.escanerResultado = await buscarAlimento(codigo);
+    if (!ui.escanerResultado) toast('No he encontrado ese producto. Revisa el número.', { ms: 6000 });
+    render();
+    return;
+  }
+  if (ev.target.id === 'formBorrarCuenta') {
+    if (String(f.get('conf') || '').trim().toUpperCase() !== 'BORRAR') {
+      toast('Escribe BORRAR para confirmar.');
+      return;
+    }
+    cerrarModal();
+    const si = await confirmar('Se borrarán tu cuenta y todos tus datos. No se puede deshacer.',
+      { titulo: 'Última confirmación', ok: 'Borrar para siempre', peligro: true });
+    if (!si) return;
+    try {
+      if (modoNube() && haySesionNube()) await borrarCuentaNube();
+      const id = usuarios.activo;
+      localStorage.removeItem(claveDe(id));
+      usuarios.lista = usuarios.lista.filter(u => u.id !== id);
+      usuarios.activo = usuarios.lista[0]?.id || null;
+      if (usuarios.activo) { guardarUsuarios(); estado = cargar(usuarios.activo); ir('login'); }
+      else { localStorage.removeItem(CLAVE_USUARIOS); location.hash = 'login'; location.reload(); }
+      toast('Tu cuenta y tus datos se han borrado.');
+    } catch (e) {
+      toast(`No he podido borrar la cuenta en la nube: ${e.message}. Inténtalo de nuevo.`, { ms: 8000 });
+    }
+    return;
+  }
   // ---- Acceso y recuperación ----
   if (ev.target.id === 'formNubeLogin') {
     const aviso = t => { const el = $('#avisoLogin'); if (el) el.textContent = t; };

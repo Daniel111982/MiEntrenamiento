@@ -826,3 +826,31 @@ input[type=url] { width: 100%; padding: 12px; border-radius: 12px; border: 1px s
 .guiado .blo-txt { font-size: 1.05rem; }
 .car-dia-km { font-variant-numeric: tabular-nums; }
 
+/* --- Logros, informes, fotos, menú, escáner y privacidad --------------- */
+.reto-mes .anillo-mini { flex: none; }
+.barra-logro { display: block; height: 5px; margin-top: 7px; border-radius: 99px; background: var(--borde); overflow: hidden; }
+.barra-logro i { display: block; height: 100%; border-radius: 99px; background: var(--acento); }
+.celda.logro-off { opacity: .72; }
+.celda.logro-on { border-color: color-mix(in srgb, var(--amarillo) 45%, var(--borde)); }
+.informe-linea { align-items: flex-start; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--borde); }
+.informe-linea:last-child { border-bottom: 0; }
+.fotos-progreso { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.foto-progreso { padding: 10px; }
+.foto-progreso img { width: 100%; border-radius: var(--radio-s); }
+.menu-hoy { border-color: var(--acento); box-shadow: inset 0 0 0 1px var(--acento); }
+.info-comida { padding: 5px 0; border-bottom: 1px solid var(--borde); gap: 8px; }
+.info-comida:last-child { border-bottom: 0; }
+.lista-compra { margin: 8px 0 0; padding-left: 20px; columns: 2; column-gap: 24px; }
+.lista-compra li { break-inside: avoid; margin-bottom: 5px; font-size: .92rem; }
+.mini-producto { width: 34px; height: 34px; object-fit: contain; vertical-align: middle; border-radius: 8px; background: var(--tarjeta2); }
+.politica summary { cursor: pointer; list-style: none; }
+.politica summary::-webkit-details-marker { display: none; }
+.politica h2 { margin-top: 18px; font-size: 1rem; color: var(--acento); }
+.politica ul { padding-left: 20px; }
+.politica li { margin-bottom: 7px; font-size: .9rem; }
+.tarjeta.peligro { border-color: color-mix(in srgb, var(--peligro) 40%, var(--borde)); }
+.tarjeta.peligro h2 { color: var(--peligro); }
+.aviso-global { border-color: color-mix(in srgb, var(--acento) 45%, var(--borde)); background: color-mix(in srgb, var(--acento2) 8%, var(--tarjeta)); }
+.aviso-global b { color: var(--acento); }
+@media (max-width: 420px) { .lista-compra { columns: 1; } }
+

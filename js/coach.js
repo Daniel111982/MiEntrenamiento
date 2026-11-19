@@ -10,10 +10,13 @@
 // «Dato real» (lo registrado) de la «Estimación» (lo calculado).
 // =====================================================================
 import { porId, MUSCULOS } from './ejercicios.js';
-import { OBJETIVOS, METODOS, SEMANAS_CICLO, fase, descansoRecomendado, unoRM, lunes, hoyIso, iso, sumarDias } from './generador.js';
+import { OBJETIVOS, METODOS, SEMANAS_CICLO, fase, descansoRecomendado, unoRM, lunes, hoyIso, iso, sumarDias, alternativas } from './generador.js';
 import { racha, volumenSesion, volumenMuscular, recuperacion, mejorSerie } from './stats.js';
+import { guiaEjercicio } from './tecnica.js';
+import { alimentoPorId, macrosDe, RECETAS, resumenReceta, sumarMacros } from './alimentos.js';
 
 const n0 = v => Math.round(Number(v) || 0).toLocaleString('es-ES');
+const comidasTxt = n => Number(n) === 1 ? '1 comida anotada' : `${n0(n)} comidas anotadas`;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const nombresMus = ms => ms.map(m => MUSCULOS[m] || m).join(' y ');
 
@@ -49,6 +52,12 @@ export function construirContextoCoach(estado = {}, objetivosNutri = {}, extras 
   const pesos = (estado.medidas || []).filter(m => m.peso != null).sort((a, b) => a.fecha.localeCompare(b.fecha));
   const pesoActual = pesos.length ? Number(pesos[pesos.length - 1].peso) : null;
   const peso30 = pesos.filter(p => p.fecha <= sumarDias(hoy, -30)).pop();
+
+  // Ingesta REAL del día (lo registrado, nunca una estimación). Se calcula
+  // aquí para que tanto el prompt del LLM como el motor local la vean.
+  const consumoHoy = consumoDelDia(estado, hoy);
+  const estancamiento = detectarEstancamiento(hist);
+
   return {
     perfil, semana, fase: f,
     objetivo: OBJETIVOS[perfil.objetivo] || OBJETIVOS.musculo,
@@ -67,9 +76,88 @@ export function construirContextoCoach(estado = {}, objetivosNutri = {}, extras 
     volumenMuscular: volumenMuscular(hist, 7),
     adherencia: { hechas: hechas.length, total: pasadas.length, pct: pasadas.length ? Math.round(hechas.length / pasadas.length * 100) : 0 },
     nutricion: objetivosNutri || {},
+    consumoHoy,
+    estancamiento,
     pesoActual,
     cambioPeso30: pesoActual && peso30 ? Math.round((pesoActual - Number(peso30.peso)) * 10) / 10 : null,
   };
+}
+
+// Suma las entradas REALES del diario de hoy con las mismas reglas que usa la
+// pantalla de Nutrición: escaneados (macros por 100 g), recetas y catálogo.
+function macrosEntradaCoach(en) {
+  if (!en) return { kcal: 0, prot: 0, carbs: 0, grasa: 0, fibra: 0 };
+  if (en.macros100) {
+    const k = (Number(en.gramos) || 0) / 100;
+    const m = en.macros100;
+    return {
+      kcal: (m.kcal || 0) * k, prot: (m.prot || 0) * k, carbs: (m.carbs || 0) * k,
+      grasa: (m.grasa || 0) * k, fibra: (m.fibra || 0) * k,
+    };
+  }
+  if (en.tipo === 'receta') {
+    const r = RECETAS.find(x => x.id === en.id);
+    if (!r) return { kcal: 0, prot: 0, carbs: 0, grasa: 0, fibra: 0 };
+    const k = Number(en.racion) || 1;
+    const t = resumenReceta(r).total;
+    return { kcal: t.kcal * k, prot: t.prot * k, carbs: t.carbs * k, grasa: t.grasa * k, fibra: (t.fibra || 0) * k };
+  }
+  return macrosDe(alimentoPorId(en.id), Number(en.gramos) || 0);
+}
+
+function consumoDelDia(estado, fecha) {
+  const dia = estado.comidas?.[fecha] || {};
+  const total = { kcal: 0, prot: 0, carbs: 0, grasa: 0 };
+  let comidas = 0;
+  for (const entradas of Object.values(dia)) {
+    if (!Array.isArray(entradas) || !entradas.length) continue;
+    comidas++;
+    const s = sumarMacros(entradas.map(macrosEntradaCoach));
+    total.kcal += s.kcal; total.prot += s.prot;
+    total.carbs += s.carbs; total.grasa += s.grasa;
+  }
+  return {
+    kcal: Math.round(total.kcal), prot: Math.round(total.prot),
+    carbs: Math.round(total.carbs), grasa: Math.round(total.grasa),
+    vasos: Number(estado.agua?.[fecha]) || 0, comidas,
+  };
+}
+
+// Un ejercicio está estancado cuando lleva >= 3 registros y su mejor serie no
+// mejora al menos un 2 % en las últimas 3 sesiones. También mira el volumen.
+function detectarEstancamiento(hist) {
+  const porEj = new Map();
+  hist.forEach((h, idx) => {
+    for (const e of h.ejercicios || []) {
+      if (!e?.id) continue;
+      if (!porEj.has(e.id)) porEj.set(e.id, []);
+      const mejor = mejorSerie(e.series || []);
+      porEj.get(e.id).push({
+        idx, fecha: h.fecha, nombre: e.nombre || porId[e.id]?.nombre || e.id,
+        val: mejor?.val || 0, kg: mejor?.kg || 0,
+        volumen: (e.series || []).reduce((a, s) => a + (s.kg || 0) * (s.reps || 0), 0),
+      });
+    }
+  });
+  const parados = [];
+  for (const [id, puntos] of porEj) {
+    if (puntos.length < 3) continue;
+    const recientes = puntos.slice(-3);
+    const primeros = recientes[0].val;
+    const ultimo = recientes[recientes.length - 1].val;
+    const mejora = primeros > 0 ? (ultimo - primeros) / primeros : 0;
+    const volAntes = recientes[0].volumen;
+    const volAhora = recientes[recientes.length - 1].volumen;
+    if (mejora < 0.02 && ultimo > 0) {
+      parados.push({
+        id, nombre: ultimo && recientes[recientes.length - 1].nombre,
+        desde: primeros, hasta: ultimo,
+        porcentaje: Math.round(mejora * 100),
+        volumenCae: volAntes > 0 && volAhora < volAntes * 0.9,
+      });
+    }
+  }
+  return parados.sort((a, b) => a.porcentaje - b.porcentaje);
 }
 
 // Última vez que se hizo un ejercicio (con su valoración de sesión).
@@ -96,7 +184,12 @@ export function resumenParaIA(ctx) {
   if (ctx.fatigados.length) l.push(`Músculos aún recuperándose: ${nombresMus(ctx.fatigados)}.`);
   else l.push('Músculos recuperados para entrenar.');
   const n = ctx.nutricion || {};
-  if (n.kcal) l.push(`Metas de nutrición: ${n0(n.kcal)} kcal, ${n.protG} g de proteína, ${(n.aguaMl / 1000).toFixed(1)} L de agua al día.`);
+  if (n.kcal) l.push(`Metas de nutrición: ${n0(n.kcal)} kcal, ${n.protG} g de proteína, ${n.carbsG} g de hidratos, ${n.grasaG} g de grasa y ${(n.aguaMl / 1000).toFixed(1)} L de agua al día.`);
+  const c = ctx.consumoHoy || {};
+  l.push(`Consumo REAL registrado hoy: ${n0(c.kcal)} kcal, ${c.prot || 0} g proteína, ${c.carbs || 0} g hidratos, ${c.grasa || 0} g grasa, ${c.vasos || 0} vasos de agua (${comidasTxt(c.comidas)}). Si faltan datos, no los inventes.`);
+  if (ctx.estancamiento?.length) {
+    l.push(`Posible estancamiento (datos reales): ${ctx.estancamiento.slice(0, 4).map(e => `${e.nombre} ${e.porcentaje}% en las últimas 3 sesiones${e.volumenCae ? ' y con volumen a la baja' : ''}`).join('; ')}.`);
+  }
   if (ctx.planSesiones.length) l.push(`Sesiones del plan: ${ctx.planSesiones.map(s => s.nombre).join(', ')}.`);
   return l.join('\n');
 }
@@ -343,6 +436,8 @@ export function preguntasSugeridas(ctx) {
   q.push('¿Cuánto debo descansar?');
   q.push('¿Cuántas series son suficientes?');
   q.push('¿Estoy progresando?');
+  q.push('¿Cómo se hace este ejercicio?');
+  q.push('¿Qué como hoy? ¿Cuánta proteína me falta?');
   q.push('¿Cuánta proteína necesito?');
   if (ctx.fatigados.length) q.push('¿Qué músculos puedo entrenar hoy?');
   return q.slice(0, 6);
@@ -377,6 +472,28 @@ export function responder(pregunta, ctx) {
       };
     }
     return { titulo: 'Cuánto peso poner', html: '<p>Empieza el primer ejercicio con un peso que te deje 2-3 repeticiones en reserva (RIR 2-3). A partir de ahí, si completas el tope del rango con margen, sube; si no llegas al mínimo, baja un 5 %. La app te sugiere la carga en cada serie.</p>' };
+  }
+
+  // --- Técnica dentro del chat ("cómo se hace") ---
+  if (tiene('como se hace', 'cómo se hace', 'tecnica', 'técnica', 'postura', 'forma correcta', 'bien hecho')) {
+    const item = ctx.enCurso?.ejercicios.find(e => e.series.some(r => !r.hecho))
+      || ctx.enCurso?.ejercicios[0]
+      || ctx.planSesiones.flatMap(s => s.ejercicios || [])[0];
+    const e = item ? (porId[item.id] || {}) : {};
+    const nombre = item ? (e.nombre || item.nombre || 'ese ejercicio') : 'ese ejercicio';
+    const guia = item && e.desc ? guiaEjercicio(e) : { pasos: [], claves: [], errores: [], resp: '' };
+    const pasos = (guia.pasos || []).slice(0, 4);
+    const claves = (guia.claves || []).slice(0, 3);
+    const errores = (guia.errores || []).slice(0, 3);
+    return {
+      titulo: `Cómo hacer ${nombre}`,
+      html: `<p>La guía completa (dibujo, pasos y vídeo) está en <a href="#ejercicio/${item?.id || ''}">la ficha del ejercicio</a>. Te resumo lo importante:</p>
+        ${pasos.length ? `<ol class="ciencia-puntos">${pasos.map(c => `<li>${esc(c)}</li>`).join('')}</ol>` : ''}
+        ${claves.length ? `<ul class="ciencia-puntos">${claves.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
+        ${guia.resp ? `<p><b>Respiración:</b> ${esc(guia.resp)}.</p>` : ''}
+        ${errores.length ? `<p><b>Errores que conviene evitar:</b> ${errores.map(c => esc(c)).join(' · ')}.</p>` : ''}
+        <p class="tenue">Si al hacerlo notas dolor articular, para y consúltalo con un profesional. La técnica va antes que la carga.</p>`,
+    };
   }
 
   // --- Orden ---
@@ -430,13 +547,17 @@ export function responder(pregunta, ctx) {
     };
   }
 
-  // --- Progreso ---
-  if (tiene('progres', 'mejorando', 'evolucion', 'evolución', 'como voy', 'cómo voy', 'avanzando')) {
+  // --- Progreso / estancamiento ---
+  if (tiene('progres', 'mejorando', 'evolucion', 'evolución', 'como voy', 'cómo voy', 'avanzando', 'estanc', 'atascado', 'no subo')) {
+    const parados = ctx.estancamiento || [];
     return {
       titulo: '¿Estoy progresando?',
       html: `<p>${ctx.sesiones ? `Llevas <b>${ctx.sesiones} sesiones</b> registradas, racha de <b>${ctx.racha} semanas</b> y <b>${n0(ctx.volumenSemana)} kg</b> movidos esta semana.` : 'Todavía no tienes sesiones registradas.'}</p>
       ${ctx.ultima ? `<p>Última sesión: <b>${esc(ctx.ultima.nombre)}</b>${ctx.ultima.valoracion ? ` (${ctx.ultima.valoracion})` : ''}.</p>` : ''}
-      <p class="tenue">La mejor señal de progreso es hacer más repeticiones o mover más peso con la misma técnica. Mira tus récords en <a href="#seguimiento/records">Seguimiento → Récords</a>.</p>`,
+      ${parados.length ? `<div class="alerta"><b>He detectado un posible estancamiento</b>
+        <p>${parados.slice(0, 3).map(e => `<b>${esc(e.nombre)}</b> lleva ${e.porcentaje}% de cambio en sus últimas 3 sesiones${e.volumenCae ? ' y su volumen baja' : ''}`).join('; ')}.</p>
+        <p class="tenue">Son tus datos reales. Prueba a subir 1-2 kg o una repetición en esos ejercicios, o revisa descanso y comida antes de añadir volumen.</p></div>` : ''}
+      <p class="tenue">La mejor señal de progreso es hacer más repeticiones o mover más peso con la misma técnica. Mira tus récords en <a href="#seguimiento/records">Seguimiento → Récords</a> y tu <a href="#seguimiento/informe">informe semanal</a>.</p>`,
     };
   }
 
@@ -458,13 +579,19 @@ export function responder(pregunta, ctx) {
     };
   }
 
-  // --- Nutrición ---
-  if (tiene('proteina', 'proteína', 'comer', 'caloria', 'caloría', 'kcal', 'dieta', 'aliment')) {
+  // --- Nutrición (metas estimadas VS ingesta real) ---
+  if (tiene('proteina', 'proteína', 'comer', 'caloria', 'caloría', 'kcal', 'dieta', 'aliment', 'agua', 'hidrat', 'he comido', 'comido hoy', 'que como', 'qué como')) {
     const n = ctx.nutricion || {};
+    const c = ctx.consumoHoy || {};
+    const faltaKcal = n.kcal && c.kcal ? Math.round(n.kcal - c.kcal) : null;
+    const faltaProt = n.protG && c.prot ? Math.round(n.protG - c.prot) : null;
     return {
       titulo: 'Nutrición para tu objetivo',
-      html: n.kcal ? `<p>Tus metas estimadas: <b>${n0(n.kcal)} kcal</b>, <b>${n.protG} g de proteína</b>, <b>${n.carbsG} g de hidratos</b>, <b>${n.grasaG} g de grasa</b> y <b>${(n.aguaMl / 1000).toFixed(1)} L</b> de agua al día.</p>`
-        : `<p>Configura tus objetivos en <a href="#nutricion/objetivos">Nutrición → Objetivos</a> para que calcule tus calorías y macros.</p>`,
+      html: `${n.kcal ? `<p><b>Objetivo estimado:</b> ${n0(n.kcal)} kcal, ${n.protG} g de proteína, ${n.carbsG} g de hidratos, ${n.grasaG} g de grasa y ${(n.aguaMl / 1000).toFixed(1)} L de agua al día.</p>`
+          : `<p>Configura tus objetivos en <a href="#nutricion/objetivos">Nutrición → Objetivos</a> para calcular tus calorías y macros.</p>`}
+        <p><b>Dato real de hoy:</b> ${n0(c.kcal || 0)} kcal, ${c.prot || 0} g de proteína, ${c.carbs || 0} g de hidratos, ${c.grasa || 0} g de grasa y ${c.vasos || 0} vasos de agua${c.comidas ? ` (${comidasTxt(c.comidas)})` : ''}.</p>
+        ${faltaKcal != null ? `<p class="tenue">${faltaKcal > 0 ? `Te quedan <b>${n0(faltaKcal)} kcal</b> para llegar a tu objetivo estimado.` : `Ya has superado la estimación en <b>${n0(Math.abs(faltaKcal))} kcal</b>. No pasa nada: ajusta mañana, no hoy.`}${faltaProt != null && faltaProt > 0 ? ` Y te faltan <b>${faltaProt} g</b> de proteína.` : ''}</p>` : ''}
+        <p class="tenue">Solo cuento lo que has registrado. Si comes algo fuera de la app, anótalo en <a href="#nutricion">Nutrición → Diario</a> para que el dato real sea fiable. No es consejo médico.</p>`,
     };
   }
 
@@ -477,16 +604,23 @@ export function responder(pregunta, ctx) {
     };
   }
 
-  // --- Cambiar un ejercicio ---
+  // --- Cambiar un ejercicio (con alternativas concretas del catálogo) ---
   if (tiene('cambiar', 'sustituir', 'alternativa', 'otro ejercicio', 'no tengo', 'maquina', 'máquina', 'ocupada')) {
+    const item = ctx.enCurso?.ejercicios.find(e => e.series.some(r => !r.hecho))
+      || ctx.enCurso?.ejercicios[0]
+      || ctx.planSesiones.flatMap(s => s.ejercicios || [])[0];
+    const actual = item ? (porId[item.id] || {}) : {};
+    const opciones = item ? alternativas(item.id, ctx.perfil || {}) : [];
+    const nombres = (opciones || []).slice(0, 3).map(a => esc(a.nombre || porId[a.id]?.nombre || a.id));
     return {
       titulo: 'Cambiar un ejercicio',
-      html: `<p>Puedes cambiar cualquier ejercicio por otra variante que trabaje el mismo patrón:</p>
+      html: `<p>${item ? `Para <b>${esc(actual.nombre || item.nombre || 'ese ejercicio')}</b>, mantén el mismo patrón y elige una de estas opciones:` : 'Mantén el mismo patrón (empuje, tirón, sentadilla, bisagra…) para no desequilibrar el programa.'}</p>
+      ${nombres.length ? `<ul class="ciencia-puntos">${nombres.map(n => `<li>${n}</li>`).join('')}</ul>` : ''}
       <ul class="ciencia-puntos">
-        <li>Desde la sesión, pulsa <b>⇄</b> en el ejercicio para ver alternativas.</li>
+        <li>Desde la sesión, pulsa <b>⇄</b> en el ejercicio para ver y aplicar las alternativas.</li>
         <li>Si una máquina está ocupada, pulsa <b>▶</b> para hacer otro ejercicio antes.</li>
       </ul>
-      <p class="tenue">Mantén el mismo patrón (empuje, tirón, sentadilla, bisagra…) para no desequilibrar el programa.</p>`,
+      <p class="tenue">Las alternativas se filtran por el material que marcaste en tu perfil.</p>`,
     };
   }
 

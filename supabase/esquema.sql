@@ -255,7 +255,7 @@ grant execute on function public.canjear_beta(text) to authenticated;
 
 -- ---------------------------------------------------------------------
 -- 10. Ping: mantiene despierto el proyecto (evita la pausa por inactividad).
---     Lo llama una tarea programada (GitHub Actions) a diario. Cualquier
+--     Lo llama una tarea programada (cron-job.org) a diario. Cualquier
 --     visita a la API cuenta como actividad; con esto sobra.
 -- ---------------------------------------------------------------------
 create or replace function public.ping()
@@ -268,6 +268,66 @@ as $$
 $$;
 
 grant execute on function public.ping() to anon, authenticated;
+
+-- ---------------------------------------------------------------------
+-- 11. Borrado de cuenta (derecho al olvido, RGPD).
+--     Lo llama el usuario autenticado desde Ajustes → Privacidad.
+--     Es SECURITY DEFINER para poder borrar también la fila de auth.users,
+--     pero solo actúa sobre auth.uid(): nadie puede borrar a otro usuario.
+--     Nunca se expone la clave service_role en la app.
+-- ---------------------------------------------------------------------
+create or replace function public.borrar_mi_cuenta()
+returns void
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  uid uuid := auth.uid();
+begin
+  if uid is null then
+    raise exception 'Debes iniciar sesion para borrar tu cuenta.';
+  end if;
+  delete from public.datos    where usuario = uid;
+  delete from public.perfiles where id     = uid;
+  delete from auth.users      where id     = uid;
+end;
+$$;
+
+revoke all on function public.borrar_mi_cuenta() from public;
+grant execute on function public.borrar_mi_cuenta() to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 12. Avisos globales de la app (gestión de contenidos del dueño).
+--     Cualquier cuenta autenticada puede LEER los avisos activos; solo
+--     el administrador puede escribirlos. Es gratis y no necesita CMS externo.
+-- ---------------------------------------------------------------------
+create table if not exists public.avisos (
+  id       text primary key,
+  titulo   text not null,
+  texto    text not null,
+  activo   boolean not null default true,
+  orden    int not null default 0,
+  actualizado timestamptz not null default now(),
+  autor    uuid references auth.users(id) on delete set null
+);
+
+alter table public.avisos enable row level security;
+
+drop policy if exists "avisos - leer activos" on public.avisos;
+drop policy if exists "avisos - admin escribe" on public.avisos;
+create policy "avisos - leer activos"
+  on public.avisos for select
+  to authenticated
+  using (activo);
+create policy "avisos - admin escribe"
+  on public.avisos for all
+  to authenticated
+  using (public.es_admin())
+  with check (public.es_admin());
+
+revoke all on public.avisos from anon;
+grant select, insert, update, delete on public.avisos to authenticated;
 
 -- =====================================================================
 -- ¡Listo! Deberías ver "Success. No rows returned".

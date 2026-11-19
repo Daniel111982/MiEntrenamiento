@@ -1,8 +1,10 @@
-# MiEntrenamiento
+# DanTal (MiEntrenamiento)
 
-App web instalable (PWA) de entrenamiento personal. Genera un programa a tu medida, te guía en cada sesión y registra tu progreso. Funciona sin conexión, admite varios usuarios y guarda los datos solo en tu dispositivo.
+App web instalable (PWA) de entrenamiento y nutrición. **Entrena · Nutre · Evoluciona.** Genera un programa a tu medida, te guía en cada sesión y registra tu progreso. Funciona sin conexión y, si tienes cuenta, copia tus datos a la nube para recuperarlos en otro móvil.
 
 **Probarla:** https://dantal-app.pages.dev/ (copia en https://daniel111982.github.io/MiEntrenamiento/)
+
+**Cuentas:** acceso con correo y contraseña (Supabase, plan gratis). La primera cuenta es la administradora; las demás entran con un código beta que reparte el dueño, con caducidad o sin límite. Sin conexión se sigue usando igual; al volver la red se sincroniza.
 
 ## Funciones
 
@@ -16,6 +18,15 @@ App web instalable (PWA) de entrenamiento personal. Genera un programa a tu medi
 - **Biblioteca** de 68 ejercicios con dibujo animado del movimiento, paso a paso, claves, errores comunes y respiración. Puedes guardar tu vídeo de YouTube y tu foto de cada ejercicio.
 - **Ayudas** en todos los botones (ratón, teclado o pulsación larga) e iconos ⓘ en las zonas importantes.
 - **Usuarios:** gestor para crear, editar, cambiar y borrar usuarios; cada uno con su propio programa y seguimiento.
+- **Nube y beta:** cuentas reales, inicio de sesión persistente, sincronización entre dispositivos, códigos beta con duración elegida por el dueño y borrado de cuenta desde la app.
+- **Fotos de progreso:** galería corporal privada que **nunca sale del dispositivo**, con fecha, ángulo y nota.
+- **Meta corporal:** peso y grasa objetivo con fecha, y evolución frente al registro real.
+- **Nutrición ampliada:** menú semanal con lista de la compra y escáner de códigos de barras (Open Food Facts; solo se envía el código).
+- **Constancia:** insignias y retos mensuales e **informe semanal** con sesiones, minutos, volumen, racha, peso y agua.
+- **Planificación adaptativa:** mueve las sesiones perdidas a huecos libres y ajusta cada sesión a tu material y tiempo.
+- **Coach mejorado:** explica técnica con pasos reales, alternativas según tu material, detecta estancamiento y compara tus metas con tu ingesta real del día.
+- **Privacidad (RGPD):** política y consentimiento dentro de la app, con finalidades claras y ejercicio del derecho a borrado.
+- **Contenidos del dueño:** el administrador publica avisos globales que aparecen en «Hoy»; solo él puede escribirlos (el resto solo lee).
 - **Datos:** resumen en PDF, exportación CSV y copia de seguridad en JSON (de un usuario o de todos).
 
 ## Ejecutar en local
@@ -40,6 +51,13 @@ y abre http://localhost:8765.
 | `js/stats.js` | Récords, rachas, volumen y recuperación |
 | `js/tecnica.js` | Dibujos animados y guía de técnica |
 | `js/ayudas.js` | Ayudas contextuales |
+| `js/nube.js` | Cliente Supabase: cuentas, sync, borrado y contenidos |
+| `js/logros.js`, `js/informe.js` | Insignias, retos e informe semanal |
+| `js/menu.js`, `js/escaner.js` | Menú semanal, compra y escáner de alimentos |
+| `js/planificador.js` | Reorganización y ajuste de sesiones |
+| `js/rgpd.js` | Política de privacidad y consentimiento |
+| `js/coach.js`, `js/llm.js` | Coach local y conexión opcional con IA |
+| `supabase/esquema.sql`, `supabase/GUIA.md` | Tablas, permisos y pasos del backend gratis |
 | `sw.js` | Funcionamiento sin conexión |
 | `VERSIONES/` | Copias completas por versión, historial y scripts para guardar o restaurar |
 
@@ -51,4 +69,12 @@ El proyecto guarda una copia completa de cada versión en `VERSIONES/`, para pod
 - `VERSIONES/nueva-version.cmd -Nota "..."` — guarda el estado actual como versión nueva.
 - `VERSIONES/restaurar.cmd -Version v1.00` — vuelve a una versión anterior.
 
-La versión que ve el usuario está en `js/app.js` → `const APP_VERSION`.
+La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.00`). Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
+
+## Privacidad y seguridad
+
+- La clave de Supabase que va en la app es **pública** (anon/publishable). La clave `service_role` **nunca** se incluye.
+- Las fotos, los datos de seguridad locales y las fotos de progreso **no se sincronizan**.
+- Los reportes de «Ideas e incidencias» son privados del dueño.
+- Los avisos globales se guardan en la tabla `avisos` de Supabase: lectura para cuentas autenticadas, escritura solo para el administrador.
+- Política y consentimiento RGPD disponibles en **Ajustes → Privacidad y RGPD**.

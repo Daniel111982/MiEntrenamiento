@@ -112,6 +112,22 @@ export const actualizarMiPerfilNube = campos =>
 export const canjearCodigoNube = codigo =>
   peticion('/rest/v1/rpc/canjear_beta', { metodo: 'POST', cuerpo: { p_codigo: codigo } });
 
+// ------------------------------------------------------------- Contenidos
+// Textos globales que publica el dueño (tabla `avisos`). Cualquier cuenta
+// autenticada puede leer los activos; solo el administrador puede escribir.
+export const listarContenidosNube = () =>
+  peticion('/rest/v1/avisos?select=*&order=orden.asc,actualizado.desc');
+
+export const guardarContenidoNube = contenido =>
+  peticion('/rest/v1/avisos', {
+    metodo: 'POST',
+    cuerpo: { ...contenido, autor: usuarioNube()?.id, actualizado: new Date().toISOString() },
+    cabeceras: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+  });
+
+export const borrarContenidoNube = id =>
+  peticion(`/rest/v1/avisos?id=eq.${encodeURIComponent(id)}`, { metodo: 'DELETE' });
+
 // ---------------------------------------------------------------- Datos
 export async function leerDatosNube() {
   const uid = usuarioNube()?.id;
@@ -126,3 +142,12 @@ export const guardarDatosNube = contenido =>
     cuerpo: { usuario: usuarioNube().id, contenido, actualizado: new Date().toISOString() },
     cabeceras: { Prefer: 'resolution=merge-duplicates,return=minimal' },
   });
+
+// ---------------------------------------------------------------- RGPD
+// Borra la cuenta del usuario autenticado (perfil, datos copiados y acceso).
+// La base de datos comprueba auth.uid(): nunca se usa service_role aquí.
+export async function borrarCuentaNube() {
+  if (!haySesionNube()) throw new Error('No hay ninguna sesión abierta.');
+  await peticion('/rest/v1/rpc/borrar_mi_cuenta', { metodo: 'POST', cuerpo: {} });
+  guardarSesion(null);
+}

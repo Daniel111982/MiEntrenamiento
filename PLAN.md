@@ -14,13 +14,16 @@
   (GitHub Pages sigue como copia: https://daniel111982.github.io/MiEntrenamiento/)
 - **Qué ya hace:** programa personalizado, sesiones guiadas, nutrición, Running,
   seguimiento, usuarios, avisos, ideas e incidencias, **cuentas beta con código de
-  invitación y caducidad**, **gestión de betas a distancia** y **sincronización de
-  datos entre dispositivos**.
+  invitación y caducidad**, **gestión de betas a distancia**, **sincronización de
+  datos entre dispositivos**, fotos de progreso, meta corporal, menú semanal y
+  compra, escáner de alimentos, insignias y retos, informe semanal, planificación
+  adaptativa, coach mejorado, RGPD y **avisos globales publicados por el dueño**.
 
 ### El límite actual
 Los datos viven en el dispositivo (funciona sin conexión) y **se copian a la cuenta**
-en Supabase, así que ya se pueden recuperar en otro móvil. El servidor existe además
-para poder **cobrar** más adelante.
+en Supabase, así que ya se pueden recuperar en otro móvil. Las fotos y los datos
+de seguridad local no salen del dispositivo. Quedan para más adelante: **dominio de
+pago, suscripciones/pago en tienda e integración nativa de relojes**.
 
 ---
 
@@ -99,7 +102,9 @@ Los pasos están en **`supabase/GUIA.md`** y las tablas en **`supabase/esquema.s
 **Estado: hecho (Fase 2).** Se guarda en el dispositivo (fuente principal) y se copia a
 la tabla `datos` de Supabase. Al abrir o volver a la app, se compara la fecha y gana el
 más nuevo. Botón «Sincronizar ahora» en *Ajustes → Tus datos*. Se sube todo salvo la
-contraseña local y las fotos (se quedan en el dispositivo).
+contraseña local, las fotos de técnica y las fotos de progreso (se quedan en el
+dispositivo). Los avisos globales del dueño viven aparte, en la tabla `avisos`, y no
+forman parte de la copia de cada usuario.
 
 ### 8. Qué necesitas para montarlo (lista de la compra)
 
@@ -223,9 +228,14 @@ mayoría ya lo tienes).
 - [x] **Fase 3 — URL propia (gratis).** Un dominio de verdad cuesta ~10 €/año; mientras
   tanto se usa **Cloudflare Pages** en https://dantal-app.pages.dev (hecho el 19-11-2026),
   con HTTPS, actualización automática y lista para Android/TWA.
-- [ ] **Fase 4 — Android.** Paquete TWA y publicación en Google Play.
+- [x] **Fase 3B — Funciones de producto y RGPD.** Fotos de progreso, meta corporal,
+  menú y compra, escáner, logros/retos, informe semanal, planificación adaptativa,
+  coach con ingesta real, consentimiento y avisos globales del dueño. *(hecha: v39)*
+- [ ] **Fase 4 — Android.** Paquete TWA y publicación en Google Play (requiere dominio propio).
 - [ ] **Fase 5 — iOS.** Envoltorio con Capacitor y publicación en la App Store.
-- [ ] **Fase 6 — Monetización.** Suscripciones con el pago de las tiendas.
+- [ ] **Fase 6 — Monetización y relojes.** Suscripciones con el pago de las tiendas
+  (Stripe en web) e integración **nativa** de relojes (HealthKit / Google Health Connect),
+  que no se mezcla con la importación de CSV actual.
 
 ### Fase 3 — URL propia gratis (Cloudflare Pages) — HECHA
 
@@ -261,6 +271,22 @@ disponible como copia.
 
 > El día que se quiera un dominio real, se compra (Cloudflare Registrar lo vende casi a
 > precio, ~10 €/año) y se añade en *Custom domains* sin rehacer nada.
+
+### Fase 3B — Funciones de producto y RGPD — HECHA (v39)
+
+Se cierran los huecos que faltaban para la beta, sin coste adicional:
+
+- **Fotos de progreso** (`#seguimiento/fotos`): galería privada en el dispositivo; nunca se suben.
+- **Meta corporal** (`#seguimiento/objetivo`): peso/grasa objetivo con fecha y comparación con el último registro.
+- **Menú semanal y lista de la compra** (`#nutricion/menu`) y **escáner** (`#nutricion/escaner`) con Open Food Facts; solo se envía el código de barras.
+- **Logros y retos del mes** (`#seguimiento/logros`) e **informe semanal** (`#seguimiento/informe`).
+- **Planificación adaptativa**: sesiones perdidas se mueven a huecos libres y cada sesión se ajusta al material y al tiempo disponible.
+- **Coach**: usa la ingesta real (catálogo, recetas y escaneados), detecta estancamiento, da pasos de técnica y alternativas concretas; el historial del chat se guarda con el usuario.
+- **RGPD**: política, consentimiento por finalidades y borrado de cuenta (RPC `borrar_mi_cuenta()` verificada).
+- **Contenidos del dueño**: tabla `avisos` con RLS; lectura para cuentas autenticadas y escritura solo para `public.es_admin()`. Se gestiona en *Ajustes → Contenidos de la app* y aparece en «Hoy».
+
+La sincronización incluye los campos nuevos (`coachChat`, `rgpd`, `metaCorporal`, `menu`,
+`logrosVistos`) y **nunca** envía `seguridad`, `fotos` ni `progresoFotos` (comprobado).
 
 ### Mantener despierto el proyecto (anti-pausa)
 
@@ -303,5 +329,8 @@ La clave que se usa es la **pública** (anon), la misma que va dentro de la app;
 3. **¿Tienes un Mac** para el día de iOS? (si no, iOS se deja para el final)
 4. **Modelo de negocio:** ¿suscripción, pago único, o gratis con extras?
 
-Lo siguiente será la **Fase 4** (Android/TWA) o la **Fase 6** (monetización), según lo
-que prefieras.
+Lo siguiente será la **Fase 4** (Android/TWA), la **Fase 5** (iOS) o la **Fase 6**
+(pagos y relojes nativos), según lo que prefieras. Antes conviene comprobar en el móvil
+que las sesiones antiguas se recuperaron siguiendo el orden de URLs indicado: entrar
+primero en GitHub Pages, iniciar sesión y esperar «Todo al día ✅», y solo después abrir
+Cloudflare Pages (sin borrar datos del sitio).

@@ -31,6 +31,18 @@ Sigue estos pasos. Tardarás unos 10 minutos.
 5. Debe aparecer **«Success. No rows returned»**. Ya tienes las tablas, la seguridad y
    el alta automática de usuarios.
 
+> **Ya ejecutado el 19-11-2026** en el proyecto real. El esquema incluye además la
+> función `borrar_mi_cuenta()` (RGPD): el usuario autenticado puede borrar su cuenta
+> y todos sus datos desde **Ajustes → Privacidad**. Verificada con un usuario de prueba:
+> devuelve HTTP 204 y el perfil y el acceso dejan de existir. **No necesita ni usa
+> `service_role`**: solo actúa sobre `auth.uid()`.
+>
+> El esquema también crea la tabla **`public.avisos`** para los contenidos globales del
+> dueño: cualquier cuenta autenticada puede **leer** los avisos activos (RLS), y solo
+> `public.es_admin()` puede insertar, editar o borrar. `anon` no tiene permisos. Se gestiona
+> desde **Ajustes → Contenidos de la app** y aparece en la pantalla «Hoy». Verificado por
+> API: usuario normal 200 al leer y 403 al escribir, anon 401, dueño 201/204.
+
 ## Paso 4 — Ajustar el acceso (recomendado)
 
 1. Menú izquierdo → **Authentication** → **Providers** → **Email**.
@@ -57,11 +69,12 @@ Sigue estos pasos. Tardarás unos 10 minutos.
 
 ---
 
-## Cuando ya esté
+## Estado actual
 
-Con eso yo puedo conectar la app a Supabase y empezar la **Fase 1**: cuentas reales y
-**gestión de las betas a distancia** (ver, ampliar, cortar o borrar testers desde tu
-móvil, sin depender de cada dispositivo).
+Ya están hechas la **Fase 1** (cuentas reales y betas a distancia), la **Fase 2**
+(sincronización) y la **Fase 3** (URL propia gratis en Cloudflare Pages). La app usa
+esta misma clave pública para avisos, betas, sync y borrado de cuenta. Para publicar,
+basta con hacer `push` a `main`: Cloudflare Pages actualiza la web sola.
 
 ---
 
