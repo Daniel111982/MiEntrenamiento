@@ -265,9 +265,13 @@ disponible como copia.
 ### Mantener despierto el proyecto (anti-pausa)
 
 El plan gratis de Supabase **pausa el proyecto tras 7 días sin ninguna visita**. Para
-una beta con uso intermitente, se usa un **servicio externo de ping** (por ejemplo
-[cron-job.org](https://cron-job.org), gratis) que entra a la API **una vez al día** y lo
+una beta con uso intermitente, se usa un **servicio externo de ping**
+([cron-job.org](https://cron-job.org), gratis) que entra a la API **una vez al día** y lo
 mantiene despierto. No depende del repositorio ni de GitHub.
+
+**Ya configurado (19-11-2026):** cronjob `Ping Supabase DanTal` (id `8898034`), activo,
+con ejecución diaria a las **06:00 (Europe/Madrid)** expresión `0 6 * * *`. Comprobado:
+la llamada responde HTTP 200 con `{"ok" : true, "hora" : "..."}`.
 
 **Cómo se configura (una sola vez):**
 
@@ -283,7 +287,8 @@ mantiene despierto. No depende del repositorio ni de GitHub.
      - `Authorization: Bearer sb_publishable_x_jgGp3cBoqYr-E9vCK6hQ_PJjBW3T9`
      - `Content-Type: application/json`
    - **Advanced → Request body:** `{}`
-3. Guardar. La primera ejecución se puede probar con *Run now*.
+3. Guardar. La primera ejecución se puede probar con *Run now* (o comprobando la
+   respuesta de la API como se hizo aquí).
 
 La clave que se usa es la **pública** (anon), la misma que va dentro de la app; nunca la
 `service_role`.
