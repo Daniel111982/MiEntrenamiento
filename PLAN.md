@@ -9,16 +9,17 @@
 ## Aplicación MiEntrenamiento
 
 - **Tecnología:** HTML · CSS · JavaScript ES6 (módulos). Sin npm ni compilación.
-- **Tipo:** PWA (web instalable). Hoy funciona 100 % en el dispositivo, sin servidor.
+- **Tipo:** PWA (web instalable) con **backend en Supabase (plan gratis)**.
 - **Dónde vive ahora:** GitHub Pages → https://daniel111982.github.io/MiEntrenamiento/
 - **Qué ya hace:** programa personalizado, sesiones guiadas, nutrición, Running,
-  seguimiento, usuarios, avisos, ideas e incidencias y **cuentas beta con código de
-  invitación y caducidad**.
+  seguimiento, usuarios, avisos, ideas e incidencias, **cuentas beta con código de
+  invitación y caducidad**, **gestión de betas a distancia** y **sincronización de
+  datos entre dispositivos**.
 
 ### El límite actual
-Como no hay servidor, **cada móvil guarda sus propios datos** y no se hablan entre sí.
-Por eso el dueño no puede ver, ampliar ni cortar una beta a distancia. El servidor
-existe para resolver justo eso y para poder cobrar más adelante.
+Los datos viven en el dispositivo (funciona sin conexión) y **se copian a la cuenta**
+en Supabase, así que ya se pueden recuperar en otro móvil. El servidor existe además
+para poder **cobrar** más adelante.
 
 ---
 
@@ -93,6 +94,11 @@ Los pasos están en **`supabase/GUIA.md`** y las tablas en **`supabase/esquema.s
   ("última escritura gana") y lo demás se une.
 - Se sincroniza **por usuario** y solo lo que cambie, para gastar pocos datos.
 - La app **sigue funcionando sin conexión** y sincroniza cuando vuelve la red.
+
+**Estado: hecho (Fase 2).** Se guarda en el dispositivo (fuente principal) y se copia a
+la tabla `datos` de Supabase. Al abrir o volver a la app, se compara la fecha y gana el
+más nuevo. Botón «Sincronizar ahora» en *Ajustes → Tus datos*. Se sube todo salvo la
+contraseña local y las fotos (se quedan en el dispositivo).
 
 ### 8. Qué necesitas para montarlo (lista de la compra)
 
@@ -208,23 +214,35 @@ mayoría ya lo tienes).
 
 ## Plan por fases
 
-- [ ] **Fase 1 — Servidor mínimo (gratis).** Proyecto en Supabase, cuentas reales y API
-  para **gestionar las betas a distancia**. La app se conecta.
-- [ ] **Fase 2 — Cuentas y sincronización.** Usuarios reales en el servidor y datos
-  sincronizados entre dispositivos.
+- [x] **Fase 1 — Servidor mínimo (gratis).** Proyecto en Supabase, cuentas reales y API
+  para **gestionar las betas a distancia**. La app se conecta. *(hecho: v30 y v31)*
+- [x] **Fase 2 — Cuentas y sincronización.** Usuarios reales en el servidor y datos
+  sincronizados entre dispositivos. *(hecho: v32, más un ping diario que evita que
+  Supabase se pause a los 7 días sin visitas)*
 - [ ] **Fase 3 — Dominio propio.** Nombre bonito y HTTPS fijo.
 - [ ] **Fase 4 — Android.** Paquete TWA y publicación en Google Play.
 - [ ] **Fase 5 — iOS.** Envoltorio con Capacitor y publicación en la App Store.
 - [ ] **Fase 6 — Monetización.** Suscripciones con el pago de las tiendas.
 
+### Mantener despierto el proyecto (anti-pausa)
+
+El plan gratis de Supabase **pausa el proyecto tras 7 días sin ninguna visita**. Para
+una beta con uso intermitente, hay una **tarea diaria** en GitHub Actions
+(`.github/workflows/ping-supabase.yml`) que entra a la API y lo mantiene despierto.
+Usa la clave **pública** (anon), nunca la `service_role`.
+
+> Si el repositorio pasa **60 días sin cambios**, GitHub desactiva las tareas
+> programadas. Se reactivan desde la pestaña **Actions** del repositorio (o se lanza a
+> mano con «Run workflow»).
+
 ---
 
 ## Decisiones que necesito de ti
 
-1. **Crear el proyecto en Supabase** y ejecutar `supabase/esquema.sql` (ver
-   `supabase/GUIA.md`), y mandarme el **Project URL** y la clave **anon public**.
+1. ~~Crear el proyecto en Supabase y conectar la app~~ **Hecho** (Fases 1 y 2).
 2. **¿Tienes dominio propio** o seguimos con GitHub Pages de momento.
 3. **¿Tienes un Mac** para el día de iOS? (si no, iOS se deja para el final)
 4. **Modelo de negocio:** ¿suscripción, pago único, o gratis con extras?
 
-Con el punto 1 conecto la app y construyo la **Fase 1**.
+Lo siguiente será la **Fase 3** (dominio propio) o la **Fase 4** (Android/TWA), según lo
+que prefieras.

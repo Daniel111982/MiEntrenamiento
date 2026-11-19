@@ -67,8 +67,11 @@ móvil, sin depender de cada dispositivo).
   hasta 50.000 usuarios activos. De sobra para empezar.
 - **Se pausa por inactividad:** si el proyecto **no recibe ninguna visita en 7 días**,
   Supabase lo pausa. Se reactiva solo al entrar al panel, pero mientras tanto la app no
-  podría conectar. **Solución sencilla:** si esto pasa, lo despertamos con una visita
-  automática (por ejemplo, un *ping* programado). Lo dejamos preparado en la Fase 2.
+  podría conectar. **Ya resuelto (Fase 2):** hay una función `ping()` en la base de datos
+  y una **tarea diaria** en GitHub Actions (`.github/workflows/ping-supabase.yml`) que
+  entra a la API, así el proyecto nunca se queda 7 días sin visitas.
+  *Nota:* si el repositorio pasa 60 días sin cambios, GitHub desactiva las tareas
+  programadas; se reactivan desde la pestaña **Actions**.
 - **Si algún día crece:** se pasa al plan de pago (unos 25 $/mes) o se migra a otro
   sitio, sin rehacer el código.
 
