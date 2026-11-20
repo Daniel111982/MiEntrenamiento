@@ -114,6 +114,17 @@ export function generarInsightsDantal(estado = {}, objetivosNutri = {}, consumoH
     });
   }
 
+  if (estimacion.fibraG && consumoHoy && consumoHoy.fibra != null) {
+    const llevas = Math.round(consumoHoy.fibra);
+    const falta = Math.max(0, Math.round(estimacion.fibraG - consumoHoy.fibra));
+    out.push({
+      tipo: 'Dato real', icono: '🌾', titulo: 'Fibra registrada hoy',
+      texto: falta
+        ? `Llevas ${llevas} g de ${estimacion.fibraG} g orientativos. Te faltan ${falta} g; fruta, verdura, legumbres y cereales integrales ayudan.`
+        : `Has registrado ${llevas} g de fibra y cubres la referencia orientativa de ${estimacion.fibraG} g.`,
+    });
+  }
+
   if (consumoHoy) {
     const restante = Math.round((estimacion.kcal || 0) - (consumoHoy.kcal || 0));
     const protRest = Math.round((estimacion.protG || 0) - (consumoHoy.prot || 0));

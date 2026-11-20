@@ -259,7 +259,12 @@ mayoría ya lo tienes).
 - [x] **Fase 3G — Calorías adaptativas.** El objetivo se ajusta hasta ±200 kcal con la
   tendencia real del peso (o con la ingesta registrada si no hay pesajes suficientes),
   con límites de seguridad, motivo visible y opción de fijar un número propio o
-  desactivar el ajuste. Siguiente: 2.08 fibra y micronutrientes. *(hecha: app 2.07)*
+  desactivar el ajuste. *(hecha: app 2.07)*
+- [x] **Fase 3H — Fibra, micronutrientes y gráficos del diario.** La fibra se ve junto a
+  los macros; calcio, hierro, vitaminas D y C y potasio solo se muestran si la etiqueta
+  los declara (nunca se estiman), con referencias orientativas visibles. El diario añade
+  anillo de calorías, donut de macros, barras por comida y evolución semanal, y cada
+  comida recién registrada muestra una tarjeta visual con sus cantidades. *(hecha: app 2.08)*
 - [ ] **Fase 4 — Android.** Paquete TWA y publicación en Google Play (requiere dominio propio).
 - [ ] **Fase 5 — iOS.** Envoltorio con Capacitor y publicación en la App Store.
 - [ ] **Fase 6 — Monetización y relojes.** Suscripciones con el pago de las tiendas

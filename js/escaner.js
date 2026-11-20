@@ -14,6 +14,34 @@ const CAMPOS = [
   'nutrition_data_per', 'completeness', 'image_front_small_url',
 ].join(',');
 
+// Micronutrientes que Open Food Facts puede declarar por 100 g.
+// Solo se guardan si vienen en la ficha: nunca se inventan ni se estiman.
+const MICROS_OFF = {
+  calcio: 'calcium_100g',
+  hierro: 'iron_100g',
+  vitD: 'vitamin-d_100g',
+  vitC: 'vitamin-c_100g',
+  potasio: 'potassium_100g',
+};
+export const CLAVES_MICROS = Object.keys(MICROS_OFF);
+
+function microNumero(x) {
+  const v = Number(x);
+  if (!Number.isFinite(v) || v < 0) return null;
+  const redondeado = Math.round(v * 100) / 100;
+  return redondeado || (v > 0 ? Math.round(v * 1000) / 1000 : 0);
+}
+
+function leerMicros(nutriments = {}, datos = null) {
+  const n = datos || nutriments || {};
+  const out = {};
+  for (const [clave, campo] of Object.entries(MICROS_OFF)) {
+    const valor = microNumero(n[datos ? clave : campo]);
+    if (valor != null) out[clave] = valor;
+  }
+  return out;
+}
+
 // Claves nuevas: no se tocan las claves históricas de la app.
 export const CLAVE_CACHE_ESCANER = 'mientrenamiento:escaner-cache';
 export const CLAVE_HISTORIAL_ESCANER = 'mientrenamiento:escaner-historial';
@@ -209,6 +237,7 @@ function normalizar(p = {}, codigo = '') {
     azucares: redondear(n.sugars_100g),
     saturada: redondear(n['saturated-fat_100g']),
     sal: redondear(n.salt_100g),
+    micros100: leerMicros(n),
     porcion,
     cantidad: String(p.quantity || '').trim(),
     ingredientes: String(p.ingredients_text || '').trim(),
@@ -269,6 +298,7 @@ export function productoManual(datos = {}) {
     azucares: redondear(datos.azucares),
     saturada: redondear(datos.saturada),
     sal: redondear(datos.sal),
+    micros100: leerMicros({}, datos.micros100 || {}),
     porcion: Math.max(1, redondear(datos.porcion) || 100),
     ingredientes: String(datos.ingredientes || '').trim(),
     alergenos: String(datos.alergenos || '').trim(),

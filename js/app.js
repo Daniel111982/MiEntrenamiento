@@ -42,7 +42,8 @@ import {
 import { LOGROS, RETOS, retoDelMes, calcularLogros, progresoReto } from './logros.js';
 import { informeSemanal, textoInforme } from './informe.js';
 import { generarMenu, listaCompra, textoListaCompra, planAlimentacion, candidatasReceta, comidaConReceta, recalcularComida, recalcularDia } from './menu.js';
-import { soportaCodigos, escanearCodigo, buscarAlimento, urlProducto, historialEscaner, limpiarHistorialEscaner, productoManual, guardarProductoLocal } from './escaner.js';
+import { soportaCodigos, escanearCodigo, buscarAlimento, urlProducto, historialEscaner, limpiarHistorialEscaner, productoManual, guardarProductoLocal, CLAVES_MICROS } from './escaner.js';
+import { anilloKcal, donutMacros, miniMacros, barrasComidas, sparklineKcal, tarjetaEntrada, barraMicro } from './graficos.js';
 import { reorganizarSemana, ajustarSesion, huecosLibres } from './planificador.js';
 import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from './rgpd.js';
 
@@ -51,7 +52,7 @@ import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from 
 // =====================================================================
 // Cada usuario guarda sus datos por separado: 'mientrenamiento:u:<id>'.
 // La lista de usuarios y cuál está activo van en 'mientrenamiento:usuarios'.
-const APP_VERSION = '2.07'; // versión de la app (ver VERSIONES/HISTORIAL.md)
+const APP_VERSION = '2.08'; // versión de la app (ver VERSIONES/HISTORIAL.md)
 const CLAVE = 'mientrenamiento:v2'; // formato anterior, de un solo usuario
 const CLAVE_USUARIOS = 'mientrenamiento:usuarios';
 const claveDe = id => `mientrenamiento:u:${id}`;
@@ -258,6 +259,7 @@ const UI_INICIAL = {
   verMaestro: false, recMetodo: null, incFiltro: 'nuevas', coachChat: [], coachPensando: false,
   coachIgnorados: [], coachIAOk: null,
   informeOffset: 0, escanerResultado: null, escanerComida: 'comida', escanerNuevo: false, escanerManual: null, menuSemilla: 0,
+  ultimaEntrada: null, // gráfico de la comida recién añadida al diario
   contenidos: [], contenidoEdit: null,
   catalogos: { ejercicio: [], alimento: [], rutina: [] },
   catalogosEstado: 'inicial', catalogosError: '', adminEdit: null,
@@ -587,6 +589,76 @@ const SUBNAV_NUTRICION = [
 // =====================================================================
 const ceroMacros = () => ({ kcal: 0, prot: 0, carbs: 0, grasa: 0, fibra: 0 });
 
+// Referencias orientativas para adultos. Nunca son objetivos médicos y solo se
+// comparan con valores que la etiqueta declaró de verdad.
+const MICROS_REF = [
+  { k: 'calcio', nombre: 'Calcio', uni: 'mg', ref: 800, color: 'var(--acento2)' },
+  { k: 'hierro', nombre: 'Hierro', uni: 'mg', ref: 12, color: 'var(--naranja)' },
+  { k: 'vitD', nombre: 'Vitamina D', uni: 'µg', ref: 15, color: 'var(--amarillo)' },
+  { k: 'vitC', nombre: 'Vitamina C', uni: 'mg', ref: 80, color: 'var(--acento)' },
+  { k: 'potasio', nombre: 'Potasio', uni: 'mg', ref: 2000, color: 'var(--violeta)' },
+];
+const ceroMicros = () => Object.fromEntries(MICROS_REF.map(m => [m.k, 0]));
+const hayMicros = m => Boolean(m && Object.keys(m).length);
+
+function escalarMicros(micros = {}, factor = 1) {
+  const out = {};
+  for (const [k, v] of Object.entries(micros || {})) {
+    if (!CLAVES_MICROS.includes(k)) continue;
+    const x = Number(v);
+    if (Number.isFinite(x) && x >= 0) out[k] = x * factor;
+  }
+  return out;
+}
+
+function microsDeAlimento(alimento, gramos) {
+  return escalarMicros(alimento?.micros100, (Number(gramos) || 0) / 100);
+}
+
+function microsEntrada(en) {
+  if (!en) return {};
+  if (hayMicros(en.micros100)) {
+    return escalarMicros(en.micros100, (Number(en.gramos) || 0) / 100);
+  }
+  if (en.tipo === 'receta') {
+    const ings = Array.isArray(en.ingredientes) && en.ingredientes.length
+      ? en.ingredientes
+      : (RECETAS.find(x => x.id === en.id)?.ingredientes || []);
+    if (!ings.length) return {};
+    const partes = ings.map(i => microsDeAlimento(alimentoPorId(i.id), Number(i.gramos) || 0));
+    // Solo se muestra un mineral si todos los ingredientes lo declaran.
+    const completos = CLAVES_MICROS.filter(k => partes.every(p => k in p));
+    const r = Number(en.racion) || 1;
+    return Object.fromEntries(completos.map(k => [k, partes.reduce((s, p) => s + (p[k] || 0), 0) * r]));
+  }
+  return microsDeAlimento(alimentoPorId(en.id), Number(en.gramos) || 0);
+}
+
+function microsComida(entradas = []) {
+  const partes = entradas.map(microsEntrada);
+  const presentes = CLAVES_MICROS.filter(k => partes.some(p => k in p));
+  return Object.fromEntries(presentes.map(k => [k, partes.reduce((s, p) => s + (p[k] || 0), 0)]));
+}
+
+function microsDia(fecha = diaNutri()) {
+  const dia = comidasDia(fecha);
+  return microsComida(Object.keys(COMIDAS).flatMap(c => dia[c] || []));
+}
+
+function tarjetaMicros(micros) {
+  const datos = MICROS_REF.filter(m => m.k in (micros || {}));
+  return `<div class="tarjeta tarjeta-micros">
+    <h2>🧪 Micronutrientes declarados</h2>
+    ${datos.length
+      ? datos.map(m => `<div class="micro-fila">
+          <div class="fila"><span>${m.nombre}</span><b>${fmtDec(micros[m.k])} ${m.uni} <small>de ~${m.ref} ${m.uni}</small></b></div>
+          ${barraMicro(micros[m.k], m.ref, m.color)}
+        </div>`).join('')
+      : '<p class="tenue">Todavía no hay minerales ni vitaminas declarados en tus registros. Al escanear un producto, DanTal muestra solo los que figuran en su etiqueta; nunca los inventa.</p>'}
+    <p class="tenue">Referencias orientativas para adultos, no objetivos médicos. Los datos vienen de la ficha del producto; comprueba siempre la etiqueta.</p>
+  </div>`;
+}
+
 // Ritmo semanal razonable para cada objetivo nutricional (kg/semana).
 const RITMO_OBJETIVO = {
   perder: { esperado: -0.5, texto: 'perder grasa' },
@@ -723,6 +795,36 @@ function barrasMacros(consumo, metas) {
     const pct = meta ? Math.min(100, Math.round(val / meta * 100)) : 0;
     return `<div class="macro-barra p-${cls}"><span>${nombre}</span><div class="macro-pista"><i style="width:${pct}%"></i></div><b>${Math.round(val)}/${Math.round(meta)} ${u}</b></div>`;
   }).join('')}</div>`;
+}
+
+// Tarjeta visual del día: anillo de calorías, donut de macros, barras por
+// comida y evolución semanal. Solo usa lo que el usuario ha registrado.
+function graficoDiaHTML(consumo, metas, comidas, fecha = diaNutri()) {
+  const objetivo = metas?.kcal || 0;
+  const dias = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = sumarDias(fecha, -i);
+    dias.push({
+      kcal: i === 0 ? consumo.kcal : macrosDia(d).kcal,
+      etiqueta: ['D', 'L', 'M', 'X', 'J', 'V', 'S'][deIso(d).getDay()],
+    });
+  }
+  const porComida = Object.entries(COMIDAS).map(([k, c]) => ({
+    nombre: c.nombre, kcal: macrosComida(comidas[k] || []).kcal,
+  }));
+  return `<div class="tarjeta grafico-dia">
+    <div class="fila"><h2>📈 Tu día en gráficos</h2><span class="badge">Registro real</span></div>
+    <div class="g-dia-arriba">
+      ${anilloKcal(consumo.kcal, objetivo)}
+      ${donutMacros(consumo)}
+    </div>
+    ${barrasMacros(consumo, metas)}
+    <h3>Calorías por comida</h3>
+    ${barrasComidas(porComida)}
+    <h3>Últimos 7 días</h3>
+    ${sparklineKcal(dias.map(d => d.kcal), objetivo, dias.map(d => d.etiqueta))}
+    <p class="tenue">Los gráficos se dibujan con lo que has anotado. Si un producto no declara fibra o micronutrientes, DanTal no los calcula.</p>
+  </div>`;
 }
 
 // =====================================================================
@@ -2296,15 +2398,20 @@ function nutricion() {
     cuerpo: `
       ${subnav(SUBNAV_NUTRICION, 'nutricion')}
       ${navegadorDiasNutri()}
-      <div class="tiles cuatro">
+      ${ui.ultimaEntrada?.fecha === f ? `<div class="ultima-entrada entrance">
+        <button class="icono peq cerrar-ultima" data-a="cerrarUltimaEntrada" title="Cerrar">✕</button>
+        ${tarjetaEntrada(ui.ultimaEntrada.macros, ui.ultimaEntrada.nombre, ui.ultimaEntrada.micros)}
+      </div>` : ''}
+      <div class="tiles cinco">
         ${tile('🔥', fmtNum(consumo.kcal), kcalMeta ? `de ${fmtNum(kcalMeta)} kcal` : 'kcal registradas', 'naranja')}
         ${tile('🥩', `${Math.round(consumo.prot)} g`, metas ? `de ${metas.protG} g de proteína` : 'proteína', 'verde')}
+        ${tile('🌾', `${Math.round(consumo.fibra)} g`, metas ? `de ${metas.fibraG} g de fibra` : 'fibra', 'verde')}
         ${tile('💧', `${(aguaMl / 1000).toFixed(2)} L`, aguaMeta ? `de ${(aguaMeta / 1000).toFixed(1)} L` : 'agua', 'azul')}
         ${tile('🍽️', kcalMeta ? fmtNum(restante) : '—', kcalMeta ? (restante ? 'kcal disponibles' : 'objetivo cubierto') : 'sin objetivo', 'violeta')}
       </div>
-      ${metas ? `<div class="tarjeta"><h2>📊 Macros del día</h2>${barrasMacros(consumo, metas)}
-        <p class="tenue">${fmtNum(consumo.kcal)} kcal registradas de ${fmtNum(kcalMeta)}.</p></div>`
-        : `<div class="tarjeta"><h2>Configura tus objetivos</h2><p class="tenue">Añade sexo, edad, altura y peso en <a class="enlace" href="#nutricion/objetivos">Objetivos</a> para ver tus metas diarias de calorías y macros.</p></div>`}
+      ${graficoDiaHTML(consumo, metas, comidas, f)}
+      ${tarjetaMicros(microsDia(f))}
+      ${!metas ? `<div class="tarjeta"><h2>Configura tus objetivos</h2><p class="tenue">Añade sexo, edad, altura y peso en <a class="enlace" href="#nutricion/objetivos">Objetivos</a> para ver tus metas diarias de calorías y macros.</p></div>` : ''}
       <div class="fila"><h2>Comidas</h2><a class="enlace" href="#nutricion/ia">🤖 Asistente</a></div>
       ${Object.entries(COMIDAS).map(([k, c]) => bloqueComida(k, c, comidas[k] || [])).join('')}
       <a class="tarjeta enlace-tarjeta" href="#nutricion/recetas"><div class="fila"><div><h2>🍳 Recetas equilibradas</h2><p class="tenue">Añádelas a tu diario con un toque.</p></div><span class="chev">›</span></div></a>
@@ -2317,6 +2424,7 @@ function bloqueComida(clave, c, entradas) {
   const macros = macrosComida(entradas);
   return `<div class="comida-bloque">
     <div class="fila"><h3>${c.icono} ${c.nombre}</h3><span class="kcal-comida">${fmtNum(macros.kcal)} kcal</span></div>
+    ${entradas.length ? miniMacros(macros) : ''}
     ${entradas.length ? entradas.map((en, idx) => itemComida(en, clave, idx)).join('') : '<p class="tenue">Sin registros todavía.</p>'}
     <div class="botones">
       <button class="btn sec" data-a="addAlimento" data-comida="${clave}">＋ Alimento</button>
@@ -2333,8 +2441,8 @@ function itemComida(en, clave, idx) {
   const nombre = esReceta ? (receta?.nombre || en.id) : (al?.nombre || en.nombre || en.id);
   const sub = esReceta ? `${fmtDec(en.racion || 1)} ${Number(en.racion || 1) === 1 ? 'ración' : 'raciones'}` : `${en.gramos} g`;
   return `<div class="alimento-item">
-    <div class="ai-t"><b>${esc(nombre)}</b><small>${sub}</small></div>
-    <div class="ai-m"><b>${fmtNum(macros.kcal)}</b><small>kcal · ${Math.round(macros.prot)} P</small></div>
+    <div class="ai-t"><b>${esc(nombre)}</b><small>${sub}</small>${miniMacros(macros)}</div>
+    <div class="ai-m"><b>${fmtNum(macros.kcal)}</b><small>kcal</small></div>
     <div class="acciones">
       <button class="icono peq" data-a="editCantidad" data-comida="${clave}" data-i="${idx}" title="Cambiar cantidad">✎</button>
       <button class="icono peq" data-a="quitarComida" data-comida="${clave}" data-i="${idx}" title="Quitar">🗑️</button>
@@ -2494,6 +2602,11 @@ function guardarComidas() { guardar(); render(); }
 function anadirEntrada(comida, entrada, fecha = diaNutri()) {
   const dia = (estado.comidas[fecha] = estado.comidas[fecha] || {});
   (dia[comida] = dia[comida] || []).push(entrada);
+  // Guardamos una copia ligera para mostrar el gráfico de esta comida al añadirla.
+  const nombre = entrada.nombre
+    || (entrada.tipo === 'receta' ? (RECETAS.find(r => r.id === entrada.id)?.nombre || 'Receta')
+      : (alimentoPorId(entrada.id)?.nombre || 'Alimento'));
+  ui.ultimaEntrada = { fecha, comida, nombre, macros: macrosEntrada(entrada), micros: microsEntrada(entrada) };
   guardarComidas();
 }
 function quitarEntrada(comida, idx, fecha = diaNutri()) {
@@ -5808,6 +5921,7 @@ function nutricionEscaner() {
   const historial = historialEscaner();
   const borrador = ui.escanerManual || {};
   const v = (k, d = '') => esc(String(borrador[k] ?? d));
+  const mv = k => esc(String(borrador.micros100?.[k] ?? borrador[`m_${k}`] ?? ''));
   const mostrarManual = ui.escanerNuevo || (!!ui.escanerCodigo && !r);
   const alergenos = [r?.alergenos, r?.trazas].filter(Boolean).join(' · ');
 
@@ -5845,6 +5959,12 @@ function nutricionEscaner() {
           ${tile('🧈', fmtDec(r.grasa), 'g grasa', 'amarillo')}
           ${tile('🌾', fmtDec(r.fibra), 'g fibra', 'verde')}
         </div>
+        ${hayMicros(r.micros100) ? `<details class="micros-detalle">
+          <summary class="tenue">Micronutrientes declarados (${Object.keys(r.micros100).length})</summary>
+          <div class="micro-lista">${MICROS_REF.filter(m => m.k in r.micros100)
+            .map(m => `<span>${m.nombre}: <b>${fmtDec(r.micros100[m.k])} ${m.uni}</b></span>`).join('')}</div>
+          <p class="tenue">Solo aparecen los que figuran en la ficha. DanTal no inventa los que faltan.</p>
+        </details>` : ''}
         ${r.sinDatos ? '<p class="tenue"><b>Sin tabla nutricional declarada.</b> Añade los valores a mano antes de guardarlo.</p>' : ''}
         ${alergenos ? `<p class="tenue"><b>⚠️ Alérgenos:</b> ${esc(alergenos)}</p>` : ''}
         ${r.ingredientes ? `<details><summary class="tenue">Ver ingredientes</summary><p class="tenue">${esc(r.ingredientes)}</p></details>` : ''}
@@ -5871,6 +5991,16 @@ function nutricionEscaner() {
             <label class="campo">Fibra (g)<input type="number" name="fibra" min="0" step="0.1" value="${v('fibra', '0')}"></label>
             <label class="campo">Ración habitual (g)<input type="number" name="porcion" min="1" step="1" value="${v('porcion', '100')}"></label>
           </div>
+          <details class="micros-detalle">
+            <summary class="tenue">Micronutrientes (opcional, solo si están en la etiqueta)</summary>
+            <div class="nutri-grid">
+              ${CLAVES_MICROS.map(k => {
+                const def = MICROS_REF.find(m => m.k === k);
+                return `<label class="campo">${def.nombre} (${def.uni})<input type="number" name="m_${k}" min="0" step="0.01" placeholder="—" value="${mv(k)}"></label>`;
+              }).join('')}
+            </div>
+            <p class="tenue">Déjalos vacíos si el envase no los declara. Nunca se estiman.</p>
+          </details>
           <label class="campo">Ingredientes<input type="text" name="ingredientes" maxlength="300" value="${v('ingredientes')}"></label>
           <label class="campo">Alérgenos / trazas<input type="text" name="alergenos" maxlength="160" value="${v('alergenos')}"></label>
           <div class="botones">
@@ -6257,6 +6387,7 @@ document.addEventListener('click', async ev => {
       anadirEntrada(ui.escanerComida || 'comida', {
         id: `scan-${r.codigo}`, nombre: r.nombre, gramos,
         macros100: { kcal: r.kcal, prot: r.prot, carbs: r.carbs, grasa: r.grasa, fibra: r.fibra || 0 },
+        micros100: { ...(r.micros100 || {}) },
       });
       ui.escanerResultado = null;
       ir('nutricion');
@@ -6349,6 +6480,7 @@ document.addEventListener('click', async ev => {
       break;
     }
     // ---- Nutrición: diario, alimentos, recetas y agua ----
+    case 'cerrarUltimaEntrada': ui.ultimaEntrada = null; render(); break;
     case 'nutriDia': ui.diaNutri = sumarDias(diaNutri(), Number(d.d)); render(); break;
     case 'addAlimento': elegirAlimento(d.comida); break;
     case 'addReceta': elegirReceta(d.comida); break;
@@ -6360,6 +6492,7 @@ document.addEventListener('click', async ev => {
         id: a.id, nombre: a.nombre, gramos: a.porcion,
         marca: a.marca || '', ean: a.ean || '', origen: a.origen || '',
         macros100: { kcal: a.kcal, prot: a.prot, carbs: a.carbs, grasa: a.grasa, fibra: a.fibra || 0 },
+        micros100: { ...(a.micros100 || {}) },
       });
       toast(`${a.nombre} añadido`);
       break;
@@ -6887,7 +7020,14 @@ document.addEventListener('submit', async ev => {
     return;
   }
   if (ev.target.id === 'formProductoManual') {
-    const producto = guardarProductoLocal(productoManual(Object.fromEntries(f)));
+    const datos = Object.fromEntries(f);
+    datos.micros100 = {};
+    for (const k of CLAVES_MICROS) {
+      const valor = datos[`m_${k}`];
+      delete datos[`m_${k}`];
+      if (valor !== '' && valor != null) datos.micros100[k] = valor;
+    }
+    const producto = guardarProductoLocal(productoManual(datos));
     ui.escanerResultado = producto;
     ui.escanerCodigo = producto.codigo;
     ui.escanerNuevo = false;

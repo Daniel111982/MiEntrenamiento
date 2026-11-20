@@ -623,6 +623,81 @@ input[type=url] { width: 100%; padding: 12px; border-radius: 12px; border: 1px s
 .macro-barra.p-carbs .macro-pista i { background: var(--acento2); }
 .macro-barra.p-grasa .macro-pista i { background: var(--amarillo); }
 .macro-barra.p-fibra .macro-pista i { background: var(--violeta); }
+
+/* ---------- 2.08: graficos visuales, fibra y micronutrientes ---------- */
+.tiles.cinco { grid-template-columns: repeat(5, 1fr); }
+@media (max-width: 620px) { .tiles.cinco { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 400px) { .tiles.cinco { grid-template-columns: repeat(2, 1fr); } }
+
+.grafico-dia h3 { margin: 16px 0 6px; font-size: .92rem; }
+.g-dia-arriba { display: grid; grid-template-columns: minmax(140px, 1fr) minmax(220px, 1.5fr); gap: 14px; align-items: center; margin: 8px 0 4px; }
+.g-anillo { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.g-anillo small { color: var(--tenue); font-size: .72rem; text-align: center; }
+.g-num { fill: var(--texto); font-size: 21px; font-weight: 800; }
+.g-sub { fill: var(--tenue); font-size: 11px; font-weight: 700; }
+.g-donut { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.g-donut > svg { flex: none; }
+.g-centro { fill: var(--texto); font-size: 13px; font-weight: 800; }
+.g-leyenda { display: grid; gap: 6px; min-width: 0; }
+.g-leyenda span { display: flex; align-items: center; gap: 5px; font-size: .76rem; white-space: nowrap; }
+.g-leyenda i, .mini-macros-chips i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.g-leyenda small { color: var(--tenue); font-size: .68rem; }
+.g-comidas { display: grid; gap: 7px; }
+.g-comida { display: grid; grid-template-columns: 92px 1fr 58px; gap: 8px; align-items: center; font-size: .78rem; }
+.g-comida-n { color: var(--tenue); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-comida-pista { height: 10px; border-radius: 99px; background: color-mix(in srgb, var(--texto) 8%, transparent); overflow: hidden; }
+.g-comida-pista i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--acento), var(--acento2)); transition: width .3s; }
+.g-comida b { text-align: right; font-variant-numeric: tabular-nums; }
+.g-spark { margin-top: 4px; }
+.g-spark svg { display: block; overflow: visible; }
+.g-spark-area { fill: color-mix(in srgb, var(--acento) 18%, transparent); }
+.g-spark-linea { fill: none; stroke: var(--acento); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.g-spark-meta { stroke: var(--tenue); stroke-width: 1; stroke-dasharray: 4 4; opacity: .7; }
+.g-spark-punto { fill: var(--acento); stroke: var(--tarjeta); stroke-width: 1.5; }
+.g-spark-etiquetas { display: flex; justify-content: space-between; color: var(--tenue); font-size: .68rem; padding: 0 4px; }
+
+.mini-macros { margin-top: 6px; }
+.mini-macros-pista { display: flex; height: 6px; border-radius: 99px; overflow: hidden; background: color-mix(in srgb, var(--texto) 8%, transparent); }
+.mini-macros-pista i { display: block; height: 100%; }
+.mini-macros-chips { display: flex; flex-wrap: wrap; gap: 4px 8px; margin-top: 4px; }
+.mini-macros-chips span { display: inline-flex; align-items: center; gap: 4px; font-size: .68rem; color: var(--tenue); }
+.mini-macros-chips b { color: var(--texto); font-variant-numeric: tabular-nums; }
+.alimento-item .mini-macros { max-width: 260px; }
+.comida-bloque > .mini-macros { margin: 2px 0 8px; }
+
+.entrance { animation: dantal-entrar .35s ease-out both; }
+@keyframes dantal-entrar { from { opacity: 0; transform: translateY(-8px) scale(.99); } to { opacity: 1; transform: none; } }
+.ultima-entrada { position: relative; border: 2px solid var(--acento2); border-radius: var(--radio); background: color-mix(in srgb, var(--acento2) 9%, var(--tarjeta)); padding: 12px; margin: 0 0 12px; }
+.ultima-entrada .cerrar-ultima { position: absolute; top: 6px; right: 6px; z-index: 1; }
+.g-entrada-cab { padding-right: 28px; }
+.g-entrada-cab b { display: block; font-size: 1rem; }
+.g-entrada-cab small { color: var(--tenue); font-size: .74rem; }
+.g-entrada-cuerpo { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; margin-top: 8px; }
+.g-entrada-datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 6px 10px; }
+.g-entrada-datos div { display: flex; flex-direction: column; background: color-mix(in srgb, var(--tarjeta) 70%, transparent); border-radius: 10px; padding: 6px 8px; }
+.g-entrada-datos span { color: var(--tenue); font-size: .7rem; }
+.g-entrada-datos b { font-variant-numeric: tabular-nums; font-size: .92rem; }
+.g-entrada-datos small { font-size: .66rem; color: var(--tenue); }
+.g-entrada-extra { margin: 10px 0 0; font-size: .78rem; }
+
+.tarjeta-micros h2 { font-size: 1.05rem; }
+.micro-fila { margin: 12px 0; }
+.micro-fila .fila { font-size: .84rem; }
+.micro-fila .fila small { color: var(--tenue); font-weight: 500; }
+.micro-pista { height: 8px; border-radius: 99px; background: color-mix(in srgb, var(--texto) 8%, transparent); overflow: hidden; margin-top: 5px; }
+.micro-pista i { display: block; height: 100%; border-radius: 99px; transition: width .3s; }
+.micros-detalle { border: 1px solid var(--borde); border-radius: var(--radio-s); padding: 8px 10px; margin: 10px 0; background: var(--tarjeta2); }
+.micros-detalle summary { cursor: pointer; font-weight: 700; font-size: .84rem; }
+.micro-lista { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+.micro-lista span { border-radius: 99px; padding: 4px 10px; background: var(--tarjeta); border: 1px solid var(--borde); font-size: .76rem; }
+.micro-lista p { margin: 6px 0 0; }
+
+@media (max-width: 620px) {
+  .g-dia-arriba { grid-template-columns: 1fr; }
+  .g-donut { justify-content: center; }
+  .g-entrada-cuerpo { grid-template-columns: 1fr; justify-items: center; }
+  .g-entrada-datos { width: 100%; }
+}
 .agua-vasos { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
 .vaso-btn { width: 44px; height: 56px; border-radius: 8px 8px 14px 14px; border: 2px solid var(--borde); background: var(--tarjeta2);
   cursor: pointer; padding: 0; position: relative; overflow: hidden; transition: transform .1s; }
