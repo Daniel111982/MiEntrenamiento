@@ -7,7 +7,7 @@ import { dibujoSVG, pasosDibujo, guiaEjercicio } from './tecnica.js';
 import { aplicarAyudas, esconder as esconderAyuda } from './ayudas.js';
 import { volumenSesion, mejorSerie, recordAntes, recordsDeSesion, racha, volumenMuscular, recuperacion, historialCSV } from './stats.js';
 import { MARCA, logoDantal, isotipoCuadrado, cabeceraMarca } from './marca.js';
-import { COMIDAS, CATEGORIAS_ALIMENTO, ALIMENTOS, alimentoPorId, macrosDe, sumarMacros, buscarAlimentos, RECETAS, resumenReceta, sincronizarAlimentosGlobales } from './alimentos.js';
+import { COMIDAS, CATEGORIAS_ALIMENTO, ALIMENTOS, alimentoPorId, macrosDe, sumarMacros, buscarAlimentos, RECETAS, resumenReceta, sincronizarAlimentosGlobales, cargarCatalogoSupermercados } from './alimentos.js';
 import { generarInsightsDantal } from './ia.js';
 import { EQUIPO_TECHNOGYM, urlVideoTechnogym, infoTechnogym, esTechnogym, ilustracionTechnogymSVG } from './technogym.js';
 import { videoEjercicio } from './videos.js';
@@ -42,7 +42,7 @@ import {
 import { LOGROS, RETOS, retoDelMes, calcularLogros, progresoReto } from './logros.js';
 import { informeSemanal, textoInforme } from './informe.js';
 import { generarMenu, listaCompra, textoListaCompra, planAlimentacion } from './menu.js';
-import { soportaCodigos, escanearCodigo, buscarAlimento, urlProducto } from './escaner.js';
+import { soportaCodigos, escanearCodigo, buscarAlimento, urlProducto, historialEscaner, limpiarHistorialEscaner, productoManual, guardarProductoLocal } from './escaner.js';
 import { reorganizarSemana, ajustarSesion, huecosLibres } from './planificador.js';
 import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from './rgpd.js';
 
@@ -51,7 +51,7 @@ import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from 
 // =====================================================================
 // Cada usuario guarda sus datos por separado: 'mientrenamiento:u:<id>'.
 // La lista de usuarios y cuál está activo van en 'mientrenamiento:usuarios'.
-const APP_VERSION = '2.04'; // versión de la app (ver VERSIONES/HISTORIAL.md)
+const APP_VERSION = '2.05'; // versión de la app (ver VERSIONES/HISTORIAL.md)
 const CLAVE = 'mientrenamiento:v2'; // formato anterior, de un solo usuario
 const CLAVE_USUARIOS = 'mientrenamiento:usuarios';
 const claveDe = id => `mientrenamiento:u:${id}`;
@@ -252,7 +252,7 @@ const UI_INICIAL = {
   comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, videoAbierto: null,
   verMaestro: false, recMetodo: null, incFiltro: 'nuevas', coachChat: [], coachPensando: false,
   coachIgnorados: [], coachIAOk: null,
-  informeOffset: 0, escanerResultado: null, escanerComida: 'comida', menuSemilla: 0,
+  informeOffset: 0, escanerResultado: null, escanerComida: 'comida', escanerNuevo: false, escanerManual: null, menuSemilla: 0,
   contenidos: [], contenidoEdit: null,
   catalogos: { ejercicio: [], alimento: [], rutina: [] },
   catalogosEstado: 'inicial', catalogosError: '', adminEdit: null,
@@ -2266,10 +2266,11 @@ function itemComida(en, clave, idx) {
 
 function listaAlimentosHTML() {
   const lista = buscarAlimentos(ui.nutriQ, ui.nutriCat);
-  if (!lista.length) return '<p class="tenue centro">Sin resultados. Prueba con otra palabra.</p>';
+  if (!lista.length) return '<p class="tenue centro">Sin resultados. Prueba con otra palabra o escribe una marca (Lidl, Dia, Carrefour…).</p>';
   return lista.map(a => `<button class="celda" data-a="ponerAlimento" data-id="${a.id}">
-    <span class="ic verde">🍽️</span>
-    <span class="celda-t"><b>${esc(a.nombre)}</b><small>${a.porcion} g · ${fmtNum(a.kcal * a.porcion / 100)} kcal · ${fmtNum(a.prot * a.porcion / 100)} g proteína</small></span>
+    <span class="ic ${a.supermercado ? 'azul' : 'verde'}">${a.supermercado ? '🛒' : '🍽️'}</span>
+    <span class="celda-t"><b>${esc(a.nombre)}</b>${a.marca ? ` <small class="tenue">(${esc(a.marca)})</small>` : ''}
+      <small>${a.porcion} g · ${fmtNum(a.kcal * a.porcion / 100)} kcal · ${fmtNum(a.prot * a.porcion / 100)} g proteína</small></span>
     <span class="chev">＋</span></button>`).join('');
 }
 
@@ -2287,13 +2288,22 @@ function elegirAlimento(comida) {
   ui.nutriQ = '';
   ui.nutriCat = '';
   modal(`<h2>${COMIDAS[comida].icono} Añadir a ${COMIDAS[comida].nombre}</h2>
-    <div class="buscador"><span>🔍</span><input type="search" placeholder="Buscar alimento" data-a="nutriBuscar" class="buscar" aria-label="Buscar alimento"></div>
+    <div class="buscador"><span>🔍</span><input type="search" placeholder="Buscar alimento o marca (Lidl, Dia…)" data-a="nutriBuscar" class="buscar" aria-label="Buscar alimento"></div>
     <div class="chips scroll">
       <button class="chip ${!ui.nutriCat ? 'on' : ''}" data-a="nutriCat" data-m="">Todos</button>
       ${Object.entries(CATEGORIAS_ALIMENTO).map(([k, v]) => `<button class="chip ${ui.nutriCat === k ? 'on' : ''}" data-a="nutriCat" data-m="${k}">${v}</button>`).join('')}
     </div>
-    <div id="listaAlimentos">${listaAlimentosHTML()}</div>`);
+    <p id="estadoCatalogo" class="tenue centro">Cargando productos de supermercado…</p>
+    <div id="listaAlimentos">${listaAlimentosHTML()}</div>
+    <p class="tenue centro">Incluye marcas de supermercado. Datos: colaboradores de Open Food Facts (ODbL). Comprueba la etiqueta.</p>`);
   setTimeout(() => $('#listaAlimentos')?.closest('.modal-cont')?.querySelector('input')?.focus(), 50);
+  cargarCatalogoSupermercados().then(ok => {
+    const aviso = $('#estadoCatalogo');
+    if (aviso) aviso.textContent = ok
+      ? 'Ya puedes buscar por producto o marca: Lidl, Dia, Carrefour, Hacendado, Eroski, Aldi y más.'
+      : 'El catálogo de supermercado no está disponible ahora. Se usa la base de serie.';
+    refrescarListaAlimentos();
+  });
 }
 
 function elegirReceta(comida) {
@@ -5636,13 +5646,19 @@ function nutricionMenu() {
 
 function nutricionEscaner() {
   const r = ui.escanerResultado;
+  const historial = historialEscaner();
+  const borrador = ui.escanerManual || {};
+  const v = (k, d = '') => esc(String(borrador[k] ?? d));
+  const mostrarManual = ui.escanerNuevo || (!!ui.escanerCodigo && !r);
+  const alergenos = [r?.alergenos, r?.trazas].filter(Boolean).join(' · ');
+
   return pagina({
     titulo: 'Escáner de alimentos', padre: 'nutricion',
     sub: 'Código de barras con confirmación',
     cuerpo: `
       ${subnav(SUBNAV_NUTRICION, 'nutricion/escaner')}
       <div class="alerta"><b>Solo leemos el código</b>
-        <p class="tenue">Se envía únicamente el número de barras a Open Food Facts para consultar el producto. No se envían tus datos de salud ni tu historial. Siempre podrás revisar y corregir lo encontrado antes de añadirlo.</p>
+        <p class="tenue">Se envía únicamente el número de barras a Open Food Facts para consultar el producto. No se envían tus datos de salud ni tu historial. Lo encontrado se guarda en este dispositivo para que funcione sin conexión y siempre podrás corregirlo antes de añadirlo.</p>
       </div>
       <div class="tarjeta">
         <h2>📷 Escanear</h2>
@@ -5651,30 +5667,68 @@ function nutricionEscaner() {
         </label>
         <div class="botones">
           <button class="btn" data-a="escanear" ${soportaCodigos() ? '' : 'disabled'}>${soportaCodigos() ? '📷 Abrir cámara' : '📷 Cámara no disponible'}</button>
+          <button class="btn sec" data-a="productoManualNuevo">＋ Añadir a mano</button>
         </div>
         ${soportaCodigos() ? '' : '<p class="tenue">Este navegador no reconoce códigos de barras. Escribe el número a continuación: suele estar debajo del código.</p>'}
         <form id="formCodigo" class="campo">
-          <input type="text" name="codigo" inputmode="numeric" maxlength="20" placeholder="Ej. 8436542012345" value="${esc(ui.escanerCodigo || '')}" required>
+          <input type="text" name="codigo" inputmode="numeric" maxlength="20" placeholder="Ej. 8480017224491" value="${esc(ui.escanerCodigo || '')}" required>
           <button class="btn" type="submit">Buscar código</button>
         </form>
       </div>
       ${r ? `<div class="tarjeta escaneado">
         <p class="eyebrow">${esc(r.fuente || 'Open Food Facts')} · ${esc(r.codigo)}</p>
-        <div class="fila"><div><h2>${r.imagen ? `<img class="mini-producto" src="${r.imagen}" alt=""> ` : ''}${esc(r.nombre || 'Producto sin nombre')}</h2>
-          <p class="tenue">${esc(r.marca || '')} · ración ${fmtNum(r.porcion || 100)} g</p></div></div>
+        <div class="fila"><div><h2>${r.imagen ? `<img class="mini-producto" src="${esc(r.imagen)}" alt=""> ` : ''}${esc(r.nombre || 'Producto sin nombre')}</h2>
+          <p class="tenue">${esc(r.marca || '')}${r.cantidad ? ` · envase ${esc(r.cantidad)}` : ''} · ración ${fmtNum(r.porcion || 100)} g</p></div></div>
         <div class="tiles">
           ${tile('🔥', fmtNum(r.kcal), 'kcal/100 g', 'naranja')}
           ${tile('🥩', fmtDec(r.prot), 'g proteína', 'verde')}
           ${tile('🍚', fmtDec(r.carbs), 'g hidratos', 'azul')}
           ${tile('🧈', fmtDec(r.grasa), 'g grasa', 'amarillo')}
+          ${tile('🌾', fmtDec(r.fibra), 'g fibra', 'verde')}
         </div>
-        <p class="tenue"><b>Confirma antes de guardar.</b> Las cifras pueden estar desactualizadas o corresponder a otro formato del producto.</p>
+        ${r.sinDatos ? '<p class="tenue"><b>Sin tabla nutricional declarada.</b> Añade los valores a mano antes de guardarlo.</p>' : ''}
+        ${alergenos ? `<p class="tenue"><b>⚠️ Alérgenos:</b> ${esc(alergenos)}</p>` : ''}
+        ${r.ingredientes ? `<details><summary class="tenue">Ver ingredientes</summary><p class="tenue">${esc(r.ingredientes)}</p></details>` : ''}
+        <p class="tenue"><b>Confirma antes de guardar.</b> Los datos son colaborativos y pueden estar desactualizados o corresponder a otro formato. Comprueba la etiqueta.</p>
         <label class="campo">Gramos que vas a tomar<input type="number" name="gramos" id="scanGramos" inputmode="numeric" min="1" step="1" value="${fmtNum(r.porcion || 100)}"></label>
         <div class="botones">
           <button class="btn" data-a="aniadirEscaneado">Añadir a ${COMIDAS[ui.escanerComida]?.nombre || 'mi diario'}</button>
-          <a class="btn sec" href="${urlProducto(r.codigo)}" target="_blank" rel="noopener">🔎 Ver ficha</a>
+          <button class="btn sec" data-a="editarEscaneado">✏️ Corregir datos</button>
+          ${r.url ? `<a class="btn sec" href="${esc(r.url)}" target="_blank" rel="noopener">🔎 Ver ficha</a>` : ''}
         </div>
       </div>` : ''}
+      ${mostrarManual ? `<div class="tarjeta">
+        <h2>✏️ ${r ? 'Corregir producto' : 'Producto a mano'}</h2>
+        <p class="tenue">Útil si el código no está en la base de datos o si la ficha está incompleta. Se guarda solo en tu dispositivo.</p>
+        <form id="formProductoManual" class="form-producto">
+          <input type="hidden" name="codigo" value="${v('codigo')}">
+          <label class="campo">Nombre<input type="text" name="nombre" maxlength="80" value="${v('nombre')}" required></label>
+          <label class="campo">Marca<input type="text" name="marca" maxlength="60" value="${v('marca')}"></label>
+          <div class="nutri-grid">
+            <label class="campo">kcal / 100 g<input type="number" name="kcal" min="0" step="0.1" value="${v('kcal', '0')}"></label>
+            <label class="campo">Proteína (g)<input type="number" name="prot" min="0" step="0.1" value="${v('prot', '0')}"></label>
+            <label class="campo">Hidratos (g)<input type="number" name="carbs" min="0" step="0.1" value="${v('carbs', '0')}"></label>
+            <label class="campo">Grasa (g)<input type="number" name="grasa" min="0" step="0.1" value="${v('grasa', '0')}"></label>
+            <label class="campo">Fibra (g)<input type="number" name="fibra" min="0" step="0.1" value="${v('fibra', '0')}"></label>
+            <label class="campo">Ración habitual (g)<input type="number" name="porcion" min="1" step="1" value="${v('porcion', '100')}"></label>
+          </div>
+          <label class="campo">Ingredientes<input type="text" name="ingredientes" maxlength="300" value="${v('ingredientes')}"></label>
+          <label class="campo">Alérgenos / trazas<input type="text" name="alergenos" maxlength="160" value="${v('alergenos')}"></label>
+          <div class="botones">
+            <button class="btn" type="submit">Guardar producto</button>
+            <button class="btn sec" type="button" data-a="cancelarProductoManual">Cancelar</button>
+          </div>
+        </form>
+      </div>` : ''}
+      ${historial.length ? `<div class="tarjeta">
+        <div class="fila"><h2>🕘 Escaneos recientes</h2><button class="enlace" data-a="limpiarHistorialEscaner">Borrar historial</button></div>
+        ${historial.slice(0, 12).map(h => `<div class="fila">
+          <div><b>${esc(h.nombre || 'Producto sin nombre')}</b><br>
+            <small class="tenue">${esc(h.marca || h.fuente || '')} · ${esc(h.codigo)} · ${fmtCorta(h.fecha)}</small></div>
+          <button class="enlace" data-a="usarHistorial" data-codigo="${esc(h.codigo)}">Repetir</button>
+        </div>`).join('')}
+      </div>` : ''}
+      <p class="tenue centro">Datos: colaboradores de Open Food Facts (ODbL). Comprueba siempre la etiqueta, sobre todo si tienes alergias o intolerancias.</p>
     `,
   });
 }
@@ -5938,19 +5992,52 @@ document.addEventListener('click', async ev => {
       const codigo = await escanearCodigo();
       if (!codigo) { toast('No he leído ningún código. Escríbelo a mano.', { ms: 6000 }); break; }
       ui.escanerCodigo = codigo;
+      ui.escanerNuevo = false;
+      ui.escanerManual = null;
       toast('Código leído. Buscando el producto…');
       ui.escanerResultado = await buscarAlimento(codigo);
-      if (!ui.escanerResultado) toast('No he encontrado ese producto. Prueba a buscarlo por nombre.', { ms: 6000 });
+      if (!ui.escanerResultado) toast('No he encontrado ese producto. Añádelo a mano.', { ms: 6000 });
       render();
       break;
     }
+    case 'usarHistorial': {
+      const codigo = String(d.codigo || '').trim();
+      if (!codigo) break;
+      ui.escanerCodigo = codigo;
+      ui.escanerNuevo = false;
+      ui.escanerManual = null;
+      ui.escanerResultado = await buscarAlimento(codigo, { soloCache: true }) || await buscarAlimento(codigo);
+      if (!ui.escanerResultado) toast('Ya no tengo esa ficha. Busca el código de nuevo.', { ms: 6000 });
+      render();
+      break;
+    }
+    case 'limpiarHistorialEscaner':
+      limpiarHistorialEscaner();
+      render();
+      toast('Historial borrado. Tus productos a mano se han conservado.');
+      break;
+    case 'productoManualNuevo':
+      ui.escanerNuevo = true;
+      ui.escanerManual = ui.escanerResultado ? { ...ui.escanerResultado } : { porcion: 100 };
+      render();
+      break;
+    case 'editarEscaneado':
+      ui.escanerNuevo = true;
+      ui.escanerManual = { ...(ui.escanerResultado || {}), porcion: ui.escanerResultado?.porcion || 100 };
+      render();
+      break;
+    case 'cancelarProductoManual':
+      ui.escanerNuevo = false;
+      ui.escanerManual = null;
+      render();
+      break;
     case 'aniadirEscaneado': {
       const r = ui.escanerResultado;
       if (!r) break;
       const gramos = Math.max(1, Math.round(Number($('#scanGramos')?.value) || r.porcion || 100));
       anadirEntrada(ui.escanerComida || 'comida', {
         id: `scan-${r.codigo}`, nombre: r.nombre, gramos,
-        macros100: { kcal: r.kcal, prot: r.prot, carbs: r.carbs, grasa: r.grasa, fibra: 0 },
+        macros100: { kcal: r.kcal, prot: r.prot, carbs: r.carbs, grasa: r.grasa, fibra: r.fibra || 0 },
       });
       ui.escanerResultado = null;
       ir('nutricion');
@@ -6050,7 +6137,11 @@ document.addEventListener('click', async ev => {
       const a = alimentoPorId(d.id);
       if (!a) break;
       cerrarModal();
-      anadirEntrada(ui.comidaSel, { id: a.id, gramos: a.porcion });
+      anadirEntrada(ui.comidaSel, {
+        id: a.id, nombre: a.nombre, gramos: a.porcion,
+        marca: a.marca || '', ean: a.ean || '', origen: a.origen || '',
+        macros100: { kcal: a.kcal, prot: a.prot, carbs: a.carbs, grasa: a.grasa, fibra: a.fibra || 0 },
+      });
       toast(`${a.nombre} añadido`);
       break;
     }
@@ -6568,10 +6659,22 @@ document.addEventListener('submit', async ev => {
     const codigo = String(f.get('codigo') || '').trim();
     if (!codigo) return;
     ui.escanerCodigo = codigo;
+    ui.escanerNuevo = false;
+    ui.escanerManual = null;
     toast('Buscando el producto…');
     ui.escanerResultado = await buscarAlimento(codigo);
-    if (!ui.escanerResultado) toast('No he encontrado ese producto. Revisa el número.', { ms: 6000 });
+    if (!ui.escanerResultado) toast('No he encontrado ese producto. Añádelo a mano.', { ms: 6000 });
     render();
+    return;
+  }
+  if (ev.target.id === 'formProductoManual') {
+    const producto = guardarProductoLocal(productoManual(Object.fromEntries(f)));
+    ui.escanerResultado = producto;
+    ui.escanerCodigo = producto.codigo;
+    ui.escanerNuevo = false;
+    ui.escanerManual = null;
+    render();
+    toast('Producto guardado en este dispositivo. Revisa las cantidades.');
     return;
   }
   if (ev.target.id === 'formBorrarCuenta') {

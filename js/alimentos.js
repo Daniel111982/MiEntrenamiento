@@ -110,6 +110,42 @@ export const ALIMENTOS = [
 // después y se pueden quitar sin tocar esta base.
 export const ALIMENTOS_BASE = ALIMENTOS.map(a => ({ ...a }));
 
+// Catálogo de supermercados españoles (Open Food Facts, ODbL).
+// Se carga solo cuando el usuario abre el buscador de alimentos: así la app
+// arranca rápido y el service worker lo guarda en caché para usarlo sin red.
+const URL_SUPERMERCADOS = './supabase/catalogo-supermercados.json';
+let productosSupermercado = [];
+let promesaSupermercado = null;
+
+export function cargarCatalogoSupermercados() {
+  if (productosSupermercado.length) return Promise.resolve(true);
+  if (promesaSupermercado) return promesaSupermercado;
+  promesaSupermercado = fetch(URL_SUPERMERCADOS, { cache: 'no-cache' })
+    .then(r => { if (!r.ok) throw new Error('catalogo no disponible'); return r.json(); })
+    .then(datos => {
+      const ya = new Set(ALIMENTOS.map(a => a.id));
+      productosSupermercado = (Array.isArray(datos?.productos) ? datos.productos : [])
+        .filter(p => p?.id && p?.nombre && Number(p.kcal) > 0 && !ya.has(p.id))
+        .map(p => ({
+          id: p.id, nombre: p.nombre, cat: p.cat || 'bebidas',
+          kcal: Number(p.kcal) || 0, prot: Number(p.prot) || 0,
+          carbs: Number(p.carbs) || 0, grasa: Number(p.grasa) || 0,
+          fibra: Number(p.fibra) || 0, porcion: Number(p.porcion) || 100,
+          marca: p.marca || '', ean: p.ean || '', ingredientes: p.ingredientes || '',
+          alergenos: p.alergenos || '', cantidad: p.cantidad || '',
+          origen: p.origen || 'Open Food Facts', supermercado: true,
+        }));
+      return true;
+    })
+    .catch(() => {
+      promesaSupermercado = null;
+      return false;
+    });
+  return promesaSupermercado;
+}
+
+export const catalogoSupermercadosCargado = () => productosSupermercado.length > 0;
+
 // Añade los alimentos que publica el dueño desde el panel de administración.
 // Se reconstruyen en cada carga para que los cambios lleguen a todas las
 // cuentas sin tocar los valores guardados por cada usuario.
@@ -126,12 +162,16 @@ export function sincronizarAlimentosGlobales(lista = []) {
       kcal: Number(a.kcal) || 0, prot: Number(a.prot) || 0,
       carbs: Number(a.carbs) || 0, grasa: Number(a.grasa) || 0,
       fibra: Number(a.fibra) || 0, porcion: Number(a.porcion) || 100,
+      marca: a.marca || '', ean: a.ean || '', ingredientes: a.ingredientes || '',
+      alergenos: a.alergenos || '', cantidad: a.cantidad || '',
+      origen: a.origen || (String(a.id).startsWith('off-') ? 'Open Food Facts' : ''),
       global: true,
     });
   }
 }
 
-export const alimentoPorId = id => ALIMENTOS.find(a => a.id === id) || null;
+export const alimentoPorId = id =>
+  ALIMENTOS.find(a => a.id === id) || productosSupermercado.find(a => a.id === id) || null;
 
 // Macros de una cantidad concreta de un alimento (o de una lista de ingredientes).
 export function macrosDe(alimento, gramos = 100) {
@@ -153,12 +193,25 @@ export function sumarMacros(lista) {
   }), { kcal: 0, prot: 0, carbs: 0, grasa: 0, fibra: 0 });
 }
 
-// Busca alimentos por nombre o categoría.
+// Busca alimentos por nombre, marca, código o categoría.
+// Con 26.000 productos de supermercado, solo se incluyen cuando hay búsqueda:
+// así la lista inicial sigue siendo rápida y manejable.
 export function buscarAlimentos(texto = '', categoria = '') {
   const q = texto.trim().toLowerCase();
-  return ALIMENTOS.filter(a =>
-    (!categoria || a.cat === categoria) &&
-    (!q || a.nombre.toLowerCase().includes(q)));
+  const palabras = q.split(/\s+/).filter(Boolean);
+  const fuente = palabras.length ? [...ALIMENTOS, ...productosSupermercado] : ALIMENTOS;
+  const vistos = new Set();
+  const resultados = [];
+  for (const a of fuente) {
+    if (categoria && a.cat !== categoria) continue;
+    if (vistos.has(a.id)) continue;
+    const textoAlimento = `${a.nombre} ${a.marca || ''} ${a.ean || ''}`.toLowerCase();
+    if (!palabras.every(p => textoAlimento.includes(p))) continue;
+    vistos.add(a.id);
+    resultados.push(a);
+    if (palabras.length && resultados.length >= 80) break;
+  }
+  return resultados;
 }
 
 // 8 recetas equilibradas. Los ingredientes van en gramos.
