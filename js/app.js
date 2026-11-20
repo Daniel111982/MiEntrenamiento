@@ -41,9 +41,10 @@ import {
 } from './nube.js';
 import { LOGROS, RETOS, retoDelMes, calcularLogros, progresoReto } from './logros.js';
 import { informeSemanal, textoInforme } from './informe.js';
+import { informeNutricional, textoInformeNutricional } from './informe-nutricion.js';
 import { generarMenu, listaCompra, textoListaCompra, planAlimentacion, candidatasReceta, comidaConReceta, recalcularComida, recalcularDia } from './menu.js';
 import { soportaCodigos, escanearCodigo, buscarAlimento, urlProducto, historialEscaner, limpiarHistorialEscaner, productoManual, guardarProductoLocal, CLAVES_MICROS } from './escaner.js';
-import { anilloKcal, donutMacros, miniMacros, barrasComidas, sparklineKcal, tarjetaEntrada, barraMicro } from './graficos.js';
+import { anilloKcal, donutMacros, miniMacros, barrasComidas, sparklineKcal, tarjetaEntrada, barraMicro, barrasSemana, barrasComparacion } from './graficos.js';
 import { reorganizarSemana, ajustarSesion, huecosLibres } from './planificador.js';
 import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from './rgpd.js';
 
@@ -52,7 +53,7 @@ import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from 
 // =====================================================================
 // Cada usuario guarda sus datos por separado: 'mientrenamiento:u:<id>'.
 // La lista de usuarios y cuál está activo van en 'mientrenamiento:usuarios'.
-const APP_VERSION = '2.08'; // versión de la app (ver VERSIONES/HISTORIAL.md)
+const APP_VERSION = '2.09'; // versión de la app (ver VERSIONES/HISTORIAL.md)
 const CLAVE = 'mientrenamiento:v2'; // formato anterior, de un solo usuario
 const CLAVE_USUARIOS = 'mientrenamiento:usuarios';
 const claveDe = id => `mientrenamiento:u:${id}`;
@@ -258,7 +259,7 @@ const UI_INICIAL = {
   comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, videoAbierto: null,
   verMaestro: false, recMetodo: null, incFiltro: 'nuevas', coachChat: [], coachPensando: false,
   coachIgnorados: [], coachIAOk: null,
-  informeOffset: 0, escanerResultado: null, escanerComida: 'comida', escanerNuevo: false, escanerManual: null, menuSemilla: 0,
+  informeOffset: 0, informeNutriOffset: 0, escanerResultado: null, escanerComida: 'comida', escanerNuevo: false, escanerManual: null, menuSemilla: 0,
   ultimaEntrada: null, // gráfico de la comida recién añadida al diario
   contenidos: [], contenidoEdit: null,
   catalogos: { ejercicio: [], alimento: [], rutina: [] },
@@ -430,6 +431,7 @@ const RUTAS = [
   [/^carrera\/calculadora$/, carreraCalculadora, 'carrera'],
   [/^nutricion$/, nutricion, 'nutricion'],
   [/^nutricion\/diario$/, nutricion, 'nutricion'],
+  [/^nutricion\/informe$/, nutricionInforme, 'nutricion'],
   [/^nutricion\/recetas$/, nutricionRecetas, 'nutricion'],
   [/^nutricion\/receta\/([\w-]+)$/, nutricionReceta, 'nutricion'],
   [/^nutricion\/hidratacion$/, nutricionAgua, 'nutricion'],
@@ -579,7 +581,7 @@ const ICONO_PATRON = {
 const vacioMsg = (icono, titulo, texto, boton = '') => `<div class="vacio"><div class="vacio-ic">${icono}</div><h2>${titulo}</h2><p class="tenue">${texto}</p>${boton}</div>`;
 const subnav = (items, actual) => `<nav class="subnav">${items.map(([h, t]) => `<a href="#${h}" class="${h === actual ? 'on' : ''}">${t}</a>`).join('')}</nav>`;
 const SUBNAV_NUTRICION = [
-  ['nutricion', 'Diario'], ['nutricion/recetas', 'Recetas'], ['nutricion/menu', 'Menú semanal'],
+  ['nutricion', 'Diario'], ['nutricion/informe', 'Informe'], ['nutricion/recetas', 'Recetas'], ['nutricion/menu', 'Menú semanal'],
   ['nutricion/escaner', 'Escáner'], ['nutricion/hidratacion', 'Agua'],
   ['nutricion/ia', 'Asistente'], ['nutricion/objetivos', 'Objetivos'],
 ];
@@ -2412,10 +2414,100 @@ function nutricion() {
       ${graficoDiaHTML(consumo, metas, comidas, f)}
       ${tarjetaMicros(microsDia(f))}
       ${!metas ? `<div class="tarjeta"><h2>Configura tus objetivos</h2><p class="tenue">Añade sexo, edad, altura y peso en <a class="enlace" href="#nutricion/objetivos">Objetivos</a> para ver tus metas diarias de calorías y macros.</p></div>` : ''}
-      <div class="fila"><h2>Comidas</h2><a class="enlace" href="#nutricion/ia">🤖 Asistente</a></div>
+      <div class="fila"><h2>Comidas</h2><span><a class="enlace" href="#nutricion/informe">📊 Informe semanal</a> · <a class="enlace" href="#nutricion/ia">🤖 Asistente</a></span></div>
       ${Object.entries(COMIDAS).map(([k, c]) => bloqueComida(k, c, comidas[k] || [])).join('')}
       <a class="tarjeta enlace-tarjeta" href="#nutricion/recetas"><div class="fila"><div><h2>🍳 Recetas equilibradas</h2><p class="tenue">Añádelas a tu diario con un toque.</p></div><span class="chev">›</span></div></a>
       <p class="tenue">${vasos} ${vasos === 1 ? 'vaso' : 'vasos'} de agua (${VASO_ML} ml cada uno). <a class="enlace" href="#nutricion/hidratacion">Registrar agua</a></p>
+    `,
+  });
+}
+
+function fechaInformeNutri() {
+  const d = new Date();
+  d.setDate(d.getDate() + (ui.informeNutriOffset || 0) * 7);
+  return d;
+}
+
+function informeNutriActual() {
+  const metas = metasNutricion();
+  return informeNutricional(estado.comidas, {
+    fecha: fechaInformeNutri(),
+    metas: metas || {},
+    agua: estado.agua,
+    vasoMl: VASO_ML,
+    macroDe: macrosEntrada,
+    microDe: microsEntrada,
+  });
+}
+
+function nutricionInforme() {
+  const metas = metasNutricion();
+  const inf = informeNutriActual();
+  const { desde, hasta } = inf.periodo;
+  const conPrevio = inf.diasPreviosRegistrados > 0;
+  const filas = [
+    { nombre: 'Calorías', actual: inf.medias.kcal, anterior: inf.previas.kcal, uni: 'kcal' },
+    { nombre: 'Proteína', actual: inf.medias.prot, anterior: inf.previas.prot, uni: 'g' },
+    { nombre: 'Hidratos', actual: inf.medias.carbs, anterior: inf.previas.carbs, uni: 'g' },
+    { nombre: 'Grasa', actual: inf.medias.grasa, anterior: inf.previas.grasa, uni: 'g' },
+    { nombre: 'Fibra', actual: inf.medias.fibra, anterior: inf.previas.fibra, uni: 'g' },
+  ];
+  const microDatos = MICROS_REF.filter(m => inf.micros[m.k]?.dias > 0);
+
+  return pagina({
+    titulo: 'Informe nutricional', padre: 'nutricion',
+    sub: `${fmtCorta(desde)} – ${fmtCorta(hasta)}`,
+    cuerpo: `
+      ${subnav(SUBNAV_NUTRICION, 'nutricion/informe')}
+      <div class="fila nav-semana">
+        <button class="icono" data-a="informeNutriSemana" data-d="-1" aria-label="Semana anterior">‹</button>
+        <b>${ui.informeNutriOffset ? `Semana del ${fmtCorta(desde)}` : 'Esta semana'}</b>
+        <button class="icono" data-a="informeNutriSemana" data-d="1" aria-label="Semana siguiente">›</button>
+      </div>
+      ${!inf.diasRegistrados ? vacioMsg('🍎', 'Aún sin comidas', 'Registra comidas en el diario para ver tu informe semanal.') : ''}
+      <div class="tiles">
+        ${tile('🗓️', `${inf.diasRegistrados}/7`, 'días registrados', 'azul')}
+        ${tile('🔥', fmtNum(inf.medias.kcal), metas ? `media de ${fmtNum(metas.kcal)} kcal` : 'kcal de media', 'naranja')}
+        ${tile('🥩', `${fmtDec(inf.medias.prot)} g`, metas ? `de ${metas.protG} g de proteína` : 'proteína media', 'verde')}
+        ${tile('🌾', `${fmtDec(inf.medias.fibra)} g`, metas ? `de ${metas.fibraG} g de fibra` : 'fibra media', 'verde')}
+        ${tile('💧', fmtDec(inf.medias.vasos), metas ? `vasos/día de ${fmtDec(metas.aguaMl / VASO_ML)}` : 'vasos/día', 'azul')}
+      </div>
+      <div class="tarjeta">
+        <div class="fila"><h2>🔥 Calorías de la semana</h2><span class="badge">Datos reales</span></div>
+        ${barrasSemana(inf.dias, metas?.kcal)}
+      </div>
+      <div class="tarjeta">
+        <h2>🥗 Reparto medio de macros</h2>
+        ${donutMacros(inf.medias)}
+        ${metas ? barrasMacros(inf.medias, metas) : '<p class="tenue">Configura tus objetivos para comparar con tus metas.</p>'}
+      </div>
+      <div class="tarjeta">
+        <h2>📊 Esta semana vs la anterior</h2>
+        ${conPrevio
+          ? barrasComparacion(filas)
+          : '<p class="tenue">Aún no hay comidas registradas en la semana anterior. Cuando las anotes, podrás comparar.</p>'}
+      </div>
+      <div class="tarjeta tarjeta-micros">
+        <h2>🧪 Micronutrientes declarados</h2>
+        ${microDatos.length
+          ? microDatos.map(m => {
+            const x = inf.micros[m.k];
+            return `<div class="micro-fila">
+              <div class="fila"><span>${m.nombre}</span><b>${fmtDec(x.media)} ${m.uni} <small>de media · ${fmtDec(x.total)} ${m.uni} en ${x.dias} ${x.dias === 1 ? 'día' : 'días'}</small></b></div>
+              ${barraMicro(x.media, m.ref, m.color)}
+            </div>`;
+          }).join('')
+          : '<p class="tenue">No hay micronutrientes declarados en esta semana. DanTal no los inventa ni los estima.</p>'}
+        <p class="tenue">Medias calculadas solo sobre los días que declararon el dato. Referencias orientativas para adultos, no objetivos médicos.</p>
+      </div>
+      <div class="tarjeta"><h2>📝 Lo que dice tu registro</h2>
+        ${inf.observaciones.map(o => `<div class="fila informe-linea"><span>${o.icono || '•'} ${esc(o.texto)}</span></div>`).join('')}
+      </div>
+      <div class="botones">
+        <button class="btn sec" data-a="copiarInformeNutri">📋 Copiar informe</button>
+        <button class="btn sec" data-a="descargarInformeNutri">⬇️ Descargar</button>
+      </div>
+      <p class="tenue centro">El informe usa solo lo que has anotado y se queda en tu dispositivo. No es consejo médico.</p>
     `,
   });
 }
@@ -6248,6 +6340,14 @@ document.addEventListener('click', async ev => {
     case 'copiarInforme': copiarTexto(textoInforme(informeSemanal(estado, { fecha: fechaInforme() }))); break;
     case 'descargarInforme':
       descargarTexto(`dantal-informe-${hoy()}.txt`, textoInforme(informeSemanal(estado, { fecha: fechaInforme() })));
+      break;
+    case 'informeNutriSemana':
+      ui.informeNutriOffset = Math.max(-52, Math.min(52, (ui.informeNutriOffset || 0) + Number(d.d)));
+      render();
+      break;
+    case 'copiarInformeNutri': copiarTexto(textoInformeNutricional(informeNutriActual(), metasNutricion() || {})); break;
+    case 'descargarInformeNutri':
+      descargarTexto(`dantal-informe-nutricion-${hoy()}.txt`, textoInformeNutricional(informeNutriActual(), metasNutricion() || {}));
       break;
     case 'fotoProgresoQuitar': {
       const f = estado.progresoFotos || {};

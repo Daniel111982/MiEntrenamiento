@@ -17,6 +17,7 @@ App web instalable (PWA) de entrenamiento y nutrición. **Entrena · Nutre · Ev
 - **Calorías y proteína:** calculadora de gasto diario (Mifflin-St Jeor), calorías objetivo según tu meta, reparto de macros, proteína, fibra, agua e IMC, tomando tu último peso registrado. Las **calorías son adaptativas**: DanTal ajusta hasta ±200 kcal según tu tendencia de peso (o tus comidas registradas), explica el motivo y te deja fijar tu propio número o desactivar el ajuste.
 - **Gráficos del diario:** anillo de calorías, donut de proteínas/hidratos/grasas, barras por comida y evolución de los últimos 7 días, todo dibujado con lo que has anotado. Cada alimento muestra sus gramos de macro y fibra, y al añadir una comida aparece una tarjeta visual con su reparto.
 - **Fibra y micronutrientes reales:** la fibra se muestra junto al resto de macros. Calcio, hierro, vitaminas D y C y potasio solo aparecen cuando Open Food Facts los declara en la ficha o los escribes a mano; nunca se estiman. Las referencias son orientativas para adultos y no sustituyen el consejo médico.
+- **Informe nutricional semanal** (`Nutrición → Informe`): barras de calorías por día con línea de objetivo, donut y barras de macros medios, comparación con la semana anterior y micronutrientes declarados solo en los días que los tienen. Media de calorías, proteína, fibra y agua, con opción de copiar o descargar el informe. Nunca rellena días sin registrar.
 - **Biblioteca** de 68 ejercicios con dibujo animado del movimiento, paso a paso, claves, errores comunes y respiración. Puedes guardar tu vídeo de YouTube y tu foto de cada ejercicio.
 - **Ayudas** en todos los botones (ratón, teclado o pulsación larga) e iconos ⓘ en las zonas importantes.
 - **Usuarios:** gestor para crear, editar, cambiar y borrar usuarios; cada uno con su propio programa y seguimiento.
@@ -55,7 +56,8 @@ y abre http://localhost:8765.
 | `js/tecnica.js` | Dibujos animados y guía de técnica |
 | `js/ayudas.js` | Ayudas contextuales |
 | `js/nube.js` | Cliente Supabase: cuentas, sync, borrado y contenidos |
-| `js/logros.js`, `js/informe.js` | Insignias, retos e informe semanal |
+| `js/logros.js`, `js/informe.js` | Insignias, retos e informe semanal de entrenamiento |
+| `js/informe-nutricion.js` | Datos del informe nutricional semanal y texto para copiar o descargar |
 | `js/menu.js`, `js/escaner.js` | Menú personalizable (preferencias, recetas, gramos) y escáner (caché, historial, micronutrientes declarados y productos a mano) |
 | `js/graficos.js` | Gráficos SVG del diario (calorías, macros, comidas, semana y tarjeta de comida) |
 | `supabase/catalogo-supermercados.json` | Catálogo completo de marcas españolas, ODbL, cargado bajo demanda y sin conexión |

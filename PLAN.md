@@ -265,6 +265,10 @@ mayoría ya lo tienes).
   los declara (nunca se estiman), con referencias orientativas visibles. El diario añade
   anillo de calorías, donut de macros, barras por comida y evolución semanal, y cada
   comida recién registrada muestra una tarjeta visual con sus cantidades. *(hecha: app 2.08)*
+- [x] **Fase 3I — Informe nutricional semanal.** Página `Nutrición → Informe` con
+  calorías por día (objetivo incluido), macros y agua medios, comparación con la semana
+  anterior y micronutrientes declarados solo en los días con dato. Medias calculadas
+  únicamente sobre días registrados; se puede copiar o descargar. *(hecha: app 2.09)*
 - [ ] **Fase 4 — Android.** Paquete TWA y publicación en Google Play (requiere dominio propio).
 - [ ] **Fase 5 — iOS.** Envoltorio con Capacitor y publicación en la App Store.
 - [ ] **Fase 6 — Monetización y relojes.** Suscripciones con el pago de las tiendas

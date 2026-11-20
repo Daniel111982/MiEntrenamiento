@@ -152,3 +152,56 @@ export function barraMicro(valor, referencia, color = 'var(--acento)') {
   const pct = referencia > 0 ? Math.min(100, num(valor) / referencia * 100) : 0;
   return `<div class="micro-pista"><i style="width:${pct.toFixed(1)}%;background:${color}"></i></div>`;
 }
+
+// Calorías de los 7 días de la semana. Los días sin registro y los futuros se
+// dibujan diferente para que nadie los confunda con un cero real.
+export function barrasSemana(dias = [], meta = 0) {
+  const w = 294, h = 150, base = h - 24, top = 12, paso = w / 7;
+  const ancho = Math.min(26, paso * 0.58);
+  const valores = dias.map(d => num(d.kcal));
+  const techo = Math.max(num(meta), ...valores, 1) * 1.15;
+  const y = v => base - (num(v) / techo) * (base - top);
+  const objetivo = num(meta);
+  const lineaMeta = objetivo
+    ? `<line x1="0" y1="${y(objetivo).toFixed(1)}" x2="${w}" y2="${y(objetivo).toFixed(1)}" class="g-semana-meta"/>\n       <text x="${w - 2}" y="${(y(objetivo) - 4).toFixed(1)}" text-anchor="end" class="g-semana-obj">objetivo</text>`
+    : '';
+  const barras = dias.map((d, i) => {
+    const x = i * paso + (paso - ancho) / 2;
+    const futuro = Boolean(d.futuro);
+    const registrado = Boolean(d.registrado);
+    const altura = registrado ? Math.max(3, base - y(d.kcal)) : 3;
+    const clase = futuro ? 'g-barra futuro' : registrado ? 'g-barra' : 'g-barra sin-dato';
+    const detalle = futuro ? 'Todavía no es ese día' : registrado
+      ? `${fmt(d.kcal)} kcal · ${fmt1(d.prot)} g proteína · ${fmt1(d.fibra)} g fibra`
+      : 'Sin comidas registradas';
+    return `<g>
+      <rect x="${x.toFixed(1)}" y="${(base - altura).toFixed(1)}" width="${ancho.toFixed(1)}" height="${altura.toFixed(1)}" rx="5" class="${clase}">
+        <title>${esc(d.fecha || `Día ${i + 1}`)}: ${esc(detalle)}</title>
+      </rect>
+      <text x="${(i * paso + paso / 2).toFixed(1)}" y="${h - 6}" text-anchor="middle" class="g-semana-dia ${d.fecha === dias.find(z => z.hoy)?.fecha ? 'hoy' : ''}">${esc(d.etiqueta || '')}</text>
+    </g>`;
+  }).join('');
+  return `<div class="g-semana">
+    <svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" role="img" aria-label="Calorías de los últimos 7 días">
+      ${lineaMeta}${barras}
+    </svg>
+    <div class="g-semana-leyenda"><span><i class="llena"></i>Registrado</span><span><i class="vacia"></i>Sin dato</span>${objetivo ? '<span><i class="obj"></i>Objetivo</span>' : ''}</div>
+  </div>`;
+}
+
+// Comparación limpia de esta semana frente a la anterior, métrica por métrica.
+export function barrasComparacion(filas = []) {
+  const lista = filas.filter(f => f && f.nombre);
+  const max = Math.max(1, ...lista.flatMap(f => [num(f.actual), num(f.anterior)]));
+  return `<div class="g-comparacion">
+    <div class="g-comp-leyenda"><span><i class="actual"></i>Esta semana</span><span><i class="anterior"></i>Anterior</span></div>
+    ${lista.map(f => `<div class="g-comp-fila">
+      <span class="g-comp-n">${esc(f.nombre)}</span>
+      <div class="g-comp-barras">
+        <div class="g-comp-pista"><i class="actual" style="width:${(num(f.actual) / max * 100).toFixed(1)}%"><title>Esta semana: ${fmt1(f.actual)} ${esc(f.uni || '')}</title></i></div>
+        <div class="g-comp-pista"><i class="anterior" style="width:${(num(f.anterior) / max * 100).toFixed(1)}%"><title>Semana anterior: ${fmt1(f.anterior)} ${esc(f.uni || '')}</title></i></div>
+      </div>
+      <b>${fmt1(f.actual)} <small>${esc(f.uni || '')}</small></b>
+    </div>`).join('')}
+  </div>`;
+}

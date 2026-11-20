@@ -698,6 +698,31 @@ input[type=url] { width: 100%; padding: 12px; border-radius: 12px; border: 1px s
   .g-entrada-cuerpo { grid-template-columns: 1fr; justify-items: center; }
   .g-entrada-datos { width: 100%; }
 }
+/* ---------- 2.09: informe nutricional semanal ---------- */
+.g-semana svg { display: block; overflow: visible; }
+.g-barra { fill: color-mix(in srgb, var(--acento) 85%, var(--acento2)); }
+.g-barra.futuro { fill: color-mix(in srgb, var(--texto) 6%, transparent); }
+.g-barra.sin-dato { fill: none; stroke: var(--borde); stroke-width: 2; stroke-dasharray: 3 3; }
+.g-semana-meta { stroke: var(--amarillo); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.g-semana-obj { fill: var(--tenue); font-size: 9px; font-weight: 700; }
+.g-semana-dia { fill: var(--tenue); font-size: 11px; font-weight: 700; }
+.g-semana-dia.hoy { fill: var(--acento); }
+.g-semana-leyenda, .g-comp-leyenda { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; color: var(--tenue); font-size: .72rem; margin-top: 6px; }
+.g-semana-leyenda i, .g-comp-leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+.g-semana-leyenda .llena { background: var(--acento); }
+.g-semana-leyenda .vacia { background: transparent; border: 1px dashed var(--borde); }
+.g-semana-leyenda .obj { background: var(--amarillo); }
+.g-comparacion { margin-top: 4px; }
+.g-comp-fila { display: grid; grid-template-columns: 84px 1fr 76px; gap: 8px; align-items: center; margin-top: 10px; font-size: .78rem; }
+.g-comp-n { color: var(--tenue); }
+.g-comp-barras { display: grid; gap: 4px; }
+.g-comp-pista { height: 8px; border-radius: 99px; background: color-mix(in srgb, var(--texto) 8%, transparent); overflow: hidden; }
+.g-comp-pista i { display: block; height: 100%; border-radius: 99px; }
+.g-comp-pista i.actual, .g-comp-leyenda .actual { background: var(--acento); }
+.g-comp-pista i.anterior, .g-comp-leyenda .anterior { background: color-mix(in srgb, var(--tenue) 55%, transparent); }
+.g-comp-fila b { text-align: right; font-variant-numeric: tabular-nums; }
+.g-comp-fila small { color: var(--tenue); font-size: .66rem; font-weight: 500; }
+
 .agua-vasos { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
 .vaso-btn { width: 44px; height: 56px; border-radius: 8px 8px 14px 14px; border: 2px solid var(--borde); background: var(--tarjeta2);
   cursor: pointer; padding: 0; position: relative; overflow: hidden; transition: transform .1s; }
