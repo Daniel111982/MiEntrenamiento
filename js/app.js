@@ -4,6 +4,7 @@ import {
   duracionEstimada, ajustarDuracion, sesionALaCarta, descansoRecomendado, hoyIso, iso, deIso, lunes, sumarDias,
 } from './generador.js';
 import { dibujoSVG, pasosDibujo, guiaEjercicio } from './tecnica.js';
+import { urlGif, GIF_ATRIBUCION, GIF_URL } from './gifs.js';
 import { aplicarAyudas, esconder as esconderAyuda } from './ayudas.js';
 import { volumenSesion, mejorSerie, recordAntes, recordsDeSesion, racha, volumenMuscular, recuperacion, volumenSemanas, recuperacionDiaria, historialCSV } from './stats.js';
 import { MARCA, logoDantal, isotipoCuadrado, cabeceraMarca } from './marca.js';
@@ -53,7 +54,7 @@ import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from 
 // =====================================================================
 // Cada usuario guarda sus datos por separado: 'mientrenamiento:u:<id>'.
 // La lista de usuarios y cuál está activo van en 'mientrenamiento:usuarios'.
-const APP_VERSION = '2.12'; // versión de la app (ver VERSIONES/HISTORIAL.md)
+const APP_VERSION = '2.14'; // versión de la app (ver VERSIONES/HISTORIAL.md)
 const CLAVE = 'mientrenamiento:v2'; // formato anterior, de un solo usuario
 const CLAVE_USUARIOS = 'mientrenamiento:usuarios';
 const claveDe = id => `mientrenamiento:u:${id}`;
@@ -580,6 +581,11 @@ const ICONO_PATRON = {
   cuadriceps_aisl: '🦵', femoral: '🦵', gemelo: '🦶', pecho_aisl: '💪', hombro_lat: '🤷', hombro_post: '🎯',
   biceps: '💪', triceps: '💪', core: '🧱', metabolico: '🔥',
 };
+// Miniatura real del ejercicio cuando RepDB la tiene; si no, el icono de siempre.
+const iconoReal = e => e?.media_url
+  ? `<span class="ic-foto" data-icono="${ICONO_PATRON[e?.patron] || '🏋️'}"><img class="ic-foto-img" src="${esc(e.media_url)}" alt="" loading="lazy" decoding="async"></span>`
+  : `<span class="ic azul">${ICONO_PATRON[e?.patron] || '🏋️'}</span>`;
+
 const vacioMsg = (icono, titulo, texto, boton = '') => `<div class="vacio"><div class="vacio-ic">${icono}</div><h2>${titulo}</h2><p class="tenue">${texto}</p>${boton}</div>`;
 const subnav = (items, actual) => `<nav class="subnav">${items.map(([h, t]) => `<a href="#${h}" class="${h === actual ? 'on' : ''}">${t}</a>`).join('')}</nav>`;
 const SUBNAV_NUTRICION = [
@@ -2907,7 +2913,7 @@ function dibujarGrafica() {
 // =====================================================================
 function itemEjercicio(e) {
   const tg = videoEjercicio(e) ? '<span class="tg-badge" title="Con vídeo de técnica">🎬</span>' : '';
-  return `<a class="celda ${e.propio ? 'ej-propio' : ''}" href="#ejercicio/${e.id}"><span class="ic azul">${ICONO_PATRON[e.patron] || '🏋️'}</span>
+  return `<a class="celda ${e.propio ? 'ej-propio' : ''}" href="#ejercicio/${e.id}">${iconoReal(e)}
     <span class="celda-t"><b>${esc(e.nombre)}${tg}</b><small>${e.musculos.map(m => MUSCULOS[m]).join(', ')} · ${equipoTxt(e)}${e.propio ? ' · propio' : ''}</small></span><span class="chev">›</span></a>`;
 }
 
@@ -2982,7 +2988,9 @@ function playerVideo(e, clase = '') {
 // que abre el reproductor; si no hay vídeo, el icono de siempre.
 function iconoEjercicio(e) {
   const vid = idVideo(e);
-  if (!vid) return `<span class="ic-ej">${ICONO_PATRON[e?.patron] || '🏋️'}</span>`;
+  if (!vid) return e?.media_url
+    ? `<span class="ic-foto" data-icono="${ICONO_PATRON[e?.patron] || '🏋️'}"><img class="ic-foto-img" src="${esc(e.media_url)}" alt="" loading="lazy" decoding="async"></span>`
+    : `<span class="ic-ej">${ICONO_PATRON[e?.patron] || '🏋️'}</span>`;
   const abierto = ui.videoAbierto === e.id;
   return `<button class="ic-ej ic-video ${abierto ? 'on' : ''}" data-a="videoMaquina" data-id="${e.id}"
     title="${abierto ? 'Ocultar' : 'Ver'} el vídeo de técnica" aria-label="Vídeo de técnica" aria-expanded="${abierto}">
@@ -5004,7 +5012,13 @@ $('#modal').addEventListener('cancel', e => { if (e.currentTarget.dataset.fija) 
 // adicional ni dependencias.
 document.addEventListener('error', ev => {
   const img = ev.target;
-  if (img instanceof HTMLImageElement && img.classList.contains('visor-img')) img.remove();
+  if (!(img instanceof HTMLImageElement)) return;
+  if (img.classList.contains('visor-img') || img.classList.contains('visor-gif')) img.remove();
+  if (img.classList.contains('ic-foto-img')) {
+    const cont = img.parentElement;
+    cont.className = 'ic azul';
+    cont.textContent = cont.dataset.icono || '🏋️';
+  }
 }, true);
 
 // Confirmación propia (sustituye a confirm() del navegador). Devuelve una promesa con true/false.
@@ -5121,9 +5135,9 @@ function mapaZonasRep(e) {
 
 // El SVG queda debajo de la ilustración: si la imagen no carga (sin red o
 // archivo retirado) el listener de error la elimina y el dibujo sigue visible.
-function capaVisor(svg, url, alt) {
+function capaVisor(svg, url, alt, clase = 'visor-img') {
   return `<div class="visor-capas"><div class="visor-base">${svg}</div>${
-    url ? `<img class="visor-img" src="${esc(url)}" alt="${esc(alt)}" loading="lazy" decoding="async">` : ''
+    url ? `<img class="${clase}" src="${esc(url)}" alt="${esc(alt)}" loading="lazy" decoding="async">` : ''
   }</div>`;
 }
 
@@ -5132,6 +5146,7 @@ function tecnicaHTML(e, { compacta = false } = {}) {
   const [ini, fin] = pasosDibujo(e);
   const lista = (cls, items) => `<ul class="${cls}">${items.map(t => `<li>${esc(t)}</li>`).join('')}</ul>`;
   const conMedia = Boolean(e.media_url);
+  const gif = urlGif(e.id);
   const pasos = e.execution_steps?.length ? e.execution_steps : g.pasos;
   const principales = e.primary_muscles || [];
   const secundarios = e.secondary_muscles || [];
@@ -5149,16 +5164,18 @@ function tecnicaHTML(e, { compacta = false } = {}) {
           <div class="badges centro-flex">${etiquetas.map(([nombre, principal]) => `<span class="badge ${principal ? 'prim' : ''}">${esc(nombre)}</span>`).join('')}</div>
         </div>
       </div>` : '';
-  const atribucion = conMedia
+  const atribucion = `${conMedia
     ? '<p class="atribucion-rep">Ilustraciones de ejercicios por <a href="https://repdb.co" target="_blank" rel="noopener">RepDB (repdb.co)</a></p>'
-    : '';
+    : ''}${gif
+    ? `<p class="atribucion-rep">${GIF_ATRIBUCION} · <a href="${GIF_URL}" target="_blank" rel="noopener">ver fuente</a></p>`
+    : ''}`;
   return `
     <div class="tarjeta tecnica">
       <h2>🎬 Cómo se hace</h2>
       <div class="dibujo-zona">
         <div class="dibujo-grande ${conMedia ? 'con-anatomia' : ''}">
-          ${capaVisor(dibujoSVG(e), e.media_url, `Ilustración anatómica de ${e.nombre}`)}
-          <span class="badge en-vivo">● ${e.media_url_end ? 'Inicio' : 'Movimiento'}</span>
+          ${capaVisor(dibujoSVG(e), gif || e.media_url, gif ? `Animación del movimiento de ${e.nombre}` : `Ilustración anatómica de ${e.nombre}`, gif ? 'visor-gif' : 'visor-img')}
+          <span class="badge en-vivo">● ${gif ? 'En movimiento' : (e.media_url_end ? 'Inicio' : 'Movimiento')}</span>
         </div>
         <div class="posturas">
           <figure class="${conMedia ? 'con-anatomia' : ''}">
@@ -5171,9 +5188,10 @@ function tecnicaHTML(e, { compacta = false } = {}) {
           </figure>
         </div>
       </div>
-      <p class="tenue centro nota-dibujo">${conMedia
-        ? 'Ilustración anatómica de la postura y el recorrido del movimiento.'
-        : 'Dibujo orientativo. Fíjate en la postura y el recorrido.'}</p>
+      <p class="tenue centro nota-dibujo">${gif
+        ? 'Movimiento real en animación. Si no carga, verás el dibujo orientativo.'
+        : (conMedia ? 'Ilustración anatómica de la postura y el recorrido del movimiento.'
+          : 'Dibujo orientativo. Fíjate en la postura y el recorrido.')}</p>
       ${zonas}
       ${atribucion}
       ${esTechnogym(e) ? '' : playerVideo(e)}

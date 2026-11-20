@@ -88,6 +88,14 @@ Las imágenes se suben a `exercise-media/ejercicios/<id>-start.webp` y `-end.web
 
 **Ilustraciones de ejercicios por [RepDB (repdb.co)](https://repdb.co).**
 
+### Animaciones de los ejercicios
+
+La ficha de cada ejercicio muestra un **GIF animado del movimiento** de [Exercise Gym GIFs DB](https://github.com/JahelCuadrado/ExerciseGymGifsDB), servido desde su CDN pública (jsDelivr), sin subir nada a Supabase ni usar claves. Si el GIF no carga, queda el dibujo animado de siempre como respaldo.
+
+- `scripts/mapear-gifs.mjs` genera candidatos; `scripts/generar-gifs.mjs` comprueba las 82 rutas y escribe `js/gifs.js`.
+- `js/gifs.js` contiene el emparejamiento de los 82 ejercicios; `urlGif(id)` devuelve la URL o `null`.
+- **Aviso de licencia:** el repositorio de los GIFs indica que las imágenes se recopilaron de Internet y que sus autores son otros. Conviene revisar ese punto antes de usar la app con fines comerciales.
+
 ## Versiones
 
 El proyecto guarda una copia completa de cada versión en `VERSIONES/`, para poder deshacer cambios.
@@ -96,7 +104,7 @@ El proyecto guarda una copia completa de cada versión en `VERSIONES/`, para pod
 - `VERSIONES/nueva-version.cmd -Nota "..."` — guarda el estado actual como versión nueva.
 - `VERSIONES/restaurar.cmd -Version v1.00` — vuelve a una versión anterior.
 
-La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.12`). La caché del service worker es `dantal-v5.5` y los archivos estáticos usan `?v=5.5`. Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
+La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.14`). La caché del service worker es `dantal-v5.7` y los archivos estáticos usan `?v=5.7`. Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
 
 ## Privacidad y seguridad
 

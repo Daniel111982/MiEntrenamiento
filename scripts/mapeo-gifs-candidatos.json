@@ -1,0 +1,3036 @@
+[
+  {
+    "id": "sentadilla-barra",
+    "nombre": "Sentadilla con barra",
+    "consulta": "squat con barbell",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Barbell Clean Grip Front Squat",
+        "archivo": "glutes/barbell-clean-grip-front-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-clean-grip-front-squat.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Barbell Front Chest Squat",
+        "archivo": "glutes/barbell-front-chest-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-front-chest-squat.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Barbell Front Squat",
+        "archivo": "glutes/barbell-front-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-front-squat.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Barbell Full Squat",
+        "archivo": "glutes/barbell-full-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-full-squat.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Barbell Full Zercher Squat",
+        "archivo": "glutes/barbell-full-zercher-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-full-zercher-squat.gif"
+      }
+    ]
+  },
+  {
+    "id": "prensa",
+    "nombre": "Prensa de piernas",
+    "consulta": "leg press de standing rnas squat",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Lever Seated Squat Calf Raise On Leg Press Machine",
+        "archivo": "calves/lever-seated-squat-calf-raise-on-leg-press-machine.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/lever-seated-squat-calf-raise-on-leg-press-machine.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Barbell Standing Bradford Press",
+        "archivo": "delts/barbell-standing-bradford-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/barbell-standing-bradford-press.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Barbell Standing Close Grip Military Press",
+        "archivo": "delts/barbell-standing-close-grip-military-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/barbell-standing-close-grip-military-press.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Barbell Standing Wide Military Press",
+        "archivo": "delts/barbell-standing-wide-military-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/barbell-standing-wide-military-press.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Standing Alternate Overhead Press",
+        "archivo": "delts/dumbbell-standing-alternate-overhead-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-standing-alternate-overhead-press.gif"
+      }
+    ]
+  },
+  {
+    "id": "sentadilla-goblet",
+    "nombre": "Sentadilla goblet",
+    "consulta": "squat goblet",
+    "opciones": [
+      {
+        "score": 6,
+        "nombre": "Kettlebell Goblet Squat",
+        "archivo": "glutes/kettlebell-goblet-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/kettlebell-goblet-squat.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Dumbbell Goblet Squat",
+        "archivo": "quads/dumbbell-goblet-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/quads/dumbbell-goblet-squat.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Potty Squat",
+        "archivo": "abs/potty-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/potty-squat.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Dumbbell Biceps Curl Squat",
+        "archivo": "biceps/dumbbell-biceps-curl-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/dumbbell-biceps-curl-squat.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Lever Seated Squat Calf Raise On Leg Press Machine",
+        "archivo": "calves/lever-seated-squat-calf-raise-on-leg-press-machine.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/lever-seated-squat-calf-raise-on-leg-press-machine.gif"
+      }
+    ]
+  },
+  {
+    "id": "sentadilla-goblet-kb",
+    "nombre": "Sentadilla goblet con kettlebell",
+    "consulta": "squat goblet con kettlebell",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Kettlebell Goblet Squat",
+        "archivo": "glutes/kettlebell-goblet-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/kettlebell-goblet-squat.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Kettlebell Front Squat",
+        "archivo": "glutes/kettlebell-front-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/kettlebell-front-squat.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Kettlebell Pistol Squat",
+        "archivo": "glutes/kettlebell-pistol-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/kettlebell-pistol-squat.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Kettlebell Turkish Get Up Squat Style",
+        "archivo": "glutes/kettlebell-turkish-get-up-squat-style.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/kettlebell-turkish-get-up-squat-style.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Dumbbell Goblet Squat",
+        "archivo": "quads/dumbbell-goblet-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/quads/dumbbell-goblet-squat.gif"
+      }
+    ]
+  },
+  {
+    "id": "sentadilla-peso",
+    "nombre": "Sentadilla con peso corporal",
+    "consulta": "squat con weighted bodyweight",
+    "opciones": [
+      {
+        "score": 6,
+        "nombre": "Bodyweight Drop Jump Squat",
+        "archivo": "glutes/bodyweight-drop-jump-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/bodyweight-drop-jump-squat.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Weighted Squat",
+        "archivo": "glutes/weighted-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/weighted-squat.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Weighted Sissy Squat",
+        "archivo": "quads/weighted-sissy-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/quads/weighted-sissy-squat.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Weighted Cossack Squats Male",
+        "archivo": "glutes/weighted-cossack-squats-male.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/weighted-cossack-squats-male.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Bodyweight Squatting Row With Towel",
+        "archivo": "upper-back/bodyweight-squatting-row-with-towel.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/bodyweight-squatting-row-with-towel.gif"
+      }
+    ]
+  },
+  {
+    "id": "peso-muerto-rumano",
+    "nombre": "Peso muerto rumano",
+    "consulta": "deadlift romanian hinge",
+    "opciones": [
+      {
+        "score": 6,
+        "nombre": "Barbell Romanian Deadlift",
+        "archivo": "glutes/barbell-romanian-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-romanian-deadlift.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Dumbbell Romanian Deadlift",
+        "archivo": "glutes/dumbbell-romanian-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/dumbbell-romanian-deadlift.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Band Stiff Leg Deadlift",
+        "archivo": "glutes/band-stiff-leg-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-stiff-leg-deadlift.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Band Straight Back Stiff Leg Deadlift",
+        "archivo": "glutes/band-straight-back-stiff-leg-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-straight-back-stiff-leg-deadlift.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Barbell Deadlift",
+        "archivo": "glutes/barbell-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-deadlift.gif"
+      }
+    ]
+  },
+  {
+    "id": "peso-muerto",
+    "nombre": "Peso muerto",
+    "consulta": "deadlift hinge",
+    "opciones": [
+      {
+        "score": 3,
+        "nombre": "Band Stiff Leg Deadlift",
+        "archivo": "glutes/band-stiff-leg-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-stiff-leg-deadlift.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Band Straight Back Stiff Leg Deadlift",
+        "archivo": "glutes/band-straight-back-stiff-leg-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-straight-back-stiff-leg-deadlift.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Barbell Deadlift",
+        "archivo": "glutes/barbell-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-deadlift.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Barbell One Arm Side Deadlift",
+        "archivo": "glutes/barbell-one-arm-side-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-one-arm-side-deadlift.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Barbell Romanian Deadlift",
+        "archivo": "glutes/barbell-romanian-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-romanian-deadlift.gif"
+      }
+    ]
+  },
+  {
+    "id": "rumano-mancuernas",
+    "nombre": "Peso muerto rumano con mancuernas",
+    "consulta": "deadlift romanian con dumbbell s hinge",
+    "opciones": [
+      {
+        "score": 10.2,
+        "nombre": "Dumbbell Romanian Deadlift",
+        "archivo": "glutes/dumbbell-romanian-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/dumbbell-romanian-deadlift.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Barbell Romanian Deadlift",
+        "archivo": "glutes/barbell-romanian-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-romanian-deadlift.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Deadlift",
+        "archivo": "glutes/dumbbell-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/dumbbell-deadlift.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Single Leg Deadlift With Stepbox Support",
+        "archivo": "glutes/dumbbell-single-leg-deadlift-with-stepbox-support.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/dumbbell-single-leg-deadlift-with-stepbox-support.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Single Leg Deadlift",
+        "archivo": "glutes/dumbbell-single-leg-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/dumbbell-single-leg-deadlift.gif"
+      }
+    ]
+  },
+  {
+    "id": "swing-kb",
+    "nombre": "Swing con kettlebell",
+    "consulta": "swing con kettlebell hinge deadlift",
+    "opciones": [
+      {
+        "score": 6,
+        "nombre": "Kettlebell Swing",
+        "archivo": "glutes/kettlebell-swing.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/kettlebell-swing.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Kettlebell Advanced Windmill",
+        "archivo": "abs/kettlebell-advanced-windmill.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/kettlebell-advanced-windmill.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Kettlebell Bent Press",
+        "archivo": "abs/kettlebell-bent-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/kettlebell-bent-press.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Kettlebell Double Windmill",
+        "archivo": "abs/kettlebell-double-windmill.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/kettlebell-double-windmill.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Kettlebell Figure 8",
+        "archivo": "abs/kettlebell-figure-8.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/kettlebell-figure-8.gif"
+      }
+    ]
+  },
+  {
+    "id": "puente-gluteo",
+    "nombre": "Puente de glúteo",
+    "consulta": "bridge de glute hinge deadlift",
+    "opciones": [
+      {
+        "score": 6,
+        "nombre": "Barbell Glute Bridge Two Legs On Bench Male",
+        "archivo": "glutes/barbell-glute-bridge-two-legs-on-bench-male.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-glute-bridge-two-legs-on-bench-male.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Barbell Glute Bridge",
+        "archivo": "glutes/barbell-glute-bridge.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-glute-bridge.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Glute Bridge March",
+        "archivo": "glutes/glute-bridge-march.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/glute-bridge-march.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Glute Bridge Two Legs On Bench Male",
+        "archivo": "glutes/glute-bridge-two-legs-on-bench-male.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/glute-bridge-two-legs-on-bench-male.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Low Glute Bridge On Floor",
+        "archivo": "glutes/low-glute-bridge-on-floor.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/low-glute-bridge-on-floor.gif"
+      }
+    ]
+  },
+  {
+    "id": "hip-thrust",
+    "nombre": "Hip thrust con barra",
+    "consulta": "hip thrust con barbell hinge deadlift",
+    "opciones": [
+      {
+        "score": 6,
+        "nombre": "Barbell Deadlift",
+        "archivo": "glutes/barbell-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-deadlift.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Barbell Lying Lifting On Hip",
+        "archivo": "glutes/barbell-lying-lifting-on-hip.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-lying-lifting-on-hip.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Barbell One Arm Side Deadlift",
+        "archivo": "glutes/barbell-one-arm-side-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-one-arm-side-deadlift.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Barbell Romanian Deadlift",
+        "archivo": "glutes/barbell-romanian-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-romanian-deadlift.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Barbell Single Leg Deadlift",
+        "archivo": "glutes/barbell-single-leg-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-single-leg-deadlift.gif"
+      }
+    ]
+  },
+  {
+    "id": "zancada-mancuernas",
+    "nombre": "Zancadas con mancuernas",
+    "consulta": "lunge con dumbbell s",
+    "opciones": [
+      {
+        "score": 10.2,
+        "nombre": "Dumbbell Step Up Lunge",
+        "archivo": "quads/dumbbell-step-up-lunge.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/quads/dumbbell-step-up-lunge.gif"
+      },
+      {
+        "score": 8.4,
+        "nombre": "Dumbbell Contralateral Forward Lunge",
+        "archivo": "glutes/dumbbell-contralateral-forward-lunge.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/dumbbell-contralateral-forward-lunge.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Bicep Curl Lunge With Bowling Motion",
+        "archivo": "biceps/dumbbell-bicep-curl-lunge-with-bowling-motion.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/dumbbell-bicep-curl-lunge-with-bowling-motion.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Lunge With Bicep Curl",
+        "archivo": "biceps/dumbbell-lunge-with-bicep-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/dumbbell-lunge-with-bicep-curl.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Lunge",
+        "archivo": "glutes/dumbbell-lunge.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/dumbbell-lunge.gif"
+      }
+    ]
+  },
+  {
+    "id": "bulgara",
+    "nombre": "Sentadilla búlgara",
+    "consulta": "squat bulgarian lunge",
+    "opciones": [
+      {
+        "score": 6,
+        "nombre": "Barbell Squat Jump Step Rear Lunge",
+        "archivo": "quads/barbell-squat-jump-step-rear-lunge.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/quads/barbell-squat-jump-step-rear-lunge.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Lunge With Twist",
+        "archivo": "abs/lunge-with-twist.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/lunge-with-twist.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Potty Squat",
+        "archivo": "abs/potty-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/potty-squat.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Dumbbell Bicep Curl Lunge With Bowling Motion",
+        "archivo": "biceps/dumbbell-bicep-curl-lunge-with-bowling-motion.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/dumbbell-bicep-curl-lunge-with-bowling-motion.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Dumbbell Biceps Curl Squat",
+        "archivo": "biceps/dumbbell-biceps-curl-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/dumbbell-biceps-curl-squat.gif"
+      }
+    ]
+  },
+  {
+    "id": "zancada-atras",
+    "nombre": "Zancada hacia atrás",
+    "consulta": "lunge hacia atras",
+    "opciones": [
+      {
+        "score": 3,
+        "nombre": "Lunge With Twist",
+        "archivo": "abs/lunge-with-twist.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/lunge-with-twist.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Dumbbell Bicep Curl Lunge With Bowling Motion",
+        "archivo": "biceps/dumbbell-bicep-curl-lunge-with-bowling-motion.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/dumbbell-bicep-curl-lunge-with-bowling-motion.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Dumbbell Lunge With Bicep Curl",
+        "archivo": "biceps/dumbbell-lunge-with-bicep-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/dumbbell-lunge-with-bicep-curl.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Barbell Lateral Lunge",
+        "archivo": "glutes/barbell-lateral-lunge.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-lateral-lunge.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Barbell Lunge",
+        "archivo": "glutes/barbell-lunge.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-lunge.gif"
+      }
+    ]
+  },
+  {
+    "id": "press-banca",
+    "nombre": "Press de banca",
+    "consulta": "bench press chest",
+    "opciones": [
+      {
+        "score": 6,
+        "nombre": "Dumbbell Bench Seated Press",
+        "archivo": "delts/dumbbell-bench-seated-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-bench-seated-press.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Band Bench Press",
+        "archivo": "pectorals/band-bench-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/band-bench-press.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Band One Arm Twisting Chest Press",
+        "archivo": "pectorals/band-one-arm-twisting-chest-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/band-one-arm-twisting-chest-press.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Barbell Bench Press",
+        "archivo": "pectorals/barbell-bench-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/barbell-bench-press.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Barbell Decline Bench Press",
+        "archivo": "pectorals/barbell-decline-bench-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/barbell-decline-bench-press.gif"
+      }
+    ]
+  },
+  {
+    "id": "press-mancuernas",
+    "nombre": "Press de banca con mancuernas",
+    "consulta": "bench press con dumbbell s chest",
+    "opciones": [
+      {
+        "score": 10.2,
+        "nombre": "Dumbbell Bench Seated Press",
+        "archivo": "delts/dumbbell-bench-seated-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-bench-seated-press.gif"
+      },
+      {
+        "score": 10.2,
+        "nombre": "Dumbbell Bench Press",
+        "archivo": "pectorals/dumbbell-bench-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/dumbbell-bench-press.gif"
+      },
+      {
+        "score": 10.2,
+        "nombre": "Dumbbell Decline Bench Press",
+        "archivo": "pectorals/dumbbell-decline-bench-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/dumbbell-decline-bench-press.gif"
+      },
+      {
+        "score": 10.2,
+        "nombre": "Dumbbell Incline Bench Press",
+        "archivo": "pectorals/dumbbell-incline-bench-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/dumbbell-incline-bench-press.gif"
+      },
+      {
+        "score": 10.2,
+        "nombre": "Dumbbell One Arm Decline Chest Press",
+        "archivo": "pectorals/dumbbell-one-arm-decline-chest-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/dumbbell-one-arm-decline-chest-press.gif"
+      }
+    ]
+  },
+  {
+    "id": "press-maquina",
+    "nombre": "Press de pecho en máquina",
+    "consulta": "press de chest en machine",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Machine Inner Chest Press",
+        "archivo": "pectorals/machine-inner-chest-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/machine-inner-chest-press.gif"
+      },
+      {
+        "score": 8.4,
+        "nombre": "Smith Machine Reverse Decline Close Grip Bench Press",
+        "archivo": "pectorals/smith-machine-reverse-decline-close-grip-bench-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/smith-machine-reverse-decline-close-grip-bench-press.gif"
+      },
+      {
+        "score": 8.4,
+        "nombre": "Smith Machine Decline Close Grip Bench Press",
+        "archivo": "triceps/smith-machine-decline-close-grip-bench-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/smith-machine-decline-close-grip-bench-press.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell One Arm Decline Chest Press",
+        "archivo": "pectorals/dumbbell-one-arm-decline-chest-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/dumbbell-one-arm-decline-chest-press.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Lever Decline Chest Press",
+        "archivo": "pectorals/lever-decline-chest-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/lever-decline-chest-press.gif"
+      }
+    ]
+  },
+  {
+    "id": "flexiones",
+    "nombre": "Flexiones",
+    "consulta": "push up chest press",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Chest Tap Push Up Male",
+        "archivo": "pectorals/chest-tap-push-up-male.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/chest-tap-push-up-male.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Band Push Sit Up",
+        "archivo": "abs/band-push-sit-up.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/band-push-sit-up.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Barbell Press Sit Up",
+        "archivo": "abs/barbell-press-sit-up.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/barbell-press-sit-up.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Push Up To Side Plank",
+        "archivo": "abs/push-up-to-side-plank.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/push-up-to-side-plank.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Sit Up With Arms On Chest",
+        "archivo": "abs/sit-up-with-arms-on-chest.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/sit-up-with-arms-on-chest.gif"
+      }
+    ]
+  },
+  {
+    "id": "flexiones-bandas",
+    "nombre": "Press de pecho con banda",
+    "consulta": "press de chest con band",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Band One Arm Twisting Chest Press",
+        "archivo": "pectorals/band-one-arm-twisting-chest-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/band-one-arm-twisting-chest-press.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Resistance Band Seated Chest Press",
+        "archivo": "pectorals/resistance-band-seated-chest-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/resistance-band-seated-chest-press.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Band Shoulder Press",
+        "archivo": "delts/band-shoulder-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-shoulder-press.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Band Twisting Overhead Press",
+        "archivo": "delts/band-twisting-overhead-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-twisting-overhead-press.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Resistance Band Seated Shoulder Press",
+        "archivo": "delts/resistance-band-seated-shoulder-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/resistance-band-seated-shoulder-press.gif"
+      }
+    ]
+  },
+  {
+    "id": "press-militar",
+    "nombre": "Press militar con barra",
+    "consulta": "press overhead con barbell shoulder",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Barbell Seated Overhead Press",
+        "archivo": "delts/barbell-seated-overhead-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/barbell-seated-overhead-press.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Barbell Press Sit Up",
+        "archivo": "abs/barbell-press-sit-up.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/barbell-press-sit-up.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Dumbbell Seated Biceps Curl To Shoulder Press",
+        "archivo": "biceps/dumbbell-seated-biceps-curl-to-shoulder-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/dumbbell-seated-biceps-curl-to-shoulder-press.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Band Shoulder Press",
+        "archivo": "delts/band-shoulder-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-shoulder-press.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Band Twisting Overhead Press",
+        "archivo": "delts/band-twisting-overhead-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-twisting-overhead-press.gif"
+      }
+    ]
+  },
+  {
+    "id": "press-hombro-mancuernas",
+    "nombre": "Press de hombros con mancuernas",
+    "consulta": "press de shoulder con dumbbell s",
+    "opciones": [
+      {
+        "score": 11.4,
+        "nombre": "Dumbbell Seated Biceps Curl To Shoulder Press",
+        "archivo": "biceps/dumbbell-seated-biceps-curl-to-shoulder-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/dumbbell-seated-biceps-curl-to-shoulder-press.gif"
+      },
+      {
+        "score": 11.4,
+        "nombre": "Dumbbell One Arm Shoulder Press v2",
+        "archivo": "delts/dumbbell-one-arm-shoulder-press-v-2.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-one-arm-shoulder-press-v-2.gif"
+      },
+      {
+        "score": 11.4,
+        "nombre": "Dumbbell One Arm Shoulder Press",
+        "archivo": "delts/dumbbell-one-arm-shoulder-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-one-arm-shoulder-press.gif"
+      },
+      {
+        "score": 11.4,
+        "nombre": "Dumbbell Seated Shoulder Press Parallel Grip",
+        "archivo": "delts/dumbbell-seated-shoulder-press-parallel-grip.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-seated-shoulder-press-parallel-grip.gif"
+      },
+      {
+        "score": 11.4,
+        "nombre": "Dumbbell Seated Shoulder Press",
+        "archivo": "delts/dumbbell-seated-shoulder-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-seated-shoulder-press.gif"
+      }
+    ]
+  },
+  {
+    "id": "press-hombro-maquina",
+    "nombre": "Press de hombros en máquina",
+    "consulta": "press de shoulder en machine",
+    "opciones": [
+      {
+        "score": 8.4,
+        "nombre": "Smith Machine Reverse Decline Close Grip Bench Press",
+        "archivo": "pectorals/smith-machine-reverse-decline-close-grip-bench-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/smith-machine-reverse-decline-close-grip-bench-press.gif"
+      },
+      {
+        "score": 8.4,
+        "nombre": "Smith Machine Decline Close Grip Bench Press",
+        "archivo": "triceps/smith-machine-decline-close-grip-bench-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/smith-machine-decline-close-grip-bench-press.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Seated Biceps Curl To Shoulder Press",
+        "archivo": "biceps/dumbbell-seated-biceps-curl-to-shoulder-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/dumbbell-seated-biceps-curl-to-shoulder-press.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Band Shoulder Press",
+        "archivo": "delts/band-shoulder-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-shoulder-press.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Cable Alternate Shoulder Press",
+        "archivo": "delts/cable-alternate-shoulder-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/cable-alternate-shoulder-press.gif"
+      }
+    ]
+  },
+  {
+    "id": "pike",
+    "nombre": "Flexiones pike",
+    "consulta": "push up pike shoulder press",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Pike To Cobra Push Up",
+        "archivo": "glutes/pike-to-cobra-push-up.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/pike-to-cobra-push-up.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Exercise Ball Pike Push Up",
+        "archivo": "pectorals/exercise-ball-pike-push-up.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/exercise-ball-pike-push-up.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Shoulder Tap Push Up",
+        "archivo": "pectorals/shoulder-tap-push-up.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/shoulder-tap-push-up.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Band Push Sit Up",
+        "archivo": "abs/band-push-sit-up.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/band-push-sit-up.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Barbell Press Sit Up",
+        "archivo": "abs/barbell-press-sit-up.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/barbell-press-sit-up.gif"
+      }
+    ]
+  },
+  {
+    "id": "press-hombro-bandas",
+    "nombre": "Press de hombros con banda",
+    "consulta": "press de shoulder con band",
+    "opciones": [
+      {
+        "score": 10.2,
+        "nombre": "Band Shoulder Press",
+        "archivo": "delts/band-shoulder-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-shoulder-press.gif"
+      },
+      {
+        "score": 10.2,
+        "nombre": "Resistance Band Seated Shoulder Press",
+        "archivo": "delts/resistance-band-seated-shoulder-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/resistance-band-seated-shoulder-press.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Seated Biceps Curl To Shoulder Press",
+        "archivo": "biceps/dumbbell-seated-biceps-curl-to-shoulder-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/dumbbell-seated-biceps-curl-to-shoulder-press.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Band Twisting Overhead Press",
+        "archivo": "delts/band-twisting-overhead-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-twisting-overhead-press.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Cable Alternate Shoulder Press",
+        "archivo": "delts/cable-alternate-shoulder-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/cable-alternate-shoulder-press.gif"
+      }
+    ]
+  },
+  {
+    "id": "remo-barra",
+    "nombre": "Remo con barra",
+    "consulta": "row con barbell",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Barbell Rear Delt Row",
+        "archivo": "delts/barbell-rear-delt-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/barbell-rear-delt-row.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Barbell Upright Row",
+        "archivo": "delts/barbell-upright-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/barbell-upright-row.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Barbell Wide Grip Upright Row",
+        "archivo": "delts/barbell-wide-grip-upright-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/barbell-wide-grip-upright-row.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Barbell Bent Over Row",
+        "archivo": "upper-back/barbell-bent-over-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/barbell-bent-over-row.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Barbell Incline Row",
+        "archivo": "upper-back/barbell-incline-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/barbell-incline-row.gif"
+      }
+    ]
+  },
+  {
+    "id": "remo-mancuerna",
+    "nombre": "Remo con mancuerna a una mano",
+    "consulta": "row con dumbbell a una mano",
+    "opciones": [
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell One Arm Upright Row",
+        "archivo": "delts/dumbbell-one-arm-upright-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-one-arm-upright-row.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Rear Delt Row Shoulder",
+        "archivo": "delts/dumbbell-rear-delt-row-shoulder.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-rear-delt-row-shoulder.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Upright Row Back Pov",
+        "archivo": "delts/dumbbell-upright-row-back-pov.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-upright-row-back-pov.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Bent Over Row",
+        "archivo": "upper-back/dumbbell-bent-over-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/dumbbell-bent-over-row.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Incline Row",
+        "archivo": "upper-back/dumbbell-incline-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/dumbbell-incline-row.gif"
+      }
+    ]
+  },
+  {
+    "id": "remo-polea",
+    "nombre": "Remo sentado en polea",
+    "consulta": "row seated en cable",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Cable Seated High Row V Bar",
+        "archivo": "lats/cable-seated-high-row-v-bar.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/cable-seated-high-row-v-bar.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Cable Decline Seated Wide Grip Row",
+        "archivo": "upper-back/cable-decline-seated-wide-grip-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/cable-decline-seated-wide-grip-row.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Cable Floor Seated Wide Grip Row",
+        "archivo": "upper-back/cable-floor-seated-wide-grip-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/cable-floor-seated-wide-grip-row.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Cable Low Seated Row",
+        "archivo": "upper-back/cable-low-seated-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/cable-low-seated-row.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Cable Reverse Grip Straight Back Seated High Row",
+        "archivo": "upper-back/cable-reverse-grip-straight-back-seated-high-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/cable-reverse-grip-straight-back-seated-high-row.gif"
+      }
+    ]
+  },
+  {
+    "id": "remo-maquina",
+    "nombre": "Remo en máquina",
+    "consulta": "row en machine",
+    "opciones": [
+      {
+        "score": 4.2,
+        "nombre": "Cable Squat Row With Rope Attachment",
+        "archivo": "lats/cable-squat-row-with-rope-attachment.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/cable-squat-row-with-rope-attachment.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Smith Machine Reverse Decline Close Grip Bench Press",
+        "archivo": "pectorals/smith-machine-reverse-decline-close-grip-bench-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/smith-machine-reverse-decline-close-grip-bench-press.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Smith Machine Decline Close Grip Bench Press",
+        "archivo": "triceps/smith-machine-decline-close-grip-bench-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/smith-machine-decline-close-grip-bench-press.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Smith Machine Incline Tricep Extension",
+        "archivo": "triceps/smith-machine-incline-tricep-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/smith-machine-incline-tricep-extension.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Barbell Bent Over Row",
+        "archivo": "upper-back/barbell-bent-over-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/barbell-bent-over-row.gif"
+      }
+    ]
+  },
+  {
+    "id": "remo-bandas",
+    "nombre": "Remo con banda",
+    "consulta": "row con band",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Band Standing Rear Delt Row",
+        "archivo": "delts/band-standing-rear-delt-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-standing-rear-delt-row.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Band Squat Row",
+        "archivo": "glutes/band-squat-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-squat-row.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Band One Arm Standing Low Row",
+        "archivo": "upper-back/band-one-arm-standing-low-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/band-one-arm-standing-low-row.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Band One Arm Twisting Seated Row",
+        "archivo": "upper-back/band-one-arm-twisting-seated-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/band-one-arm-twisting-seated-row.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Resistance Band Seated Straight Back Row",
+        "archivo": "upper-back/resistance-band-seated-straight-back-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/resistance-band-seated-straight-back-row.gif"
+      }
+    ]
+  },
+  {
+    "id": "remo-invertido",
+    "nombre": "Remo invertido bajo mesa",
+    "consulta": "row inverted bajo mesa",
+    "opciones": [
+      {
+        "score": 6,
+        "nombre": "Inverted Row Bent Knees",
+        "archivo": "upper-back/inverted-row-bent-knees.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/inverted-row-bent-knees.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Inverted Row On Bench",
+        "archivo": "upper-back/inverted-row-on-bench.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/inverted-row-on-bench.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Inverted Row v2",
+        "archivo": "upper-back/inverted-row-v-2.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/inverted-row-v-2.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Inverted Row With Straps",
+        "archivo": "upper-back/inverted-row-with-straps.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/inverted-row-with-straps.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Inverted Row",
+        "archivo": "upper-back/inverted-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/inverted-row.gif"
+      }
+    ]
+  },
+  {
+    "id": "dominadas",
+    "nombre": "Dominadas",
+    "consulta": "pull up lat pulldown",
+    "opciones": [
+      {
+        "score": 10.2,
+        "nombre": "Rocky Pull Up Pulldown",
+        "archivo": "lats/rocky-pull-up-pulldown.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/rocky-pull-up-pulldown.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Assisted Parallel Close Grip Pull Up",
+        "archivo": "lats/assisted-parallel-close-grip-pull-up.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/assisted-parallel-close-grip-pull-up.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Assisted Pull Up",
+        "archivo": "lats/assisted-pull-up.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/assisted-pull-up.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Assisted Standing Pull Up",
+        "archivo": "lats/assisted-standing-pull-up.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/assisted-standing-pull-up.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Band Assisted Pull Up",
+        "archivo": "lats/band-assisted-pull-up.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/band-assisted-pull-up.gif"
+      }
+    ]
+  },
+  {
+    "id": "jalon",
+    "nombre": "Jalón al pecho",
+    "consulta": "lat pulldown al chest",
+    "opciones": [
+      {
+        "score": 7.2,
+        "nombre": "Twin Handle Parallel Grip Lat Pulldown",
+        "archivo": "lats/twin-handle-parallel-grip-lat-pulldown.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/twin-handle-parallel-grip-lat-pulldown.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Cable Lat Pulldown Full Range Of Motion",
+        "archivo": "lats/cable-lat-pulldown-full-range-of-motion.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/cable-lat-pulldown-full-range-of-motion.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Cable Pulldown Pro Lat Bar",
+        "archivo": "lats/cable-pulldown-pro-lat-bar.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/cable-pulldown-pro-lat-bar.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Reverse Grip Machine Lat Pulldown",
+        "archivo": "lats/reverse-grip-machine-lat-pulldown.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/reverse-grip-machine-lat-pulldown.gif"
+      },
+      {
+        "score": 5.4,
+        "nombre": "Alternate Lateral Pulldown",
+        "archivo": "lats/alternate-lateral-pulldown.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/alternate-lateral-pulldown.gif"
+      }
+    ]
+  },
+  {
+    "id": "jalon-bandas",
+    "nombre": "Jalón con banda",
+    "consulta": "lat pulldown con band",
+    "opciones": [
+      {
+        "score": 7.2,
+        "nombre": "Band Close Grip Pulldown",
+        "archivo": "lats/band-close-grip-pulldown.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/band-close-grip-pulldown.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Band Fixed Back Close Grip Pulldown",
+        "archivo": "lats/band-fixed-back-close-grip-pulldown.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/band-fixed-back-close-grip-pulldown.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Band Fixed Back Underhand Pulldown",
+        "archivo": "lats/band-fixed-back-underhand-pulldown.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/band-fixed-back-underhand-pulldown.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Band Kneeling One Arm Pulldown",
+        "archivo": "lats/band-kneeling-one-arm-pulldown.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/band-kneeling-one-arm-pulldown.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Band Underhand Pulldown",
+        "archivo": "lats/band-underhand-pulldown.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/band-underhand-pulldown.gif"
+      }
+    ]
+  },
+  {
+    "id": "pullover-mancuerna",
+    "nombre": "Pullover con mancuerna",
+    "consulta": "pullover con dumbbell lat pulldown",
+    "opciones": [
+      {
+        "score": 6,
+        "nombre": "Cable Lat Pulldown Full Range Of Motion",
+        "archivo": "lats/cable-lat-pulldown-full-range-of-motion.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/cable-lat-pulldown-full-range-of-motion.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Cable Pulldown Pro Lat Bar",
+        "archivo": "lats/cable-pulldown-pro-lat-bar.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/cable-pulldown-pro-lat-bar.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Reverse Grip Machine Lat Pulldown",
+        "archivo": "lats/reverse-grip-machine-lat-pulldown.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/reverse-grip-machine-lat-pulldown.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Twin Handle Parallel Grip Lat Pulldown",
+        "archivo": "lats/twin-handle-parallel-grip-lat-pulldown.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/twin-handle-parallel-grip-lat-pulldown.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Dumbbell Around Pullover",
+        "archivo": "pectorals/dumbbell-around-pullover.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/dumbbell-around-pullover.gif"
+      }
+    ]
+  },
+  {
+    "id": "superman",
+    "nombre": "Superman en el suelo",
+    "consulta": "superman en el suelo lat pulldown",
+    "opciones": [
+      {
+        "score": 7.2,
+        "nombre": "Twin Handle Parallel Grip Lat Pulldown",
+        "archivo": "lats/twin-handle-parallel-grip-lat-pulldown.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/twin-handle-parallel-grip-lat-pulldown.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Cable Lat Pulldown Full Range Of Motion",
+        "archivo": "lats/cable-lat-pulldown-full-range-of-motion.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/cable-lat-pulldown-full-range-of-motion.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Cable Pulldown Pro Lat Bar",
+        "archivo": "lats/cable-pulldown-pro-lat-bar.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/cable-pulldown-pro-lat-bar.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Reverse Grip Machine Lat Pulldown",
+        "archivo": "lats/reverse-grip-machine-lat-pulldown.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/reverse-grip-machine-lat-pulldown.gif"
+      },
+      {
+        "score": 5.4,
+        "nombre": "Band Kneeling One Arm Pulldown",
+        "archivo": "lats/band-kneeling-one-arm-pulldown.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/band-kneeling-one-arm-pulldown.gif"
+      }
+    ]
+  },
+  {
+    "id": "extension-cuadriceps",
+    "nombre": "Extensión de cuádriceps",
+    "consulta": "extension de quadriceps",
+    "opciones": [
+      {
+        "score": 4.2,
+        "nombre": "Exercise Ball Back Extension With Arms Extended",
+        "archivo": "spine/exercise-ball-back-extension-with-arms-extended.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/spine/exercise-ball-back-extension-with-arms-extended.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Band Side Triceps Extension",
+        "archivo": "triceps/band-side-triceps-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/band-side-triceps-extension.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Dumbbell Decline Triceps Extension",
+        "archivo": "triceps/dumbbell-decline-triceps-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/dumbbell-decline-triceps-extension.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Ez Barbell Decline Triceps Extension",
+        "archivo": "triceps/ez-barbell-decline-triceps-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/ez-barbell-decline-triceps-extension.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Band Bent Over Hip Extension",
+        "archivo": "glutes/band-bent-over-hip-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-bent-over-hip-extension.gif"
+      }
+    ]
+  },
+  {
+    "id": "sentadilla-pared",
+    "nombre": "Sentadilla isométrica en pared",
+    "consulta": "squat isometrica en wall quadriceps",
+    "opciones": [
+      {
+        "score": 4.2,
+        "nombre": "Exercise Ball On The Wall Calf Raise Tennis Ball Between Ankles",
+        "archivo": "calves/exercise-ball-on-the-wall-calf-raise-tennis-ball-between-ankles.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/exercise-ball-on-the-wall-calf-raise-tennis-ball-between-ankles.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Exercise Ball On The Wall Calf Raise Tennis Ball Between Knees",
+        "archivo": "calves/exercise-ball-on-the-wall-calf-raise-tennis-ball-between-knees.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/exercise-ball-on-the-wall-calf-raise-tennis-ball-between-knees.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Dumbbell Bench Squat",
+        "archivo": "glutes/dumbbell-bench-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/dumbbell-bench-squat.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Frankenstein Squat",
+        "archivo": "glutes/frankenstein-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/frankenstein-squat.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Cable Squat Row With Rope Attachment",
+        "archivo": "lats/cable-squat-row-with-rope-attachment.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/cable-squat-row-with-rope-attachment.gif"
+      }
+    ]
+  },
+  {
+    "id": "curl-femoral",
+    "nombre": "Curl femoral en máquina",
+    "consulta": "curl hamstring en machine",
+    "opciones": [
+      {
+        "score": 7.2,
+        "nombre": "Inverse Leg Curl On Pull Up Cable Machine",
+        "archivo": "hamstrings/inverse-leg-curl-on-pull-up-cable-machine.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/hamstrings/inverse-leg-curl-on-pull-up-cable-machine.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Smith Machine Bicep Curl",
+        "archivo": "biceps/smith-machine-bicep-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/smith-machine-bicep-curl.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Exercise Ball One Legged Diagonal Kick Hamstring Curl",
+        "archivo": "glutes/exercise-ball-one-legged-diagonal-kick-hamstring-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/exercise-ball-one-legged-diagonal-kick-hamstring-curl.gif"
+      },
+      {
+        "score": 5.4,
+        "nombre": "Inverse Leg Curl Bench Support",
+        "archivo": "hamstrings/inverse-leg-curl-bench-support.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/hamstrings/inverse-leg-curl-bench-support.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Band Concentration Curl",
+        "archivo": "biceps/band-concentration-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/band-concentration-curl.gif"
+      }
+    ]
+  },
+  {
+    "id": "curl-femoral-fitball",
+    "nombre": "Curl femoral deslizante",
+    "consulta": "curl hamstring sliding",
+    "opciones": [
+      {
+        "score": 6,
+        "nombre": "Exercise Ball One Legged Diagonal Kick Hamstring Curl",
+        "archivo": "glutes/exercise-ball-one-legged-diagonal-kick-hamstring-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/exercise-ball-one-legged-diagonal-kick-hamstring-curl.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Cable Assisted Inverse Leg Curl",
+        "archivo": "hamstrings/cable-assisted-inverse-leg-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/hamstrings/cable-assisted-inverse-leg-curl.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Inverse Leg Curl Bench Support",
+        "archivo": "hamstrings/inverse-leg-curl-bench-support.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/hamstrings/inverse-leg-curl-bench-support.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Inverse Leg Curl On Pull Up Cable Machine",
+        "archivo": "hamstrings/inverse-leg-curl-on-pull-up-cable-machine.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/hamstrings/inverse-leg-curl-on-pull-up-cable-machine.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Lever Kneeling Leg Curl",
+        "archivo": "hamstrings/lever-kneeling-leg-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/hamstrings/lever-kneeling-leg-curl.gif"
+      }
+    ]
+  },
+  {
+    "id": "gemelos-pie",
+    "nombre": "Elevación de gemelos de pie",
+    "consulta": "raise de calf standing",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Barbell Standing Calf Raise",
+        "archivo": "calves/barbell-standing-calf-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/barbell-standing-calf-raise.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Barbell Standing Leg Calf Raise",
+        "archivo": "calves/barbell-standing-leg-calf-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/barbell-standing-leg-calf-raise.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Barbell Standing Rocking Leg Calf Raise",
+        "archivo": "calves/barbell-standing-rocking-leg-calf-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/barbell-standing-rocking-leg-calf-raise.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Bodyweight Standing Calf Raise",
+        "archivo": "calves/bodyweight-standing-calf-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/bodyweight-standing-calf-raise.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Cable Standing Calf Raise",
+        "archivo": "calves/cable-standing-calf-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/cable-standing-calf-raise.gif"
+      }
+    ]
+  },
+  {
+    "id": "gemelos-maquina",
+    "nombre": "Elevación de gemelos en máquina",
+    "consulta": "raise de calf en machine",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Lever Seated Squat Calf Raise On Leg Press Machine",
+        "archivo": "calves/lever-seated-squat-calf-raise-on-leg-press-machine.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/lever-seated-squat-calf-raise-on-leg-press-machine.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Band Two Legs Calf Raise Band Under Both Legs v2",
+        "archivo": "calves/band-two-legs-calf-raise-band-under-both-legs-v-2.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/band-two-legs-calf-raise-band-under-both-legs-v-2.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Exercise Ball On The Wall Calf Raise Tennis Ball Between Ankles",
+        "archivo": "calves/exercise-ball-on-the-wall-calf-raise-tennis-ball-between-ankles.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/exercise-ball-on-the-wall-calf-raise-tennis-ball-between-ankles.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Exercise Ball On The Wall Calf Raise Tennis Ball Between Knees",
+        "archivo": "calves/exercise-ball-on-the-wall-calf-raise-tennis-ball-between-knees.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/exercise-ball-on-the-wall-calf-raise-tennis-ball-between-knees.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Band Single Leg Calf Raise",
+        "archivo": "calves/band-single-leg-calf-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/band-single-leg-calf-raise.gif"
+      }
+    ]
+  },
+  {
+    "id": "aperturas-mancuernas",
+    "nombre": "Aperturas con mancuernas",
+    "consulta": "fly con dumbbell s chest",
+    "opciones": [
+      {
+        "score": 10.2,
+        "nombre": "Dumbbell One Arm Chest Fly On Exercise Ball",
+        "archivo": "pectorals/dumbbell-one-arm-chest-fly-on-exercise-ball.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/dumbbell-one-arm-chest-fly-on-exercise-ball.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell One Arm Reverse Fly With Support",
+        "archivo": "delts/dumbbell-one-arm-reverse-fly-with-support.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-one-arm-reverse-fly-with-support.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Rear Fly",
+        "archivo": "delts/dumbbell-rear-fly.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-rear-fly.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Reverse Fly",
+        "archivo": "delts/dumbbell-reverse-fly.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-reverse-fly.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Rotation Reverse Fly",
+        "archivo": "delts/dumbbell-rotation-reverse-fly.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-rotation-reverse-fly.gif"
+      }
+    ]
+  },
+  {
+    "id": "cruce-poleas",
+    "nombre": "Cruce de poleas",
+    "consulta": "cable fly de s chest",
+    "opciones": [
+      {
+        "score": 11.4,
+        "nombre": "Cable One Arm Decline Chest Fly",
+        "archivo": "pectorals/cable-one-arm-decline-chest-fly.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/cable-one-arm-decline-chest-fly.gif"
+      },
+      {
+        "score": 8.4,
+        "nombre": "Cable Cross Over Revers Fly",
+        "archivo": "delts/cable-cross-over-revers-fly.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/cable-cross-over-revers-fly.gif"
+      },
+      {
+        "score": 8.4,
+        "nombre": "Cable Standing Cross Over High Reverse Fly",
+        "archivo": "delts/cable-standing-cross-over-high-reverse-fly.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/cable-standing-cross-over-high-reverse-fly.gif"
+      },
+      {
+        "score": 8.4,
+        "nombre": "Cable Supine Reverse Fly",
+        "archivo": "delts/cable-supine-reverse-fly.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/cable-supine-reverse-fly.gif"
+      },
+      {
+        "score": 8.4,
+        "nombre": "Cable Decline Fly",
+        "archivo": "pectorals/cable-decline-fly.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/cable-decline-fly.gif"
+      }
+    ]
+  },
+  {
+    "id": "flexiones-diamante",
+    "nombre": "Flexiones cerradas",
+    "consulta": "push up close grip chest fly",
+    "opciones": [
+      {
+        "score": 12,
+        "nombre": "Band Close Grip Push Up",
+        "archivo": "triceps/band-close-grip-push-up.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/band-close-grip-push-up.gif"
+      },
+      {
+        "score": 12,
+        "nombre": "Close Grip Push Up On Knees",
+        "archivo": "triceps/close-grip-push-up-on-knees.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/close-grip-push-up-on-knees.gif"
+      },
+      {
+        "score": 12,
+        "nombre": "Close Grip Push Up",
+        "archivo": "triceps/close-grip-push-up.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/close-grip-push-up.gif"
+      },
+      {
+        "score": 12,
+        "nombre": "Incline Close Grip Push Up",
+        "archivo": "triceps/incline-close-grip-push-up.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/incline-close-grip-push-up.gif"
+      },
+      {
+        "score": 12,
+        "nombre": "Medicine Ball Close Grip Push Up",
+        "archivo": "triceps/medicine-ball-close-grip-push-up.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/medicine-ball-close-grip-push-up.gif"
+      }
+    ]
+  },
+  {
+    "id": "elevaciones-laterales",
+    "nombre": "Elevaciones laterales",
+    "consulta": "raise es lateral",
+    "opciones": [
+      {
+        "score": 6,
+        "nombre": "Assisted Lying Leg Raise With Lateral Throw Down",
+        "archivo": "abs/assisted-lying-leg-raise-with-lateral-throw-down.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/assisted-lying-leg-raise-with-lateral-throw-down.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Band Front Lateral Raise",
+        "archivo": "delts/band-front-lateral-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-front-lateral-raise.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Cable Lateral Raise",
+        "archivo": "delts/cable-lateral-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/cable-lateral-raise.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Cable One Arm Lateral Raise",
+        "archivo": "delts/cable-one-arm-lateral-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/cable-one-arm-lateral-raise.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Cable Seated Rear Lateral Raise",
+        "archivo": "delts/cable-seated-rear-lateral-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/cable-seated-rear-lateral-raise.gif"
+      }
+    ]
+  },
+  {
+    "id": "laterales-polea",
+    "nombre": "Elevación lateral en polea",
+    "consulta": "raise lateral en cable",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Cable Lateral Raise",
+        "archivo": "delts/cable-lateral-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/cable-lateral-raise.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Cable One Arm Lateral Raise",
+        "archivo": "delts/cable-one-arm-lateral-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/cable-one-arm-lateral-raise.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Cable Seated Rear Lateral Raise",
+        "archivo": "delts/cable-seated-rear-lateral-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/cable-seated-rear-lateral-raise.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Seated Bent Arm Lateral Raise",
+        "archivo": "delts/dumbbell-seated-bent-arm-lateral-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-seated-bent-arm-lateral-raise.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Cable Lateral Pulldown With Rope Attachment",
+        "archivo": "lats/cable-lateral-pulldown-with-rope-attachment.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/cable-lateral-pulldown-with-rope-attachment.gif"
+      }
+    ]
+  },
+  {
+    "id": "laterales-bandas",
+    "nombre": "Elevaciones laterales con banda",
+    "consulta": "raise es lateral con band",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Band Front Lateral Raise",
+        "archivo": "delts/band-front-lateral-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-front-lateral-raise.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Band Single Leg Calf Raise",
+        "archivo": "calves/band-single-leg-calf-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/band-single-leg-calf-raise.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Band Single Leg Reverse Calf Raise",
+        "archivo": "calves/band-single-leg-reverse-calf-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/band-single-leg-reverse-calf-raise.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Band Two Legs Calf Raise Band Under Both Legs v2",
+        "archivo": "calves/band-two-legs-calf-raise-band-under-both-legs-v-2.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/band-two-legs-calf-raise-band-under-both-legs-v-2.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Assisted Lying Leg Raise With Lateral Throw Down",
+        "archivo": "abs/assisted-lying-leg-raise-with-lateral-throw-down.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/assisted-lying-leg-raise-with-lateral-throw-down.gif"
+      }
+    ]
+  },
+  {
+    "id": "curl-barra",
+    "nombre": "Curl de bíceps con barra",
+    "consulta": "curl de biceps con barbell",
+    "opciones": [
+      {
+        "score": 13.2,
+        "nombre": "Barbell Seated Close Grip Concentration Curl",
+        "archivo": "biceps/barbell-seated-close-grip-concentration-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/barbell-seated-close-grip-concentration-curl.gif"
+      },
+      {
+        "score": 13.2,
+        "nombre": "Barbell Standing Concentration Curl",
+        "archivo": "biceps/barbell-standing-concentration-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/barbell-standing-concentration-curl.gif"
+      },
+      {
+        "score": 13.2,
+        "nombre": "Barbell Standing Wide Grip Biceps Curl",
+        "archivo": "biceps/barbell-standing-wide-grip-biceps-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/barbell-standing-wide-grip-biceps-curl.gif"
+      },
+      {
+        "score": 13.2,
+        "nombre": "Barbell Standing Wide Grip Curl",
+        "archivo": "biceps/barbell-standing-wide-grip-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/barbell-standing-wide-grip-curl.gif"
+      },
+      {
+        "score": 12,
+        "nombre": "Barbell Alternate Biceps Curl",
+        "archivo": "biceps/barbell-alternate-biceps-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/barbell-alternate-biceps-curl.gif"
+      }
+    ]
+  },
+  {
+    "id": "curl-mancuernas",
+    "nombre": "Curl de bíceps con mancuernas",
+    "consulta": "curl de biceps con dumbbell s",
+    "opciones": [
+      {
+        "score": 14.4,
+        "nombre": "Dumbbell Seated Revers Grip Concentration Curl",
+        "archivo": "biceps/dumbbell-seated-revers-grip-concentration-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/dumbbell-seated-revers-grip-concentration-curl.gif"
+      },
+      {
+        "score": 14.4,
+        "nombre": "Dumbbell Standing Concentration Curl",
+        "archivo": "biceps/dumbbell-standing-concentration-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/dumbbell-standing-concentration-curl.gif"
+      },
+      {
+        "score": 14.4,
+        "nombre": "Dumbbell Standing One Arm Concentration Curl",
+        "archivo": "biceps/dumbbell-standing-one-arm-concentration-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/dumbbell-standing-one-arm-concentration-curl.gif"
+      },
+      {
+        "score": 13.2,
+        "nombre": "Dumbbell Seated Bicep Curl",
+        "archivo": "biceps/dumbbell-seated-bicep-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/dumbbell-seated-bicep-curl.gif"
+      },
+      {
+        "score": 13.2,
+        "nombre": "Dumbbell Seated Curl",
+        "archivo": "biceps/dumbbell-seated-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/dumbbell-seated-curl.gif"
+      }
+    ]
+  },
+  {
+    "id": "curl-polea",
+    "nombre": "Curl de bíceps en polea",
+    "consulta": "curl de biceps en cable",
+    "opciones": [
+      {
+        "score": 10.2,
+        "nombre": "Cable Concentration Curl",
+        "archivo": "biceps/cable-concentration-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/cable-concentration-curl.gif"
+      },
+      {
+        "score": 10.2,
+        "nombre": "Cable Seated One Arm Concentration Curl",
+        "archivo": "biceps/cable-seated-one-arm-concentration-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/cable-seated-one-arm-concentration-curl.gif"
+      },
+      {
+        "score": 10.2,
+        "nombre": "Cable Two Arm Curl On Incline Bench",
+        "archivo": "biceps/cable-two-arm-curl-on-incline-bench.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/cable-two-arm-curl-on-incline-bench.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Cable Close Grip Curl",
+        "archivo": "biceps/cable-close-grip-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/cable-close-grip-curl.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Cable Curl",
+        "archivo": "biceps/cable-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/cable-curl.gif"
+      }
+    ]
+  },
+  {
+    "id": "curl-bandas",
+    "nombre": "Curl de bíceps con banda",
+    "consulta": "curl de biceps con band",
+    "opciones": [
+      {
+        "score": 13.2,
+        "nombre": "Band Concentration Curl",
+        "archivo": "biceps/band-concentration-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/band-concentration-curl.gif"
+      },
+      {
+        "score": 12,
+        "nombre": "Band Alternating Biceps Curl",
+        "archivo": "biceps/band-alternating-biceps-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/band-alternating-biceps-curl.gif"
+      },
+      {
+        "score": 12,
+        "nombre": "Band One Arm Overhead Biceps Curl",
+        "archivo": "biceps/band-one-arm-overhead-biceps-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/band-one-arm-overhead-biceps-curl.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Resistance Band Seated Biceps Curl",
+        "archivo": "biceps/resistance-band-seated-biceps-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/resistance-band-seated-biceps-curl.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Barbell Seated Close Grip Concentration Curl",
+        "archivo": "biceps/barbell-seated-close-grip-concentration-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/barbell-seated-close-grip-concentration-curl.gif"
+      }
+    ]
+  },
+  {
+    "id": "curl-toalla",
+    "nombre": "Curl isométrico con toalla",
+    "consulta": "curl isometrico con towel biceps",
+    "opciones": [
+      {
+        "score": 7.2,
+        "nombre": "Band Concentration Curl",
+        "archivo": "biceps/band-concentration-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/band-concentration-curl.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Barbell Seated Close Grip Concentration Curl",
+        "archivo": "biceps/barbell-seated-close-grip-concentration-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/barbell-seated-close-grip-concentration-curl.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Barbell Standing Concentration Curl",
+        "archivo": "biceps/barbell-standing-concentration-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/barbell-standing-concentration-curl.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Biceps Leg Concentration Curl",
+        "archivo": "biceps/biceps-leg-concentration-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/biceps-leg-concentration-curl.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Cable Concentration Curl",
+        "archivo": "biceps/cable-concentration-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/cable-concentration-curl.gif"
+      }
+    ]
+  },
+  {
+    "id": "extension-triceps-polea",
+    "nombre": "Extensión de tríceps en polea",
+    "consulta": "extension de triceps en cable",
+    "opciones": [
+      {
+        "score": 10.2,
+        "nombre": "Cable Alternate Triceps Extension",
+        "archivo": "triceps/cable-alternate-triceps-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/cable-alternate-triceps-extension.gif"
+      },
+      {
+        "score": 10.2,
+        "nombre": "Cable Concentration Extension On Knee",
+        "archivo": "triceps/cable-concentration-extension-on-knee.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/cable-concentration-extension-on-knee.gif"
+      },
+      {
+        "score": 10.2,
+        "nombre": "Cable High Pulley Overhead Tricep Extension",
+        "archivo": "triceps/cable-high-pulley-overhead-tricep-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/cable-high-pulley-overhead-tricep-extension.gif"
+      },
+      {
+        "score": 10.2,
+        "nombre": "Cable Incline Triceps Extension",
+        "archivo": "triceps/cable-incline-triceps-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/cable-incline-triceps-extension.gif"
+      },
+      {
+        "score": 10.2,
+        "nombre": "Cable Kneeling Triceps Extension",
+        "archivo": "triceps/cable-kneeling-triceps-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/cable-kneeling-triceps-extension.gif"
+      }
+    ]
+  },
+  {
+    "id": "press-frances",
+    "nombre": "Extensión de tríceps con mancuerna",
+    "consulta": "extension de triceps con dumbbell",
+    "opciones": [
+      {
+        "score": 13.2,
+        "nombre": "Dumbbell Decline Triceps Extension",
+        "archivo": "triceps/dumbbell-decline-triceps-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/dumbbell-decline-triceps-extension.gif"
+      },
+      {
+        "score": 12,
+        "nombre": "Dumbbell Forward Lunge Triceps Extension",
+        "archivo": "triceps/dumbbell-forward-lunge-triceps-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/dumbbell-forward-lunge-triceps-extension.gif"
+      },
+      {
+        "score": 12,
+        "nombre": "Dumbbell Incline Triceps Extension",
+        "archivo": "triceps/dumbbell-incline-triceps-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/dumbbell-incline-triceps-extension.gif"
+      },
+      {
+        "score": 12,
+        "nombre": "Dumbbell Incline Two Arm Extension",
+        "archivo": "triceps/dumbbell-incline-two-arm-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/dumbbell-incline-two-arm-extension.gif"
+      },
+      {
+        "score": 12,
+        "nombre": "Dumbbell Lying Alternate Extension",
+        "archivo": "triceps/dumbbell-lying-alternate-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/dumbbell-lying-alternate-extension.gif"
+      }
+    ]
+  },
+  {
+    "id": "fondos-banco",
+    "nombre": "Fondos en banco o silla",
+    "consulta": "dip en banco o silla triceps extension",
+    "opciones": [
+      {
+        "score": 8.4,
+        "nombre": "Assisted Standing Triceps Extension With Towel",
+        "archivo": "triceps/assisted-standing-triceps-extension-with-towel.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/assisted-standing-triceps-extension-with-towel.gif"
+      },
+      {
+        "score": 8.4,
+        "nombre": "Band Side Triceps Extension",
+        "archivo": "triceps/band-side-triceps-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/band-side-triceps-extension.gif"
+      },
+      {
+        "score": 8.4,
+        "nombre": "Barbell Lying Back Of The Head Tricep Extension",
+        "archivo": "triceps/barbell-lying-back-of-the-head-tricep-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/barbell-lying-back-of-the-head-tricep-extension.gif"
+      },
+      {
+        "score": 8.4,
+        "nombre": "Barbell Lying Close Grip Triceps Extension",
+        "archivo": "triceps/barbell-lying-close-grip-triceps-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/barbell-lying-close-grip-triceps-extension.gif"
+      },
+      {
+        "score": 8.4,
+        "nombre": "Barbell Lying Extension",
+        "archivo": "triceps/barbell-lying-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/barbell-lying-extension.gif"
+      }
+    ]
+  },
+  {
+    "id": "triceps-bandas",
+    "nombre": "Extensión de tríceps con banda",
+    "consulta": "extension de triceps con band",
+    "opciones": [
+      {
+        "score": 13.2,
+        "nombre": "Band Side Triceps Extension",
+        "archivo": "triceps/band-side-triceps-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/band-side-triceps-extension.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Cable Concentration Extension On Knee",
+        "archivo": "triceps/cable-concentration-extension-on-knee.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/cable-concentration-extension-on-knee.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Decline Triceps Extension",
+        "archivo": "triceps/dumbbell-decline-triceps-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/dumbbell-decline-triceps-extension.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Ez Barbell Decline Triceps Extension",
+        "archivo": "triceps/ez-barbell-decline-triceps-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/ez-barbell-decline-triceps-extension.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Band Bent Over Hip Extension",
+        "archivo": "glutes/band-bent-over-hip-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-bent-over-hip-extension.gif"
+      }
+    ]
+  },
+  {
+    "id": "face-pull",
+    "nombre": "Face pull",
+    "consulta": "face pull rear delt",
+    "opciones": [
+      {
+        "score": 6,
+        "nombre": "Band Standing Rear Delt Row",
+        "archivo": "delts/band-standing-rear-delt-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-standing-rear-delt-row.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Barbell Rear Delt Raise",
+        "archivo": "delts/barbell-rear-delt-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/barbell-rear-delt-raise.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Barbell Rear Delt Row",
+        "archivo": "delts/barbell-rear-delt-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/barbell-rear-delt-row.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Cable Kneeling Rear Delt Row With Rope Male",
+        "archivo": "delts/cable-kneeling-rear-delt-row-with-rope-male.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/cable-kneeling-rear-delt-row-with-rope-male.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Cable Rear Delt Row Stirrups",
+        "archivo": "delts/cable-rear-delt-row-stirrups.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/cable-rear-delt-row-stirrups.gif"
+      }
+    ]
+  },
+  {
+    "id": "pajaro",
+    "nombre": "Pájaros con mancuernas",
+    "consulta": "reverse fly s con dumbbell rear delt",
+    "opciones": [
+      {
+        "score": 11.4,
+        "nombre": "Dumbbell One Arm Reverse Fly With Support",
+        "archivo": "delts/dumbbell-one-arm-reverse-fly-with-support.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-one-arm-reverse-fly-with-support.gif"
+      },
+      {
+        "score": 11.4,
+        "nombre": "Dumbbell Rear Fly",
+        "archivo": "delts/dumbbell-rear-fly.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-rear-fly.gif"
+      },
+      {
+        "score": 11.4,
+        "nombre": "Dumbbell Reverse Fly",
+        "archivo": "delts/dumbbell-reverse-fly.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-reverse-fly.gif"
+      },
+      {
+        "score": 11.4,
+        "nombre": "Dumbbell Rotation Reverse Fly",
+        "archivo": "delts/dumbbell-rotation-reverse-fly.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-rotation-reverse-fly.gif"
+      },
+      {
+        "score": 10.2,
+        "nombre": "Dumbbell Lying On Floor Rear Delt Raise",
+        "archivo": "delts/dumbbell-lying-on-floor-rear-delt-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-lying-on-floor-rear-delt-raise.gif"
+      }
+    ]
+  },
+  {
+    "id": "aperturas-bandas",
+    "nombre": "Aperturas posteriores con banda",
+    "consulta": "fly posteriores con band rear delt",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Band Standing Rear Delt Row",
+        "archivo": "delts/band-standing-rear-delt-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-standing-rear-delt-row.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Band Reverse Fly",
+        "archivo": "delts/band-reverse-fly.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-reverse-fly.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Rear Fly",
+        "archivo": "delts/dumbbell-rear-fly.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-rear-fly.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Barbell Rear Delt Raise",
+        "archivo": "delts/barbell-rear-delt-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/barbell-rear-delt-raise.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Barbell Rear Delt Row",
+        "archivo": "delts/barbell-rear-delt-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/barbell-rear-delt-row.gif"
+      }
+    ]
+  },
+  {
+    "id": "ytw",
+    "nombre": "Elevaciones Y-T-W boca abajo",
+    "consulta": "raise es y t w boca abajo rear delt",
+    "opciones": [
+      {
+        "score": 11.4,
+        "nombre": "Dumbbell Lying On Floor Rear Delt Raise",
+        "archivo": "delts/dumbbell-lying-on-floor-rear-delt-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-lying-on-floor-rear-delt-raise.gif"
+      },
+      {
+        "score": 10.2,
+        "nombre": "Barbell Rear Delt Raise",
+        "archivo": "delts/barbell-rear-delt-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/barbell-rear-delt-raise.gif"
+      },
+      {
+        "score": 10.2,
+        "nombre": "Dumbbell Rear Delt Raise",
+        "archivo": "delts/dumbbell-rear-delt-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-rear-delt-raise.gif"
+      },
+      {
+        "score": 9.6,
+        "nombre": "Dumbbell Lying One Arm Rear Lateral Raise",
+        "archivo": "delts/dumbbell-lying-one-arm-rear-lateral-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-lying-one-arm-rear-lateral-raise.gif"
+      },
+      {
+        "score": 9.6,
+        "nombre": "Dumbbell Lying Rear Lateral Raise",
+        "archivo": "delts/dumbbell-lying-rear-lateral-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-lying-rear-lateral-raise.gif"
+      }
+    ]
+  },
+  {
+    "id": "plancha",
+    "nombre": "Plancha",
+    "consulta": "plank abdominal",
+    "opciones": [
+      {
+        "score": 3,
+        "nombre": "Bodyweight Incline Side Plank",
+        "archivo": "abs/bodyweight-incline-side-plank.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/bodyweight-incline-side-plank.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Front Plank With Twist",
+        "archivo": "abs/front-plank-with-twist.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/front-plank-with-twist.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Kneeling Plank Tap Shoulder Male",
+        "archivo": "abs/kneeling-plank-tap-shoulder-male.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/kneeling-plank-tap-shoulder-male.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Power Point Plank",
+        "archivo": "abs/power-point-plank.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/power-point-plank.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Push Up To Side Plank",
+        "archivo": "abs/push-up-to-side-plank.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/push-up-to-side-plank.gif"
+      }
+    ]
+  },
+  {
+    "id": "dead-bug",
+    "nombre": "Dead bug",
+    "consulta": "dead bug abdominal",
+    "opciones": [
+      {
+        "score": 6,
+        "nombre": "Dead Bug",
+        "archivo": "abs/dead-bug.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/dead-bug.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Suspended Abdominal Fallout",
+        "archivo": "abs/suspended-abdominal-fallout.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/suspended-abdominal-fallout.gif"
+      },
+      {
+        "score": 1.2,
+        "nombre": "Band Stiff Leg Deadlift",
+        "archivo": "glutes/band-stiff-leg-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-stiff-leg-deadlift.gif"
+      },
+      {
+        "score": 1.2,
+        "nombre": "Band Straight Back Stiff Leg Deadlift",
+        "archivo": "glutes/band-straight-back-stiff-leg-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-straight-back-stiff-leg-deadlift.gif"
+      },
+      {
+        "score": 1.2,
+        "nombre": "Barbell Deadlift",
+        "archivo": "glutes/barbell-deadlift.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-deadlift.gif"
+      }
+    ]
+  },
+  {
+    "id": "elevacion-piernas",
+    "nombre": "Elevación de piernas colgado",
+    "consulta": "raise de standing rnas hanging abdominal",
+    "opciones": [
+      {
+        "score": 7.2,
+        "nombre": "Barbell Standing Front Raise Over Head",
+        "archivo": "delts/barbell-standing-front-raise-over-head.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/barbell-standing-front-raise-over-head.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Standing Alternate Raise",
+        "archivo": "delts/dumbbell-standing-alternate-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-standing-alternate-raise.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell Standing Front Raise Above Head",
+        "archivo": "delts/dumbbell-standing-front-raise-above-head.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/dumbbell-standing-front-raise-above-head.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Assisted Hanging Knee Raise With Throw Down",
+        "archivo": "abs/assisted-hanging-knee-raise-with-throw-down.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/assisted-hanging-knee-raise-with-throw-down.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Assisted Hanging Knee Raise",
+        "archivo": "abs/assisted-hanging-knee-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/assisted-hanging-knee-raise.gif"
+      }
+    ]
+  },
+  {
+    "id": "crunch-polea",
+    "nombre": "Crunch en polea",
+    "consulta": "crunch en cable abdominal",
+    "opciones": [
+      {
+        "score": 7.2,
+        "nombre": "Cable Side Bend Crunch Bosu Ball",
+        "archivo": "abs/cable-side-bend-crunch-bosu-ball.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/cable-side-bend-crunch-bosu-ball.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Cable Standing Crunch With Rope Attachment",
+        "archivo": "abs/cable-standing-crunch-with-rope-attachment.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/cable-standing-crunch-with-rope-attachment.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Cable Kneeling Crunch",
+        "archivo": "abs/cable-kneeling-crunch.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/cable-kneeling-crunch.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Cable Reverse Crunch",
+        "archivo": "abs/cable-reverse-crunch.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/cable-reverse-crunch.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Cable Seated Crunch",
+        "archivo": "abs/cable-seated-crunch.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/cable-seated-crunch.gif"
+      }
+    ]
+  },
+  {
+    "id": "plancha-lateral",
+    "nombre": "Plancha lateral",
+    "consulta": "plank lateral abdominal",
+    "opciones": [
+      {
+        "score": 3,
+        "nombre": "Assisted Lying Leg Raise With Lateral Throw Down",
+        "archivo": "abs/assisted-lying-leg-raise-with-lateral-throw-down.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/assisted-lying-leg-raise-with-lateral-throw-down.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Bodyweight Incline Side Plank",
+        "archivo": "abs/bodyweight-incline-side-plank.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/bodyweight-incline-side-plank.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Front Plank With Twist",
+        "archivo": "abs/front-plank-with-twist.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/front-plank-with-twist.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Kneeling Plank Tap Shoulder Male",
+        "archivo": "abs/kneeling-plank-tap-shoulder-male.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/kneeling-plank-tap-shoulder-male.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Power Point Plank",
+        "archivo": "abs/power-point-plank.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/power-point-plank.gif"
+      }
+    ]
+  },
+  {
+    "id": "burpees",
+    "nombre": "Burpees",
+    "consulta": "burpee cardio",
+    "opciones": [
+      {
+        "score": 14,
+        "nombre": "Burpee",
+        "archivo": "cardio/burpee.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/burpee.gif"
+      },
+      {
+        "score": 14,
+        "nombre": "Dumbbell Burpee",
+        "archivo": "cardio/dumbbell-burpee.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/dumbbell-burpee.gif"
+      },
+      {
+        "score": 14,
+        "nombre": "Jack Burpee",
+        "archivo": "cardio/jack-burpee.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/jack-burpee.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Astride Jumps Male",
+        "archivo": "cardio/astride-jumps-male.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/astride-jumps-male.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Back And Forth Step",
+        "archivo": "cardio/back-and-forth-step.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/back-and-forth-step.gif"
+      }
+    ]
+  },
+  {
+    "id": "escaladores",
+    "nombre": "Escaladores",
+    "consulta": "mountain climber cardio",
+    "opciones": [
+      {
+        "score": 17,
+        "nombre": "Mountain Climber",
+        "archivo": "cardio/mountain-climber.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/mountain-climber.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Bridge Mountain Climber Cross Body",
+        "archivo": "abs/bridge-mountain-climber-cross-body.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/bridge-mountain-climber-cross-body.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Astride Jumps Male",
+        "archivo": "cardio/astride-jumps-male.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/astride-jumps-male.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Back And Forth Step",
+        "archivo": "cardio/back-and-forth-step.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/back-and-forth-step.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Bear Crawl",
+        "archivo": "cardio/bear-crawl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/bear-crawl.gif"
+      }
+    ]
+  },
+  {
+    "id": "jumping-jacks",
+    "nombre": "Saltos de tijera",
+    "consulta": "jumping jack cardio",
+    "opciones": [
+      {
+        "score": 6,
+        "nombre": "Jack Burpee",
+        "archivo": "cardio/jack-burpee.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/jack-burpee.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Jack Jump Male",
+        "archivo": "cardio/jack-jump-male.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/jack-jump-male.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Band Jack Knife Sit Up",
+        "archivo": "abs/band-jack-knife-sit-up.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/band-jack-knife-sit-up.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Astride Jumps Male",
+        "archivo": "cardio/astride-jumps-male.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/astride-jumps-male.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Back And Forth Step",
+        "archivo": "cardio/back-and-forth-step.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/cardio/back-and-forth-step.gif"
+      }
+    ]
+  },
+  {
+    "id": "prensa-horizontal",
+    "nombre": "Prensa horizontal",
+    "consulta": "leg press horizontal squat",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Lever Seated Squat Calf Raise On Leg Press Machine",
+        "archivo": "calves/lever-seated-squat-calf-raise-on-leg-press-machine.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/lever-seated-squat-calf-raise-on-leg-press-machine.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Lever Horizontal One Leg Press",
+        "archivo": "glutes/lever-horizontal-one-leg-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/lever-horizontal-one-leg-press.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Band Horizontal Pallof Press",
+        "archivo": "abs/band-horizontal-pallof-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/band-horizontal-pallof-press.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Sled Calf Press On Leg Press",
+        "archivo": "calves/sled-calf-press-on-leg-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/sled-calf-press-on-leg-press.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Sled One Leg Calf Press On Leg Press",
+        "archivo": "calves/sled-one-leg-calf-press-on-leg-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/sled-one-leg-calf-press-on-leg-press.gif"
+      }
+    ]
+  },
+  {
+    "id": "hack-squat",
+    "nombre": "Hack squat",
+    "consulta": "hack squat",
+    "opciones": [
+      {
+        "score": 14,
+        "nombre": "Barbell Hack Squat",
+        "archivo": "glutes/barbell-hack-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-hack-squat.gif"
+      },
+      {
+        "score": 14,
+        "nombre": "Sled Closer Hack Squat",
+        "archivo": "glutes/sled-closer-hack-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/sled-closer-hack-squat.gif"
+      },
+      {
+        "score": 14,
+        "nombre": "Sled Hack Squat",
+        "archivo": "glutes/sled-hack-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/sled-hack-squat.gif"
+      },
+      {
+        "score": 14,
+        "nombre": "Smith Hack Squat",
+        "archivo": "glutes/smith-hack-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/smith-hack-squat.gif"
+      },
+      {
+        "score": 3,
+        "nombre": "Potty Squat",
+        "archivo": "abs/potty-squat.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/potty-squat.gif"
+      }
+    ]
+  },
+  {
+    "id": "hip-thrust-maquina",
+    "nombre": "Hip thrust en máquina",
+    "consulta": "hip thrust en machine hinge deadlift",
+    "opciones": [
+      {
+        "score": 4.2,
+        "nombre": "Hip Raise Bent Knee",
+        "archivo": "abs/hip-raise-bent-knee.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/hip-raise-bent-knee.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Band Bent Over Hip Extension",
+        "archivo": "glutes/band-bent-over-hip-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-bent-over-hip-extension.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Bench Hip Extension",
+        "archivo": "glutes/bench-hip-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/bench-hip-extension.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Cable Standing Hip Extension",
+        "archivo": "glutes/cable-standing-hip-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/cable-standing-hip-extension.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Lever Hip Extension v2",
+        "archivo": "glutes/lever-hip-extension-v-2.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/lever-hip-extension-v-2.gif"
+      }
+    ]
+  },
+  {
+    "id": "abductores-maquina",
+    "nombre": "Abductores en máquina",
+    "consulta": "hip abduction en machine glute",
+    "opciones": [
+      {
+        "score": 6,
+        "nombre": "Lever Seated Hip Abduction",
+        "archivo": "abductors/lever-seated-hip-abduction.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abductors/lever-seated-hip-abduction.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Resistance Band Seated Hip Abduction",
+        "archivo": "abductors/resistance-band-seated-hip-abduction.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abductors/resistance-band-seated-hip-abduction.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Side Bridge Hip Abduction",
+        "archivo": "abductors/side-bridge-hip-abduction.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abductors/side-bridge-hip-abduction.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Side Hip Abduction",
+        "archivo": "abductors/side-hip-abduction.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abductors/side-hip-abduction.gif"
+      },
+      {
+        "score": 5.4,
+        "nombre": "Band Bent Over Hip Extension",
+        "archivo": "glutes/band-bent-over-hip-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-bent-over-hip-extension.gif"
+      }
+    ]
+  },
+  {
+    "id": "aductores-maquina",
+    "nombre": "Aductores en máquina",
+    "consulta": "hip adduction en machine glute",
+    "opciones": [
+      {
+        "score": 6,
+        "nombre": "Cable Hip Adduction",
+        "archivo": "adductors/cable-hip-adduction.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/adductors/cable-hip-adduction.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Lever Seated Hip Adduction",
+        "archivo": "adductors/lever-seated-hip-adduction.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/adductors/lever-seated-hip-adduction.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Side Lying Hip Adduction Male",
+        "archivo": "adductors/side-lying-hip-adduction-male.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/adductors/side-lying-hip-adduction-male.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Side Plank Hip Adduction",
+        "archivo": "adductors/side-plank-hip-adduction.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/adductors/side-plank-hip-adduction.gif"
+      },
+      {
+        "score": 5.4,
+        "nombre": "Band Bent Over Hip Extension",
+        "archivo": "glutes/band-bent-over-hip-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/band-bent-over-hip-extension.gif"
+      }
+    ]
+  },
+  {
+    "id": "patada-gluteo",
+    "nombre": "Patada de glúteo en máquina",
+    "consulta": "kickback de glute en machine",
+    "opciones": [
+      {
+        "score": 5.4,
+        "nombre": "Smith Machine Reverse Decline Close Grip Bench Press",
+        "archivo": "pectorals/smith-machine-reverse-decline-close-grip-bench-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/smith-machine-reverse-decline-close-grip-bench-press.gif"
+      },
+      {
+        "score": 5.4,
+        "nombre": "Smith Machine Decline Close Grip Bench Press",
+        "archivo": "triceps/smith-machine-decline-close-grip-bench-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/smith-machine-decline-close-grip-bench-press.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Barbell Glute Bridge Two Legs On Bench Male",
+        "archivo": "glutes/barbell-glute-bridge-two-legs-on-bench-male.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/barbell-glute-bridge-two-legs-on-bench-male.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Glute Bridge Two Legs On Bench Male",
+        "archivo": "glutes/glute-bridge-two-legs-on-bench-male.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/glutes/glute-bridge-two-legs-on-bench-male.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Dumbbell Seated Bent Over Alternate Kickback",
+        "archivo": "triceps/dumbbell-seated-bent-over-alternate-kickback.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/dumbbell-seated-bent-over-alternate-kickback.gif"
+      }
+    ]
+  },
+  {
+    "id": "pec-deck",
+    "nombre": "Aperturas en máquina (pec deck)",
+    "consulta": "fly en machine pec deck chest",
+    "opciones": [
+      {
+        "score": 7.2,
+        "nombre": "Cable One Arm Decline Chest Fly",
+        "archivo": "pectorals/cable-one-arm-decline-chest-fly.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/cable-one-arm-decline-chest-fly.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Dumbbell One Arm Chest Fly On Exercise Ball",
+        "archivo": "pectorals/dumbbell-one-arm-chest-fly-on-exercise-ball.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/dumbbell-one-arm-chest-fly-on-exercise-ball.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Machine Inner Chest Press",
+        "archivo": "pectorals/machine-inner-chest-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/machine-inner-chest-press.gif"
+      },
+      {
+        "score": 5.4,
+        "nombre": "Dumbbell One Arm Bench Fly",
+        "archivo": "pectorals/dumbbell-one-arm-bench-fly.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/dumbbell-one-arm-bench-fly.gif"
+      },
+      {
+        "score": 5.4,
+        "nombre": "Smith Machine Reverse Decline Close Grip Bench Press",
+        "archivo": "pectorals/smith-machine-reverse-decline-close-grip-bench-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/smith-machine-reverse-decline-close-grip-bench-press.gif"
+      }
+    ]
+  },
+  {
+    "id": "press-inclinado-maquina",
+    "nombre": "Press inclinado en máquina",
+    "consulta": "press incline en machine chest",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Dumbbell One Arm Incline Chest Press",
+        "archivo": "pectorals/dumbbell-one-arm-incline-chest-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/dumbbell-one-arm-incline-chest-press.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Lever Incline Chest Press v2",
+        "archivo": "pectorals/lever-incline-chest-press-v-2.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/lever-incline-chest-press-v-2.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Lever Incline Chest Press",
+        "archivo": "pectorals/lever-incline-chest-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/lever-incline-chest-press.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Machine Inner Chest Press",
+        "archivo": "pectorals/machine-inner-chest-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/machine-inner-chest-press.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Barbell Incline Bench Press",
+        "archivo": "pectorals/barbell-incline-bench-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/barbell-incline-bench-press.gif"
+      }
+    ]
+  },
+  {
+    "id": "pullover-maquina",
+    "nombre": "Pullover en máquina",
+    "consulta": "pullover en machine lat pulldown",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Reverse Grip Machine Lat Pulldown",
+        "archivo": "lats/reverse-grip-machine-lat-pulldown.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/reverse-grip-machine-lat-pulldown.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Cable Lat Pulldown Full Range Of Motion",
+        "archivo": "lats/cable-lat-pulldown-full-range-of-motion.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/cable-lat-pulldown-full-range-of-motion.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Cable Pulldown Pro Lat Bar",
+        "archivo": "lats/cable-pulldown-pro-lat-bar.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/cable-pulldown-pro-lat-bar.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Twin Handle Parallel Grip Lat Pulldown",
+        "archivo": "lats/twin-handle-parallel-grip-lat-pulldown.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/twin-handle-parallel-grip-lat-pulldown.gif"
+      },
+      {
+        "score": 5.4,
+        "nombre": "Barbell Bent Arm Pullover",
+        "archivo": "lats/barbell-bent-arm-pullover.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/barbell-bent-arm-pullover.gif"
+      }
+    ]
+  },
+  {
+    "id": "remo-alto-maquina",
+    "nombre": "Remo al cuello en máquina",
+    "consulta": "row al cuello en machine rear delt",
+    "opciones": [
+      {
+        "score": 10.2,
+        "nombre": "Cable Kneeling Rear Delt Row With Rope Male",
+        "archivo": "delts/cable-kneeling-rear-delt-row-with-rope-male.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/cable-kneeling-rear-delt-row-with-rope-male.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Band Standing Rear Delt Row",
+        "archivo": "delts/band-standing-rear-delt-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/band-standing-rear-delt-row.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Barbell Rear Delt Row",
+        "archivo": "delts/barbell-rear-delt-row.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/barbell-rear-delt-row.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Cable Rear Delt Row Stirrups",
+        "archivo": "delts/cable-rear-delt-row-stirrups.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/cable-rear-delt-row-stirrups.gif"
+      },
+      {
+        "score": 9,
+        "nombre": "Cable Rear Delt Row With Rope",
+        "archivo": "delts/cable-rear-delt-row-with-rope.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/delts/cable-rear-delt-row-with-rope.gif"
+      }
+    ]
+  },
+  {
+    "id": "curl-biceps-maquina",
+    "nombre": "Curl de bíceps en máquina",
+    "consulta": "curl de biceps en machine",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Smith Machine Bicep Curl",
+        "archivo": "biceps/smith-machine-bicep-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/smith-machine-bicep-curl.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Band Concentration Curl",
+        "archivo": "biceps/band-concentration-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/band-concentration-curl.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Barbell Seated Close Grip Concentration Curl",
+        "archivo": "biceps/barbell-seated-close-grip-concentration-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/barbell-seated-close-grip-concentration-curl.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Barbell Standing Concentration Curl",
+        "archivo": "biceps/barbell-standing-concentration-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/barbell-standing-concentration-curl.gif"
+      },
+      {
+        "score": 7.2,
+        "nombre": "Barbell Standing Wide Grip Biceps Curl",
+        "archivo": "biceps/barbell-standing-wide-grip-biceps-curl.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/biceps/barbell-standing-wide-grip-biceps-curl.gif"
+      }
+    ]
+  },
+  {
+    "id": "extension-triceps-maquina",
+    "nombre": "Extensión de tríceps en máquina",
+    "consulta": "extension de triceps en machine",
+    "opciones": [
+      {
+        "score": 10.2,
+        "nombre": "Smith Machine Incline Tricep Extension",
+        "archivo": "triceps/smith-machine-incline-tricep-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/smith-machine-incline-tricep-extension.gif"
+      },
+      {
+        "score": 8.4,
+        "nombre": "Band Side Triceps Extension",
+        "archivo": "triceps/band-side-triceps-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/band-side-triceps-extension.gif"
+      },
+      {
+        "score": 8.4,
+        "nombre": "Dumbbell Decline Triceps Extension",
+        "archivo": "triceps/dumbbell-decline-triceps-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/dumbbell-decline-triceps-extension.gif"
+      },
+      {
+        "score": 8.4,
+        "nombre": "Ez Barbell Decline Triceps Extension",
+        "archivo": "triceps/ez-barbell-decline-triceps-extension.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/ez-barbell-decline-triceps-extension.gif"
+      },
+      {
+        "score": 8.4,
+        "nombre": "Smith Machine Decline Close Grip Bench Press",
+        "archivo": "triceps/smith-machine-decline-close-grip-bench-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/smith-machine-decline-close-grip-bench-press.gif"
+      }
+    ]
+  },
+  {
+    "id": "gemelos-sentado",
+    "nombre": "Gemelos sentado en máquina",
+    "consulta": "calf seated en machine",
+    "opciones": [
+      {
+        "score": 9,
+        "nombre": "Lever Seated Squat Calf Raise On Leg Press Machine",
+        "archivo": "calves/lever-seated-squat-calf-raise-on-leg-press-machine.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/lever-seated-squat-calf-raise-on-leg-press-machine.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Barbell Seated Calf Raise 1371",
+        "archivo": "calves/barbell-seated-calf-raise-1371.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/barbell-seated-calf-raise-1371.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Barbell Seated Calf Raise",
+        "archivo": "calves/barbell-seated-calf-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/barbell-seated-calf-raise.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Dumbbell Seated Calf Raise",
+        "archivo": "calves/dumbbell-seated-calf-raise.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/dumbbell-seated-calf-raise.gif"
+      },
+      {
+        "score": 6,
+        "nombre": "Dumbbell Seated One Leg Calf Raise Hammer Grip",
+        "archivo": "calves/dumbbell-seated-one-leg-calf-raise-hammer-grip.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/calves/dumbbell-seated-one-leg-calf-raise-hammer-grip.gif"
+      }
+    ]
+  },
+  {
+    "id": "crunch-maquina",
+    "nombre": "Crunch en máquina",
+    "consulta": "crunch en machine abdominal",
+    "opciones": [
+      {
+        "score": 4.2,
+        "nombre": "Cable Side Bend Crunch Bosu Ball",
+        "archivo": "abs/cable-side-bend-crunch-bosu-ball.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/cable-side-bend-crunch-bosu-ball.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Cable Standing Crunch With Rope Attachment",
+        "archivo": "abs/cable-standing-crunch-with-rope-attachment.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/cable-standing-crunch-with-rope-attachment.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Suspended Abdominal Fallout",
+        "archivo": "abs/suspended-abdominal-fallout.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/suspended-abdominal-fallout.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Suspended Reverse Crunch",
+        "archivo": "abs/suspended-reverse-crunch.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/abs/suspended-reverse-crunch.gif"
+      },
+      {
+        "score": 4.2,
+        "nombre": "Smith Machine Reverse Decline Close Grip Bench Press",
+        "archivo": "pectorals/smith-machine-reverse-decline-close-grip-bench-press.gif",
+        "url": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/smith-machine-reverse-decline-close-grip-bench-press.gif"
+      }
+    ]
+  }
+]
