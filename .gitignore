@@ -2,6 +2,13 @@ Thumbs.db
 .DS_Store
 *.log
 
+# Descargas temporales (dataset RepDB, etc.): nunca se publican
+.tmp/
+
+# Credenciales locales (la clave service_role NUNCA se sube al repo)
+.env
+.env.local
+
 # Copias de versiones locales (ver VERSIONES/LEEME.md)
 VERSIONES/
 

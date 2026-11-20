@@ -1,0 +1,4101 @@
+{
+  "generado": "2026-11-20T12:26:52.438Z",
+  "fuente": "RepDB free tier · https://repdb.co · .tmp/repdb/exercises.json",
+  "totalNuestros": 82,
+  "totalRepDB": 708,
+  "auto": 67,
+  "revision": 9,
+  "sinMatch": 6,
+  "umbrales": {
+    "auto": 0.62,
+    "revision": 0.45
+  },
+  "matches": [
+    {
+      "id": "sentadilla-barra",
+      "nombre": "Sentadilla con barra",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 0.85,
+      "repdb": {
+        "id": "overhead-squat",
+        "nombre_es": "Sentadilla con Barra en Alto",
+        "nombre_en": "Overhead Squat"
+      },
+      "alternativas": [
+        {
+          "id": "barbell-bulgarian-split-squat",
+          "nombre": "Sentadilla Búlgara con Barra",
+          "score": 0.67
+        },
+        {
+          "id": "squat",
+          "nombre": "Sentadilla Trasera con Barra",
+          "score": 0.67
+        },
+        {
+          "id": "barbell-box-squat",
+          "nombre": "Sentadilla en Caja con Barra",
+          "score": 0.6
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/overhead-squat-start.webp",
+        "end": "images/flat/overhead-squat-peak.webp"
+      },
+      "primary_muscles": [
+        "gluteus_maximus",
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "erector_spinae",
+        "lateral_deltoid",
+        "trapezius"
+      ],
+      "instructions": [
+        "Sostén una barra por encima de la cabeza con un agarre ancho de arrancada y los codos bloqueados.",
+        "De pie con los pies ligeramente más abiertos que la anchura de los hombros.",
+        "Baja en sentadilla empujando las caderas hacia atrás y doblando las rodillas.",
+        "Mantén la barra directamente sobre el punto medio de los pies.",
+        "Impulsa a través de los talones para volver a ponerte de pie.",
+        "Repite el número de repeticiones deseado."
+      ],
+      "nuestro": {
+        "id": "sentadilla-barra",
+        "nombre": "Sentadilla con barra",
+        "patron": "sentadilla",
+        "musculos": [
+          "cuadriceps",
+          "gluteos"
+        ],
+        "equipo": [
+          "barra"
+        ],
+        "compuesto": true,
+        "desc": "Barra sobre los trapecios, pies a la anchura de los hombros. Baja con la espalda neutra hasta que los muslos queden al menos paralelos al suelo y sube empujando con todo el pie."
+      }
+    },
+    {
+      "id": "prensa",
+      "nombre": "Prensa de piernas",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "leg-press",
+        "nombre_es": "Prensa de Piernas",
+        "nombre_en": "Leg Press"
+      },
+      "alternativas": [
+        {
+          "id": "horizontal-leg-press",
+          "nombre": "Prensa de piernas horizontal",
+          "score": 0.85
+        },
+        {
+          "id": "single-leg-press",
+          "nombre": "Prensa de Piernas a Una Pierna",
+          "score": 0.78
+        },
+        {
+          "id": "close-stance-leg-press",
+          "nombre": "Prensa de piernas con postura cerrada",
+          "score": 0.68
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/leg-press-start.webp",
+        "end": "images/flat/leg-press-peak.webp"
+      },
+      "primary_muscles": [
+        "gluteus_maximus",
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "hamstrings"
+      ],
+      "instructions": [
+        "Siéntate en la prensa de piernas con los pies a la anchura de los hombros sobre la plataforma.",
+        "Suelta los seguros y baja la plataforma doblando las rodillas.",
+        "Empuja la plataforma hacia arriba hasta que las piernas queden casi rectas.",
+        "No bloquees las rodillas en la parte superior.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "prensa",
+        "nombre": "Prensa de piernas",
+        "patron": "sentadilla",
+        "musculos": [
+          "cuadriceps",
+          "gluteos"
+        ],
+        "equipo": [
+          "maquinas"
+        ],
+        "compuesto": true,
+        "desc": "Pies en el centro de la plataforma. Baja controlando hasta unos 90° de rodilla sin despegar la zona lumbar del respaldo y empuja sin bloquear las rodillas."
+      }
+    },
+    {
+      "id": "sentadilla-goblet",
+      "nombre": "Sentadilla goblet",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "goblet-squat",
+        "nombre_es": "Sentadilla Goblet",
+        "nombre_en": "Goblet Squat"
+      },
+      "alternativas": [
+        {
+          "id": "db-goblet-squat",
+          "nombre": "Sentadilla Goblet con Mancuerna",
+          "score": 0.85
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/goblet-squat-start.webp",
+        "end": "images/flat/goblet-squat-peak.webp"
+      },
+      "primary_muscles": [
+        "gluteus_maximus",
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "hamstrings"
+      ],
+      "instructions": [
+        "Sujeta una pesa rusa a la altura del pecho con ambas manos.",
+        "Baja en sentadilla manteniendo el peso cerca del pecho.",
+        "Vuelve a subir.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "sentadilla-goblet",
+        "nombre": "Sentadilla goblet",
+        "patron": "sentadilla",
+        "musculos": [
+          "cuadriceps",
+          "gluteos"
+        ],
+        "equipo": [
+          "mancuernas"
+        ],
+        "compuesto": true,
+        "desc": "Sujeta una mancuerna vertical pegada al pecho. Baja entre las piernas manteniendo el torso erguido y los codos por dentro de las rodillas."
+      }
+    },
+    {
+      "id": "sentadilla-goblet-kb",
+      "nombre": "Sentadilla goblet con kettlebell",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 0.85,
+      "repdb": {
+        "id": "goblet-squat",
+        "nombre_es": "Sentadilla Goblet",
+        "nombre_en": "Goblet Squat"
+      },
+      "alternativas": [
+        {
+          "id": "kettlebell-squat",
+          "nombre": "Sentadilla con Kettlebell",
+          "score": 0.67
+        },
+        {
+          "id": "db-goblet-squat",
+          "nombre": "Sentadilla Goblet con Mancuerna",
+          "score": 0.5
+        },
+        {
+          "id": "kettlebell-bulgarian-split-squat",
+          "nombre": "Sentadilla Búlgara con Kettlebell",
+          "score": 0.5
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/goblet-squat-start.webp",
+        "end": "images/flat/goblet-squat-peak.webp"
+      },
+      "primary_muscles": [
+        "gluteus_maximus",
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "hamstrings"
+      ],
+      "instructions": [
+        "Sujeta una pesa rusa a la altura del pecho con ambas manos.",
+        "Baja en sentadilla manteniendo el peso cerca del pecho.",
+        "Vuelve a subir.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "sentadilla-goblet-kb",
+        "nombre": "Sentadilla goblet con kettlebell",
+        "patron": "sentadilla",
+        "musculos": [
+          "cuadriceps",
+          "gluteos"
+        ],
+        "equipo": [
+          "kettlebell"
+        ],
+        "compuesto": true,
+        "desc": "Kettlebell sujeta por las asas a la altura del pecho. Baja profundo con el pecho alto y sube empujando el suelo."
+      }
+    },
+    {
+      "id": "sentadilla-peso",
+      "nombre": "Sentadilla con peso corporal",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "bodyweight-squat",
+        "nombre_es": "Sentadilla con Peso Corporal",
+        "nombre_en": "Bodyweight Squat"
+      },
+      "alternativas": [
+        {
+          "id": "bodyweight-reverse-lunge",
+          "nombre": "Zancada Inversa con Peso Corporal",
+          "score": 0.5
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/bodyweight-squat-start.webp",
+        "end": "images/flat/bodyweight-squat-peak.webp"
+      },
+      "primary_muscles": [
+        "gluteus_maximus",
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "erector_spinae",
+        "gluteus_medius",
+        "hamstrings"
+      ],
+      "instructions": [
+        "Colócate de pie con los pies separados al ancho de los hombros y los brazos extendidos al frente.",
+        "Siéntate hacia atrás y hacia abajo flexionando caderas y rodillas.",
+        "Baja hasta que los muslos queden paralelos al suelo.",
+        "Empuja con los talones para volver a la posición de pie.",
+        "Repite el número deseado de repeticiones."
+      ],
+      "nuestro": {
+        "id": "sentadilla-peso",
+        "nombre": "Sentadilla con peso corporal",
+        "patron": "sentadilla",
+        "musculos": [
+          "cuadriceps",
+          "gluteos"
+        ],
+        "equipo": [],
+        "compuesto": true,
+        "desc": "Brazos al frente para equilibrar. Baja lo más profundo que puedas con la espalda recta y los talones en el suelo. Para progresar, haz pausas abajo o baja en 3 segundos."
+      }
+    },
+    {
+      "id": "peso-muerto-rumano",
+      "nombre": "Peso muerto rumano",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "romanian-deadlift",
+        "nombre_es": "Peso Muerto Rumano",
+        "nombre_en": "Romanian Deadlift"
+      },
+      "alternativas": [
+        {
+          "id": "dumbbell-romanian-deadlift",
+          "nombre": "Peso Muerto Rumano con Mancuernas",
+          "score": 0.93
+        },
+        {
+          "id": "banded-romanian-deadlift",
+          "nombre": "Peso Muerto Rumano con Banda",
+          "score": 0.86
+        },
+        {
+          "id": "single-leg-romanian-deadlift",
+          "nombre": "Peso Muerto Rumano a Una Pierna",
+          "score": 0.86
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/romanian-deadlift-start.webp",
+        "end": "images/flat/romanian-deadlift-peak.webp"
+      },
+      "primary_muscles": [
+        "gluteus_maximus",
+        "hamstrings"
+      ],
+      "secondary_muscles": [
+        "erector_spinae"
+      ],
+      "instructions": [
+        "Párate sosteniendo la barra a la altura de las caderas con agarre prono.",
+        "Bisagra en las caderas empujándolas hacia atrás mientras mantienes las piernas casi rectas.",
+        "Baja la barra a lo largo de las piernas hasta sentir el estiramiento de los isquiotibiales.",
+        "Empuja las caderas hacia adelante para volver a la posición de pie.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "peso-muerto-rumano",
+        "nombre": "Peso muerto rumano",
+        "patron": "bisagra",
+        "musculos": [
+          "femorales",
+          "gluteos",
+          "espalda"
+        ],
+        "equipo": [
+          "barra"
+        ],
+        "compuesto": true,
+        "desc": "Rodillas ligeramente flexionadas. Lleva la cadera atrás deslizando la barra pegada a las piernas hasta notar estiramiento en los femorales y vuelve apretando glúteos."
+      }
+    },
+    {
+      "id": "peso-muerto",
+      "nombre": "Peso muerto",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 0.85,
+      "repdb": {
+        "id": "deadlift",
+        "nombre_es": "Peso Muerto con Barra",
+        "nombre_en": "Barbell Deadlift"
+      },
+      "alternativas": [
+        {
+          "id": "deficit-deadlift",
+          "nombre": "Peso Muerto en Déficit",
+          "score": 0.85
+        },
+        {
+          "id": "dumbbell-deadlift",
+          "nombre": "Peso Muerto con Mancuernas",
+          "score": 0.85
+        },
+        {
+          "id": "kettlebell-deadlift",
+          "nombre": "Peso muerto con pesa rusa",
+          "score": 0.85
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/deadlift-start.webp",
+        "end": "images/flat/deadlift-peak.webp"
+      },
+      "primary_muscles": [
+        "erector_spinae",
+        "gluteus_maximus",
+        "hamstrings"
+      ],
+      "secondary_muscles": [
+        "quadriceps",
+        "trapezius"
+      ],
+      "instructions": [
+        "De pie con los pies a la anchura de las caderas y la barra sobre el medio del pie.",
+        "Bisagra en las caderas y agarra la barra.",
+        "Contrae el core y levanta extendiendo caderas y rodillas.",
+        "Ponte completamente erguido arriba y luego baja de forma controlada.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "peso-muerto",
+        "nombre": "Peso muerto",
+        "patron": "bisagra",
+        "musculos": [
+          "femorales",
+          "gluteos",
+          "espalda"
+        ],
+        "equipo": [
+          "barra"
+        ],
+        "compuesto": true,
+        "desc": "Barra sobre el medio del pie. Agarra, tensa la espalda y empuja el suelo con las piernas manteniendo la barra pegada al cuerpo hasta quedar erguido.",
+        "nivelMin": "intermedio"
+      }
+    },
+    {
+      "id": "rumano-mancuernas",
+      "nombre": "Peso muerto rumano con mancuernas",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "dumbbell-romanian-deadlift",
+        "nombre_es": "Peso Muerto Rumano con Mancuernas",
+        "nombre_en": "Dumbbell Romanian Deadlift"
+      },
+      "alternativas": [
+        {
+          "id": "romanian-deadlift",
+          "nombre": "Peso Muerto Rumano",
+          "score": 0.93
+        },
+        {
+          "id": "dumbbell-deadlift",
+          "nombre": "Peso Muerto con Mancuernas",
+          "score": 0.75
+        },
+        {
+          "id": "banded-romanian-deadlift",
+          "nombre": "Peso Muerto Rumano con Banda",
+          "score": 0.53
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/dumbbell-romanian-deadlift-start.webp",
+        "end": "images/flat/dumbbell-romanian-deadlift-peak.webp"
+      },
+      "primary_muscles": [
+        "gluteus_maximus",
+        "hamstrings"
+      ],
+      "secondary_muscles": [
+        "erector_spinae",
+        "forearm_flexors"
+      ],
+      "instructions": [
+        "Ponte de pie sujetando mancuernas frente a los muslos con una ligera flexión de rodillas.",
+        "Inclínate desde las caderas y empuja los glúteos hacia atrás.",
+        "Baja las mancuernas a lo largo de las piernas hasta sentir el estiramiento en los isquiotibiales.",
+        "Mantén la espalda recta y los hombros hacia atrás.",
+        "Empuja las caderas hacia adelante para volver a la posición de pie.",
+        "Repite el número de repeticiones deseado."
+      ],
+      "nuestro": {
+        "id": "rumano-mancuernas",
+        "nombre": "Peso muerto rumano con mancuernas",
+        "patron": "bisagra",
+        "musculos": [
+          "femorales",
+          "gluteos"
+        ],
+        "equipo": [
+          "mancuernas"
+        ],
+        "compuesto": true,
+        "desc": "Mancuernas delante de los muslos. Lleva la cadera atrás con la espalda neutra hasta media tibia y vuelve a la posición inicial."
+      }
+    },
+    {
+      "id": "swing-kb",
+      "nombre": "Swing con kettlebell",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "kettlebell-swing",
+        "nombre_es": "Swing con pesa rusa",
+        "nombre_en": "Kettlebell Swing"
+      },
+      "alternativas": [
+        {
+          "id": "one-arm-kettlebell-swing",
+          "nombre": "Swing con Pesa Rusa a Un Brazo",
+          "score": 0.78
+        },
+        {
+          "id": "kettlebell-swing-clean",
+          "nombre": "Swing y cargada con pesa rusa",
+          "score": 0.67
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/kettlebell-swing-start.webp",
+        "end": "images/flat/kettlebell-swing-peak.webp"
+      },
+      "primary_muscles": [
+        "gluteus_maximus",
+        "hamstrings"
+      ],
+      "secondary_muscles": [
+        "erector_spinae",
+        "quadriceps"
+      ],
+      "instructions": [
+        "Párate con los pies a la anchura de los hombros y la pesa rusa en el suelo por delante.",
+        "Bisagra en las caderas, agarra la pesa rusa y llévala hacia atrás entre las piernas.",
+        "Extiende las caderas de forma explosiva para balancear la pesa rusa hasta la altura del pecho.",
+        "Deja que la pesa rusa vuelva a balancearse entre las piernas.",
+        "Repite en un movimiento fluido."
+      ],
+      "nuestro": {
+        "id": "swing-kb",
+        "nombre": "Swing con kettlebell",
+        "patron": "bisagra",
+        "musculos": [
+          "gluteos",
+          "femorales"
+        ],
+        "equipo": [
+          "kettlebell"
+        ],
+        "compuesto": true,
+        "desc": "Balancea la kettlebell entre las piernas llevando la cadera atrás y proyéctala hasta la altura del pecho con un golpe explosivo de cadera."
+      }
+    },
+    {
+      "id": "puente-gluteo",
+      "nombre": "Puente de glúteo",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "glute-bridge",
+        "nombre_es": "Puente de Glúteos",
+        "nombre_en": "Glute Bridge"
+      },
+      "alternativas": [
+        {
+          "id": "barbell-glute-bridge",
+          "nombre": "Puente de Glúteos con Barra",
+          "score": 0.85
+        },
+        {
+          "id": "banded-glute-bridge",
+          "nombre": "Puente de Glúteos con Banda",
+          "score": 0.78
+        },
+        {
+          "id": "glute-bridge-hold",
+          "nombre": "Puente de Glúteos Isométrico",
+          "score": 0.78
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/glute-bridge-start.webp",
+        "end": "images/flat/glute-bridge-peak.webp"
+      },
+      "primary_muscles": [
+        "gluteus_maximus"
+      ],
+      "secondary_muscles": [
+        "hamstrings"
+      ],
+      "instructions": [
+        "Túmbate boca arriba con las rodillas flexionadas y los pies planos en el suelo.",
+        "Eleva las caderas apretando los glúteos.",
+        "Mantén brevemente en la parte alta con las caderas totalmente extendidas.",
+        "Baja las caderas de forma controlada.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "puente-gluteo",
+        "nombre": "Puente de glúteo",
+        "patron": "bisagra",
+        "musculos": [
+          "gluteos",
+          "femorales"
+        ],
+        "equipo": [],
+        "compuesto": false,
+        "desc": "Tumbado boca arriba con las rodillas flexionadas. Eleva la cadera apretando glúteos hasta alinear rodillas, cadera y hombros. Pausa 1 segundo arriba."
+      }
+    },
+    {
+      "id": "hip-thrust",
+      "nombre": "Hip thrust con barra",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "hip-thrust",
+        "nombre_es": "Hip thrust con barra",
+        "nombre_en": "Barbell Hip Thrust"
+      },
+      "alternativas": [
+        {
+          "id": "smith-machine-hip-thrust",
+          "nombre": "Hip Thrust en Máquina Smith",
+          "score": 0.51
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/hip-thrust-start.webp",
+        "end": "images/flat/hip-thrust-peak.webp"
+      },
+      "primary_muscles": [
+        "gluteus_maximus",
+        "gluteus_medius"
+      ],
+      "secondary_muscles": [
+        "hamstrings"
+      ],
+      "instructions": [
+        "Siéntate en el suelo con la parte superior de la espalda contra un banco y la barra sobre las caderas.",
+        "Empuja las caderas hacia arriba hasta que los muslos queden paralelos al suelo.",
+        "Aprieta los glúteos en la parte superior.",
+        "Baja las caderas de nuevo con control.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "hip-thrust",
+        "nombre": "Hip thrust con barra",
+        "patron": "bisagra",
+        "musculos": [
+          "gluteos"
+        ],
+        "equipo": [
+          "barra",
+          "banco"
+        ],
+        "compuesto": true,
+        "desc": "Espalda alta apoyada en el banco, barra sobre la cadera. Empuja hasta la extensión completa de cadera con la barbilla recogida."
+      }
+    },
+    {
+      "id": "zancada-mancuernas",
+      "nombre": "Zancadas con mancuernas",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "db-lunge",
+        "nombre_es": "Zancada con Mancuernas",
+        "nombre_en": "Dumbbell Lunge"
+      },
+      "alternativas": [
+        {
+          "id": "lunge",
+          "nombre": "Zancada",
+          "score": 0.68
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/db-lunge-start.webp",
+        "end": "images/flat/db-lunge-peak.webp"
+      },
+      "primary_muscles": [
+        "gluteus_maximus",
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "hamstrings"
+      ],
+      "instructions": [
+        "De pie, sujeta mancuernas a los costados.",
+        "Da un paso adelante con un pie y baja la rodilla trasera hacia el suelo.",
+        "Empuja con el pie delantero para volver.",
+        "Alterna las piernas.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "zancada-mancuernas",
+        "nombre": "Zancadas con mancuernas",
+        "patron": "zancada",
+        "musculos": [
+          "cuadriceps",
+          "gluteos"
+        ],
+        "equipo": [
+          "mancuernas"
+        ],
+        "compuesto": true,
+        "desc": "Da un paso largo hacia delante y baja hasta que la rodilla trasera casi toque el suelo. Alterna piernas."
+      }
+    },
+    {
+      "id": "bulgara",
+      "nombre": "Sentadilla búlgara",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "bulgarian-split-squat",
+        "nombre_es": "Sentadilla Búlgara",
+        "nombre_en": "Bulgarian Split Squat"
+      },
+      "alternativas": [
+        {
+          "id": "barbell-bulgarian-split-squat",
+          "nombre": "Sentadilla Búlgara con Barra",
+          "score": 0.85
+        },
+        {
+          "id": "kettlebell-bulgarian-split-squat",
+          "nombre": "Sentadilla Búlgara con Kettlebell",
+          "score": 0.85
+        },
+        {
+          "id": "smith-machine-bulgarian-split",
+          "nombre": "Sentadilla Búlgara en Máquina Smith",
+          "score": 0.78
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/bulgarian-split-squat-start.webp",
+        "end": "images/flat/bulgarian-split-squat-peak.webp"
+      },
+      "primary_muscles": [
+        "gluteus_maximus",
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "hamstrings"
+      ],
+      "instructions": [
+        "Colócate de pie frente a un banco y apoya un pie detrás sobre el banco.",
+        "Sujeta mancuernas a los lados.",
+        "Baja el cuerpo hasta que el muslo delantero quede paralelo al suelo.",
+        "Empuja con el talón delantero para volver a la posición de pie.",
+        "Repite en ambos lados."
+      ],
+      "nuestro": {
+        "id": "bulgara",
+        "nombre": "Sentadilla búlgara",
+        "patron": "zancada",
+        "musculos": [
+          "cuadriceps",
+          "gluteos"
+        ],
+        "equipo": [
+          "banco"
+        ],
+        "compuesto": true,
+        "desc": "Empeine trasero apoyado en el banco. Baja en vertical sobre la pierna delantera. Añade mancuernas cuando sea fácil."
+      }
+    },
+    {
+      "id": "zancada-atras",
+      "nombre": "Zancada hacia atrás",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "reverse-lunge",
+        "nombre_es": "Zancada Inversa",
+        "nombre_en": "Reverse Lunge"
+      },
+      "alternativas": [
+        {
+          "id": "barbell-reverse-lunge",
+          "nombre": "Zancada Inversa con Barra",
+          "score": 0.68
+        },
+        {
+          "id": "kettlebell-reverse-lunge",
+          "nombre": "Zancada Inversa con Kettlebell",
+          "score": 0.68
+        },
+        {
+          "id": "reverse-plank",
+          "nombre": "Plancha Inversa",
+          "score": 0.68
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/reverse-lunge-start.webp",
+        "end": "images/flat/reverse-lunge-peak.webp"
+      },
+      "primary_muscles": [
+        "gluteus_maximus",
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "hamstrings"
+      ],
+      "instructions": [
+        "Párate sosteniendo mancuernas a los costados.",
+        "Da un paso hacia atrás con una pierna y baja la rodilla hacia el suelo.",
+        "Baja hasta que el muslo delantero quede paralelo al suelo.",
+        "Empuja con el talón delantero para volver a la posición de pie.",
+        "Repite en ambos lados."
+      ],
+      "nuestro": {
+        "id": "zancada-atras",
+        "nombre": "Zancada hacia atrás",
+        "patron": "zancada",
+        "musculos": [
+          "cuadriceps",
+          "gluteos"
+        ],
+        "equipo": [],
+        "compuesto": true,
+        "desc": "Da un paso atrás y baja la rodilla trasera hacia el suelo. Vuelve empujando con el talón de la pierna delantera."
+      }
+    },
+    {
+      "id": "press-banca",
+      "nombre": "Press de banca",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 0.85,
+      "repdb": {
+        "id": "bench-press",
+        "nombre_es": "Press de Banca con Barra",
+        "nombre_en": "Barbell Bench Press"
+      },
+      "alternativas": [
+        {
+          "id": "db-bench-press",
+          "nombre": "Press de Banca con Mancuernas",
+          "score": 0.85
+        },
+        {
+          "id": "decline-bench-press",
+          "nombre": "Press de Banca Declinado",
+          "score": 0.85
+        },
+        {
+          "id": "paused-bench-press",
+          "nombre": "Press de Banca con Pausa",
+          "score": 0.78
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/bench-press-start.webp",
+        "end": "images/flat/bench-press-peak.webp"
+      },
+      "primary_muscles": [
+        "pectoralis_major"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoid",
+        "triceps_brachii"
+      ],
+      "instructions": [
+        "Acuéstate en el banco con los ojos bajo la barra.",
+        "Agarra la barra ligeramente más ancho que la anchura de los hombros.",
+        "Saca la barra del rack y bájala hasta el centro del pecho.",
+        "Empuja la barra de vuelta hasta la extensión completa de los brazos.",
+        "Repite el número de repeticiones deseado."
+      ],
+      "nuestro": {
+        "id": "press-banca",
+        "nombre": "Press de banca",
+        "patron": "empuje_h",
+        "musculos": [
+          "pecho",
+          "triceps",
+          "hombros"
+        ],
+        "equipo": [
+          "barra",
+          "banco"
+        ],
+        "compuesto": true,
+        "desc": "Escápulas juntas y pies firmes. Baja la barra controlada hasta el pecho, a la altura del esternón, y empuja hasta extender los brazos."
+      }
+    },
+    {
+      "id": "press-mancuernas",
+      "nombre": "Press de banca con mancuernas",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "db-bench-press",
+        "nombre_es": "Press de Banca con Mancuernas",
+        "nombre_en": "Dumbbell Bench Press"
+      },
+      "alternativas": [
+        {
+          "id": "close-grip-db-bench-press",
+          "nombre": "Press de Banca con Mancuernas y Agarre Cerrado",
+          "score": 0.78
+        },
+        {
+          "id": "bench-press",
+          "nombre": "Press de Banca con Barra",
+          "score": 0.5
+        },
+        {
+          "id": "db-svend-press",
+          "nombre": "Press Svend con Mancuernas",
+          "score": 0.5
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/db-bench-press-start.webp",
+        "end": "images/flat/db-bench-press-peak.webp"
+      },
+      "primary_muscles": [
+        "pectoralis_major"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoid",
+        "triceps_brachii"
+      ],
+      "instructions": [
+        "Túmbate en un banco plano sosteniendo una mancuerna en cada mano a la altura del pecho.",
+        "Empuja las mancuernas hacia arriba hasta extender completamente los brazos.",
+        "Bájalas lentamente hasta la posición inicial.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "press-mancuernas",
+        "nombre": "Press de banca con mancuernas",
+        "patron": "empuje_h",
+        "musculos": [
+          "pecho",
+          "triceps",
+          "hombros"
+        ],
+        "equipo": [
+          "mancuernas",
+          "banco"
+        ],
+        "compuesto": true,
+        "desc": "Mancuernas a los lados del pecho con los codos a unos 45°. Empuja hacia arriba juntándolas ligeramente."
+      }
+    },
+    {
+      "id": "press-maquina",
+      "nombre": "Press de pecho en máquina",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "chest-press-machine",
+        "nombre_es": "Press de Pecho en Máquina",
+        "nombre_en": "Machine Chest Press"
+      },
+      "alternativas": [
+        {
+          "id": "cable-chest-press",
+          "nombre": "Press de Pecho con Cable",
+          "score": 0.5
+        },
+        {
+          "id": "machine-shoulder-press",
+          "nombre": "Press de Hombros en Máquina",
+          "score": 0.5
+        },
+        {
+          "id": "smith-machine-bench-press",
+          "nombre": "Press de Banca en Máquina Smith",
+          "score": 0.5
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/chest-press-machine-start.webp",
+        "end": "images/flat/chest-press-machine-peak.webp"
+      },
+      "primary_muscles": [
+        "pectoralis_major"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoid",
+        "triceps_brachii"
+      ],
+      "instructions": [
+        "Siéntate en la máquina con la espalda plana contra el respaldo.",
+        "Agarra los mangos a la altura del pecho.",
+        "Empuja los mangos hacia adelante hasta extender los brazos completamente.",
+        "Vuelve lentamente a la posición inicial.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "press-maquina",
+        "nombre": "Press de pecho en máquina",
+        "patron": "empuje_h",
+        "musculos": [
+          "pecho",
+          "triceps"
+        ],
+        "equipo": [
+          "maquinas"
+        ],
+        "compuesto": true,
+        "desc": "Ajusta el asiento para que las asas queden a la altura del pecho. Empuja sin despegar la espalda y vuelve controlando."
+      }
+    },
+    {
+      "id": "flexiones",
+      "nombre": "Flexiones",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "push-up",
+        "nombre_es": "Push-Up",
+        "nombre_en": "Push-Up"
+      },
+      "alternativas": [
+        {
+          "id": "deficit-push-ups",
+          "nombre": "Flexiones en Déficit",
+          "score": 0.68
+        },
+        {
+          "id": "diamond-push-ups",
+          "nombre": "Flexiones en Diamante",
+          "score": 0.68
+        },
+        {
+          "id": "handstand-push-ups",
+          "nombre": "Flexiones en Pino",
+          "score": 0.68
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/push-up-start.webp",
+        "end": "images/flat/push-up-peak.webp"
+      },
+      "primary_muscles": [
+        "pectoralis_major",
+        "triceps_brachii"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoid"
+      ],
+      "instructions": [
+        "Comienza en posición de plancha alta con las manos a la anchura de los hombros.",
+        "Baja el cuerpo hasta que el pecho casi toque el suelo.",
+        "Empuja hacia arriba hasta la posición inicial.",
+        "Mantén el cuerpo en línea recta en todo momento.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "flexiones",
+        "nombre": "Flexiones",
+        "patron": "empuje_h",
+        "musculos": [
+          "pecho",
+          "triceps",
+          "hombros"
+        ],
+        "equipo": [],
+        "compuesto": true,
+        "desc": "Manos algo más abiertas que los hombros y cuerpo en línea recta. Baja hasta casi tocar el suelo con el pecho. Si cuestan, apoya las rodillas o las manos en un lugar elevado."
+      }
+    },
+    {
+      "id": "flexiones-bandas",
+      "nombre": "Press de pecho con banda",
+      "estado": "revisar",
+      "origen": "manual",
+      "razon": "Press de pecho con banda ≈ Push-Up con Banda",
+      "score": 1,
+      "repdb": {
+        "id": "banded-push-up",
+        "nombre_es": "Push-Up con Banda",
+        "nombre_en": "Banded Push-Up"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/banded-push-up-start.webp",
+        "end": "images/flat/banded-push-up-peak.webp"
+      },
+      "primary_muscles": [
+        "pectoralis_major",
+        "triceps_brachii"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoid",
+        "serratus_anterior"
+      ],
+      "instructions": [
+        "Coloca una banda elástica sobre la parte alta de la espalda, justo debajo del cuello, y sujeta cada extremo bajo la palma de la mano del mismo lado, apoyada en el suelo.",
+        "Empieza en plancha alta con las manos un poco más abiertas que los hombros y el cuerpo en línea recta desde la cabeza hasta los talones.",
+        "Baja el pecho hacia el suelo flexionando los codos, manteniéndolos a unos 45 grados del cuerpo.",
+        "Empuja el suelo y estira los brazos contra la tensión de la banda hasta volver a la plancha.",
+        "Mantén el core firme y las caderas niveladas durante toda la repetición.",
+        "Completa el número de repeticiones previsto, o apoya las rodillas si no puedes mantener el cuerpo en una sola línea."
+      ],
+      "nuestro": {
+        "id": "flexiones-bandas",
+        "nombre": "Press de pecho con banda",
+        "patron": "empuje_h",
+        "musculos": [
+          "pecho",
+          "triceps"
+        ],
+        "equipo": [
+          "bandas"
+        ],
+        "compuesto": true,
+        "desc": "Banda anclada a la espalda. Empuja hacia delante hasta extender los brazos y vuelve despacio."
+      }
+    },
+    {
+      "id": "press-militar",
+      "nombre": "Press militar con barra",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "ohp",
+        "nombre_es": "Press Militar con Barra",
+        "nombre_en": "Barbell Overhead Press"
+      },
+      "alternativas": [
+        {
+          "id": "bench-press",
+          "nombre": "Press de Banca con Barra",
+          "score": 0.5
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/ohp-start.webp",
+        "end": "images/flat/ohp-peak.webp"
+      },
+      "primary_muscles": [
+        "anterior_deltoid",
+        "lateral_deltoid"
+      ],
+      "secondary_muscles": [
+        "trapezius",
+        "triceps_brachii"
+      ],
+      "instructions": [
+        "De pie con los pies a la anchura de los hombros y la barra a la altura de las clavículas.",
+        "Contrae el core y empuja la barra por encima de la cabeza.",
+        "Bloquea los codos arriba con la barra sobre el punto medio del pie.",
+        "Baja la barra hasta la altura de las clavículas.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "press-militar",
+        "nombre": "Press militar con barra",
+        "patron": "empuje_v",
+        "musculos": [
+          "hombros",
+          "triceps"
+        ],
+        "equipo": [
+          "barra"
+        ],
+        "compuesto": true,
+        "desc": "De pie, glúteos y abdomen apretados. Empuja la barra desde la clavícula hasta encima de la cabeza, metiendo la cabeza bajo la barra al final."
+      }
+    },
+    {
+      "id": "press-hombro-mancuernas",
+      "nombre": "Press de hombros con mancuernas",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "dumbbell-shoulder-press",
+        "nombre_es": "Press de Hombros con Mancuernas",
+        "nombre_en": "Dumbbell Shoulder Press"
+      },
+      "alternativas": [
+        {
+          "id": "seated-db-press",
+          "nombre": "Press de Hombro con Mancuernas Sentado",
+          "score": 0.75
+        },
+        {
+          "id": "db-bench-press",
+          "nombre": "Press de Banca con Mancuernas",
+          "score": 0.5
+        },
+        {
+          "id": "db-shrug",
+          "nombre": "Encogimiento de Hombros con Mancuernas",
+          "score": 0.5
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/dumbbell-shoulder-press-start.webp",
+        "end": "images/flat/dumbbell-shoulder-press-peak.webp"
+      },
+      "primary_muscles": [
+        "anterior_deltoid",
+        "lateral_deltoid"
+      ],
+      "secondary_muscles": [
+        "trapezius",
+        "triceps_brachii"
+      ],
+      "instructions": [
+        "Siéntate o ponte de pie sujetando mancuernas a la altura de los hombros con las palmas mirando hacia adelante.",
+        "Empuja ambas mancuernas por encima de la cabeza hasta que los brazos queden completamente extendidos.",
+        "Mantén el core contraído y evita arquear la zona lumbar.",
+        "Baja las mancuernas de forma controlada hasta la altura de los hombros.",
+        "No dejes que las mancuernas se desplacen detrás de la cabeza.",
+        "Repite el número de repeticiones deseado."
+      ],
+      "nuestro": {
+        "id": "press-hombro-mancuernas",
+        "nombre": "Press de hombros con mancuernas",
+        "patron": "empuje_v",
+        "musculos": [
+          "hombros",
+          "triceps"
+        ],
+        "equipo": [
+          "mancuernas"
+        ],
+        "compuesto": true,
+        "desc": "Sentado o de pie, mancuernas a la altura de las orejas. Empuja hacia arriba sin arquear la zona lumbar."
+      }
+    },
+    {
+      "id": "press-hombro-maquina",
+      "nombre": "Press de hombros en máquina",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "machine-shoulder-press",
+        "nombre_es": "Press de Hombros en Máquina",
+        "nombre_en": "Machine Shoulder Press"
+      },
+      "alternativas": [
+        {
+          "id": "smith-machine-shoulder-press",
+          "nombre": "Press de Hombros en Máquina Smith",
+          "score": 1
+        },
+        {
+          "id": "seated-smith-machine-shoulder-press",
+          "nombre": "Press de Hombros en Máquina Smith Sentado",
+          "score": 0.93
+        },
+        {
+          "id": "single-arm-machine-shoulder-press",
+          "nombre": "Press de hombros unilateral en máquina",
+          "score": 0.68
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/machine-shoulder-press-start.webp",
+        "end": "images/flat/machine-shoulder-press-peak.webp"
+      },
+      "primary_muscles": [
+        "anterior_deltoid",
+        "lateral_deltoid"
+      ],
+      "secondary_muscles": [
+        "trapezius",
+        "triceps_brachii"
+      ],
+      "instructions": [
+        "Siéntate en la máquina con la espalda contra el rodillo.",
+        "Agarra las manijas a la altura de los hombros.",
+        "Presiona las manijas sobre la cabeza hasta que los brazos queden completamente extendidos.",
+        "Baja con control a la posición inicial.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "press-hombro-maquina",
+        "nombre": "Press de hombros en máquina",
+        "patron": "empuje_v",
+        "musculos": [
+          "hombros",
+          "triceps"
+        ],
+        "equipo": [
+          "maquinas"
+        ],
+        "compuesto": true,
+        "desc": "Asas a la altura de los hombros. Empuja hacia arriba y baja controlando."
+      }
+    },
+    {
+      "id": "pike",
+      "nombre": "Flexiones pike",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "pike-push-ups",
+        "nombre_es": "Flexiones en Pica",
+        "nombre_en": "Pike Push Ups"
+      },
+      "alternativas": [
+        {
+          "id": "push-up",
+          "nombre": "Push-Up",
+          "score": 0.68
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/pike-push-ups-start.webp",
+        "end": "images/flat/pike-push-ups-peak.webp"
+      },
+      "primary_muscles": [
+        "anterior_deltoid",
+        "lateral_deltoid"
+      ],
+      "secondary_muscles": [
+        "trapezius",
+        "triceps_brachii"
+      ],
+      "instructions": [
+        "Comienza en posición de perro boca abajo con las caderas altas y las manos a la anchura de los hombros.",
+        "Acerca los pies a las manos.",
+        "Dobla los codos y baja la cabeza hacia el suelo.",
+        "Mantén las caderas altas durante todo el ejercicio.",
+        "Empuja hacia arriba hasta que los brazos queden completamente extendidos.",
+        "Repite el número de repeticiones deseado."
+      ],
+      "nuestro": {
+        "id": "pike",
+        "nombre": "Flexiones pike",
+        "patron": "empuje_v",
+        "musculos": [
+          "hombros",
+          "triceps"
+        ],
+        "equipo": [],
+        "compuesto": true,
+        "desc": "Cadera alta formando una V invertida. Flexiona los codos llevando la cabeza hacia el suelo entre las manos y empuja."
+      }
+    },
+    {
+      "id": "remo-barra",
+      "nombre": "Remo con barra",
+      "estado": "auto",
+      "origen": "manual",
+      "razon": "Remo con barra = Remo con Barra Inclinado",
+      "score": 1,
+      "repdb": {
+        "id": "barbell-row",
+        "nombre_es": "Remo con Barra Inclinado",
+        "nombre_en": "Bent-Over Barbell Row"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/barbell-row-start.webp",
+        "end": "images/flat/barbell-row-peak.webp"
+      },
+      "primary_muscles": [
+        "latissimus_dorsi",
+        "rhomboids"
+      ],
+      "secondary_muscles": [
+        "biceps_brachii",
+        "posterior_deltoid"
+      ],
+      "instructions": [
+        "Inclínate en las caderas con una ligera flexión de rodillas.",
+        "Agarra la barra ligeramente más ancho que la anchura de los hombros.",
+        "Tira de la barra hacia el pecho inferior apretando los omóplatos.",
+        "Baja la barra de forma controlada.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "remo-barra",
+        "nombre": "Remo con barra",
+        "patron": "tiron_h",
+        "musculos": [
+          "espalda",
+          "biceps"
+        ],
+        "equipo": [
+          "barra"
+        ],
+        "compuesto": true,
+        "desc": "Torso inclinado unos 45° con la espalda neutra. Tira de la barra hacia el ombligo juntando las escápulas."
+      }
+    },
+    {
+      "id": "remo-mancuerna",
+      "nombre": "Remo con mancuerna a una mano",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "single-arm-db-row",
+        "nombre_es": "Remo con Mancuerna a Un Brazo",
+        "nombre_en": "Single-Arm Dumbbell Row"
+      },
+      "alternativas": [
+        {
+          "id": "single-arm-chest-supported-dumbbell-row",
+          "nombre": "Remo con Mancuerna a Una Mano con Pecho Apoyado",
+          "score": 0.78
+        },
+        {
+          "id": "one-arm-dumbbell-swing",
+          "nombre": "Swing con Mancuerna a un Brazo",
+          "score": 0.5
+        },
+        {
+          "id": "one-arm-kettlebell-row",
+          "nombre": "Remo con Pesa Rusa a Un Brazo",
+          "score": 0.5
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/single-arm-db-row-start.webp",
+        "end": "images/flat/single-arm-db-row-peak.webp"
+      },
+      "primary_muscles": [
+        "latissimus_dorsi",
+        "rhomboids"
+      ],
+      "secondary_muscles": [
+        "biceps_brachii",
+        "posterior_deltoid"
+      ],
+      "instructions": [
+        "Coloca una rodilla y una mano en un banco como apoyo.",
+        "Sostén una mancuerna en la otra mano con el brazo extendido.",
+        "Tira de la mancuerna hacia la cadera apretando el omóplato.",
+        "Baja la mancuerna con control.",
+        "Repite de ambos lados."
+      ],
+      "nuestro": {
+        "id": "remo-mancuerna",
+        "nombre": "Remo con mancuerna a una mano",
+        "patron": "tiron_h",
+        "musculos": [
+          "espalda",
+          "biceps"
+        ],
+        "equipo": [
+          "mancuernas"
+        ],
+        "compuesto": true,
+        "desc": "Rodilla y mano apoyadas en un banco o silla. Tira de la mancuerna hacia la cadera con el codo pegado."
+      }
+    },
+    {
+      "id": "remo-polea",
+      "nombre": "Remo sentado en polea",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "seated-cable-row",
+        "nombre_es": "Remo Sentado en Polea",
+        "nombre_en": "Seated Cable Row"
+      },
+      "alternativas": [
+        {
+          "id": "one-arm-seated-cable-row",
+          "nombre": "Remo Unilateral Sentado en Polea",
+          "score": 0.68
+        },
+        {
+          "id": "wide-grip-seated-cable-row",
+          "nombre": "Remo en Polea Sentado en Agarre Ancho",
+          "score": 0.6
+        },
+        {
+          "id": "cable-bent-over-row",
+          "nombre": "Remo Inclinado con Cable",
+          "score": 0.5
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/seated-cable-row-start.webp",
+        "end": "images/flat/seated-cable-row-peak.webp"
+      },
+      "primary_muscles": [
+        "latissimus_dorsi",
+        "rhomboids"
+      ],
+      "secondary_muscles": [
+        "biceps_brachii",
+        "erector_spinae",
+        "posterior_deltoid"
+      ],
+      "instructions": [
+        "Siéntate en la estación de remo y coloca los pies en los apoyos.",
+        "Sujeta la manija y siéntate erguido con una ligera inclinación hacia adelante.",
+        "Lleva los codos hacia atrás y tira de la manija hacia la parte baja del abdomen.",
+        "Contrae los omóplatos al final del tirón.",
+        "Extiende los brazos con control de vuelta a la posición inicial.",
+        "Repite el número de repeticiones deseado."
+      ],
+      "nuestro": {
+        "id": "remo-polea",
+        "nombre": "Remo sentado en polea",
+        "patron": "tiron_h",
+        "musculos": [
+          "espalda",
+          "biceps"
+        ],
+        "equipo": [
+          "polea"
+        ],
+        "compuesto": true,
+        "desc": "Espalda recta. Tira del agarre hacia el abdomen llevando los codos atrás y vuelve estirando sin encorvarte."
+      }
+    },
+    {
+      "id": "remo-maquina",
+      "nombre": "Remo en máquina",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "rowing-machine",
+        "nombre_es": "Máquina de Remo",
+        "nombre_en": "Rowing Machine"
+      },
+      "alternativas": [
+        {
+          "id": "smith-machine-bent-over-row",
+          "nombre": "Remo Inclinado en Máquina Smith",
+          "score": 0.67
+        },
+        {
+          "id": "chest-supported-machine-row",
+          "nombre": "Remo en Máquina con Apoyo en el Pecho",
+          "score": 0.61
+        },
+        {
+          "id": "smith-machine-upright-row",
+          "nombre": "Remo al Mentón en Máquina Smith",
+          "score": 0.6
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/rowing-machine-start.webp",
+        "end": "images/flat/rowing-machine-peak.webp"
+      },
+      "primary_muscles": [
+        "latissimus_dorsi",
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "biceps_brachii",
+        "erector_spinae",
+        "gluteus_maximus",
+        "hamstrings",
+        "rhomboids",
+        "trapezius"
+      ],
+      "instructions": [
+        "Siéntate en la máquina de remo, sujeta los pies con las correas de las plataformas y agarra la manija en pronación.",
+        "Deslízate hacia delante hasta la posición de ataque: tibias verticales, torso ligeramente por delante de la cadera y brazos estirados hacia el volante.",
+        "Empuja primero con las piernas y desplaza el asiento hacia atrás hasta dejar las rodillas casi estiradas.",
+        "Lleva el torso hacia atrás pasando de la vertical y tira entonces de la manija hasta las costillas bajas, con los codos pasando junto a los costados.",
+        "Invierte el orden en la recuperación — primero los brazos hacia delante, después el torso y por último flexionar las rodillas — y vuelve a deslizarte hasta la posición de ataque para la siguiente palada.",
+        "Continúa durante el tiempo, la distancia o el número de paladas que quieras."
+      ],
+      "nuestro": {
+        "id": "remo-maquina",
+        "nombre": "Remo en máquina",
+        "patron": "tiron_h",
+        "musculos": [
+          "espalda",
+          "biceps"
+        ],
+        "equipo": [
+          "maquinas"
+        ],
+        "compuesto": true,
+        "desc": "Pecho apoyado en el respaldo. Tira de las asas juntando las escápulas."
+      }
+    },
+    {
+      "id": "remo-bandas",
+      "nombre": "Remo con banda",
+      "estado": "auto",
+      "origen": "manual",
+      "razon": "Remo con banda = Remo de Pie con Banda",
+      "score": 1,
+      "repdb": {
+        "id": "banded-standing-row",
+        "nombre_es": "Remo de Pie con Banda",
+        "nombre_en": "Banded Standing Row"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/banded-standing-row-start.webp",
+        "end": "images/flat/banded-standing-row-peak.webp"
+      },
+      "primary_muscles": [
+        "latissimus_dorsi",
+        "rhomboids"
+      ],
+      "secondary_muscles": [
+        "biceps_brachii",
+        "posterior_deltoid",
+        "trapezius"
+      ],
+      "instructions": [
+        "Ancla una banda elástica a la altura del pecho, colócate frente a ella con un extremo en cada mano y da un paso hacia atrás hasta que la banda quede con una tensión ligera.",
+        "Ponte erguido con los pies separados al ancho de las caderas y las rodillas ligeramente flexionadas, con los brazos estirados al frente.",
+        "Lleva los codos hacia atrás pegados a los costados y acerca las manos a las costillas inferiores.",
+        "Junta los omóplatos al final del tirón sin encoger los hombros.",
+        "Estira los brazos hacia adelante de nuevo despacio, resistiendo a la banda.",
+        "Completa el número de repeticiones previsto."
+      ],
+      "nuestro": {
+        "id": "remo-bandas",
+        "nombre": "Remo con banda",
+        "patron": "tiron_h",
+        "musculos": [
+          "espalda",
+          "biceps"
+        ],
+        "equipo": [
+          "bandas"
+        ],
+        "compuesto": true,
+        "desc": "Banda anclada delante a la altura del pecho. Tira hacia el abdomen juntando las escápulas."
+      }
+    },
+    {
+      "id": "remo-invertido",
+      "nombre": "Remo invertido bajo mesa",
+      "estado": "auto",
+      "origen": "manual",
+      "razon": "Remo invertido = Inverted Row",
+      "score": 1,
+      "repdb": {
+        "id": "inverted-row",
+        "nombre_es": "Remo invertido",
+        "nombre_en": "Inverted Row"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/inverted-row-start.webp",
+        "end": "images/flat/inverted-row-peak.webp"
+      },
+      "primary_muscles": [
+        "latissimus_dorsi",
+        "rhomboids",
+        "trapezius"
+      ],
+      "secondary_muscles": [
+        "biceps_brachii",
+        "posterior_deltoid",
+        "rectus_abdominis"
+      ],
+      "instructions": [
+        "Coloca una barra en un rack a la altura de la cintura aproximadamente.",
+        "Acuéstate debajo y agarra la barra ligeramente más ancha que los hombros con agarre prono.",
+        "Cuélgate con los brazos extendidos, los talones en el suelo y el cuerpo recto de la cabeza a los tobillos.",
+        "Tira del pecho hacia la barra, apretando los omóplatos.",
+        "Bájate con control hasta que los brazos estén completamente extendidos.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "remo-invertido",
+        "nombre": "Remo invertido bajo mesa",
+        "patron": "tiron_h",
+        "musculos": [
+          "espalda",
+          "biceps"
+        ],
+        "equipo": [],
+        "compuesto": true,
+        "desc": "Túmbate bajo una mesa robusta y agárrate al borde. Con el cuerpo recto, tira del pecho hacia la mesa. Asegúrate de que la mesa no vuelca."
+      }
+    },
+    {
+      "id": "dominadas",
+      "nombre": "Dominadas",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "pull-up",
+        "nombre_es": "Dominada",
+        "nombre_en": "Pull-Up"
+      },
+      "alternativas": [
+        {
+          "id": "negative-pull-ups",
+          "nombre": "Dominadas Negativas",
+          "score": 0.68
+        },
+        {
+          "id": "scapular-pull-ups",
+          "nombre": "Dominadas Escapulares",
+          "score": 0.68
+        },
+        {
+          "id": "archer-pull-ups",
+          "nombre": "Dominadas Arquero",
+          "score": 0.61
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/pull-up-start.webp",
+        "end": "images/flat/pull-up-peak.webp"
+      },
+      "primary_muscles": [
+        "latissimus_dorsi"
+      ],
+      "secondary_muscles": [
+        "biceps_brachii",
+        "posterior_deltoid",
+        "rhomboids"
+      ],
+      "instructions": [
+        "Cuélgate de una barra con agarre prono, ligeramente más ancho que el ancho de los hombros.",
+        "Súbete hasta que la barbilla quede por encima de la barra.",
+        "Baja con control hasta el cuelgue completo.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "dominadas",
+        "nombre": "Dominadas",
+        "patron": "tiron_v",
+        "musculos": [
+          "espalda",
+          "biceps"
+        ],
+        "equipo": [
+          "dominadas"
+        ],
+        "compuesto": true,
+        "desc": "Agarre algo más ancho que los hombros. Tira hasta pasar la barbilla por encima de la barra y baja hasta extender los brazos. Si no puedes, haz solo la bajada en 4 segundos."
+      }
+    },
+    {
+      "id": "jalon",
+      "nombre": "Jalón al pecho",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "lat-pulldown",
+        "nombre_es": "Jalón al Pecho",
+        "nombre_en": "Lat Pulldown"
+      },
+      "alternativas": [
+        {
+          "id": "one-arm-lat-pulldown",
+          "nombre": "Jalón al Pecho con Un Brazo",
+          "score": 0.61
+        },
+        {
+          "id": "close-grip-lat-pulldown",
+          "nombre": "Jalón al Pecho con Agarre Cerrado",
+          "score": 0.51
+        },
+        {
+          "id": "reverse-grip-lat-pulldown",
+          "nombre": "Jalón al Pecho Agarre Supino",
+          "score": 0.51
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/lat-pulldown-start.webp",
+        "end": "images/flat/lat-pulldown-peak.webp"
+      },
+      "primary_muscles": [
+        "latissimus_dorsi"
+      ],
+      "secondary_muscles": [
+        "biceps_brachii",
+        "posterior_deltoid",
+        "rhomboids"
+      ],
+      "instructions": [
+        "Siéntate en la máquina de jalón con los muslos sujetos bajo los rodillos.",
+        "Agarra la barra ancha con un agarre en pronación.",
+        "Jala la barra hasta la parte superior del pecho apretando los dorsales.",
+        "Regresa la barra lentamente a la posición inicial.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "jalon",
+        "nombre": "Jalón al pecho",
+        "patron": "tiron_v",
+        "musculos": [
+          "espalda",
+          "biceps"
+        ],
+        "equipo": [
+          "polea"
+        ],
+        "compuesto": true,
+        "desc": "Tira de la barra hacia la parte alta del pecho llevando los codos hacia abajo y atrás, sin balancearte."
+      }
+    },
+    {
+      "id": "pullover-mancuerna",
+      "nombre": "Pullover con mancuerna",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "db-pullover",
+        "nombre_es": "Pullover con Mancuerna",
+        "nombre_en": "Dumbbell Pullover"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/db-pullover-start.webp",
+        "end": "images/flat/db-pullover-peak.webp"
+      },
+      "primary_muscles": [
+        "latissimus_dorsi",
+        "pectoralis_major"
+      ],
+      "secondary_muscles": [
+        "triceps_brachii"
+      ],
+      "instructions": [
+        "Túmbate en un banco plano con una mancuerna sobre el pecho y los brazos extendidos.",
+        "Baja la mancuerna detrás de la cabeza en arco, manteniendo una ligera flexión de codos.",
+        "Estira hasta sentir tensión en los dorsales y el pecho.",
+        "Tira de la mancuerna de vuelta a la posición inicial.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "pullover-mancuerna",
+        "nombre": "Pullover con mancuerna",
+        "patron": "tiron_v",
+        "musculos": [
+          "espalda",
+          "pecho"
+        ],
+        "equipo": [
+          "mancuernas"
+        ],
+        "compuesto": false,
+        "desc": "Tumbado con una mancuerna sobre el pecho. Llévala detrás de la cabeza con los brazos casi rectos y vuelve."
+      }
+    },
+    {
+      "id": "superman",
+      "nombre": "Superman en el suelo",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 0.93,
+      "repdb": {
+        "id": "superman",
+        "nombre_es": "Superman",
+        "nombre_en": "Superman"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/superman-start.webp",
+        "end": "images/flat/superman-peak.webp"
+      },
+      "primary_muscles": [
+        "erector_spinae",
+        "gluteus_maximus"
+      ],
+      "secondary_muscles": [
+        "hamstrings"
+      ],
+      "instructions": [
+        "Túmbate boca abajo con los brazos extendidos por encima de la cabeza.",
+        "Levanta simultáneamente los brazos, el pecho y las piernas del suelo.",
+        "Mantén brevemente la posición superior.",
+        "Baja de forma controlada.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "superman",
+        "nombre": "Superman en el suelo",
+        "patron": "tiron_v",
+        "musculos": [
+          "espalda"
+        ],
+        "equipo": [],
+        "compuesto": false,
+        "desc": "Boca abajo, brazos en Y. Eleva pecho y brazos del suelo apretando la espalda y lleva los codos hacia las costillas."
+      }
+    },
+    {
+      "id": "extension-cuadriceps",
+      "nombre": "Extensión de cuádriceps",
+      "estado": "auto",
+      "origen": "manual",
+      "razon": "Extensión de cuádriceps = Extensión de Piernas",
+      "score": 1,
+      "repdb": {
+        "id": "leg-extension",
+        "nombre_es": "Extensión de Piernas",
+        "nombre_en": "Leg Extension"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/leg-extension-start.webp",
+        "end": "images/flat/leg-extension-peak.webp"
+      },
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [],
+      "instructions": [
+        "Siéntate en la máquina de extensión de piernas con los tobillos detrás del rodillo.",
+        "Extiende las piernas hasta que queden rectas.",
+        "Aprieta los cuádriceps en la parte superior.",
+        "Baja con control.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "extension-cuadriceps",
+        "nombre": "Extensión de cuádriceps",
+        "patron": "cuadriceps_aisl",
+        "musculos": [
+          "cuadriceps"
+        ],
+        "equipo": [
+          "maquinas"
+        ],
+        "compuesto": false,
+        "desc": "Extiende las rodillas por completo, aprieta 1 segundo y baja controlando."
+      }
+    },
+    {
+      "id": "sentadilla-pared",
+      "nombre": "Sentadilla isométrica en pared",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 0.85,
+      "repdb": {
+        "id": "squat-hold",
+        "nombre_es": "Sentadilla Isométrica",
+        "nombre_en": "Squat Hold"
+      },
+      "alternativas": [
+        {
+          "id": "wall-sit",
+          "nombre": "Sentadilla en Pared",
+          "score": 0.67
+        },
+        {
+          "id": "barbell-isometric-squat-hold",
+          "nombre": "Sentadilla Isométrica con Barra",
+          "score": 0.5
+        },
+        {
+          "id": "barbell-zercher-squat-hold",
+          "nombre": "Sentadilla Zercher Isométrica",
+          "score": 0.5
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/squat-hold-main.webp",
+        "end": null
+      },
+      "primary_muscles": [
+        "gluteus_maximus",
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "adductors",
+        "erector_spinae",
+        "gluteus_medius",
+        "hamstrings"
+      ],
+      "instructions": [
+        "Colócate de pie con los pies a la anchura de los hombros y las puntas ligeramente hacia fuera.",
+        "Estira los brazos rectos al frente como contrapeso.",
+        "Baja en sentadilla hasta que los muslos queden paralelos al suelo, con el pecho erguido y los talones apoyados.",
+        "Mantén la posición, con las rodillas en línea con las puntas de los pies.",
+        "Ponte de pie para terminar."
+      ],
+      "nuestro": {
+        "id": "sentadilla-pared",
+        "nombre": "Sentadilla isométrica en pared",
+        "patron": "cuadriceps_aisl",
+        "musculos": [
+          "cuadriceps"
+        ],
+        "equipo": [],
+        "compuesto": false,
+        "desc": "Espalda contra la pared y rodillas a 90°. Aguanta la posición.",
+        "tipo": "tiempo"
+      }
+    },
+    {
+      "id": "curl-femoral",
+      "nombre": "Curl femoral en máquina",
+      "estado": "revisar",
+      "origen": "manual",
+      "razon": "Curl femoral en máquina ≈ Curl de Piernas Sentado",
+      "score": 1,
+      "repdb": {
+        "id": "seated-leg-curl",
+        "nombre_es": "Curl de Piernas Sentado",
+        "nombre_en": "Seated Leg Curl"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/seated-leg-curl-start.webp",
+        "end": "images/flat/seated-leg-curl-peak.webp"
+      },
+      "primary_muscles": [
+        "hamstrings"
+      ],
+      "secondary_muscles": [
+        "gastrocnemius"
+      ],
+      "instructions": [
+        "Ajusta el respaldo y el cojín de tobillo para que las rodillas queden alineadas con el pivote de la máquina.",
+        "Siéntate erguido, coloca la parte posterior de los tobillos sobre el cojín y sujeta las asas.",
+        "Flexiona las piernas hacia abajo y atrás bajo el asiento hasta donde la máquina lo permita.",
+        "Pausa en la contracción máxima, luego vuelve lentamente a la posición inicial.",
+        "Repite el número de repeticiones deseado."
+      ],
+      "nuestro": {
+        "id": "curl-femoral",
+        "nombre": "Curl femoral en máquina",
+        "patron": "femoral",
+        "musculos": [
+          "femorales"
+        ],
+        "equipo": [
+          "maquinas"
+        ],
+        "compuesto": false,
+        "desc": "Flexiona las rodillas llevando los talones hacia los glúteos y vuelve despacio."
+      }
+    },
+    {
+      "id": "curl-femoral-fitball",
+      "nombre": "Curl femoral deslizante",
+      "estado": "revisar",
+      "origen": "manual",
+      "razon": "Curl femoral deslizante ≈ Curl de Isquiotibiales con TRX",
+      "score": 1,
+      "repdb": {
+        "id": "trx-hamstring-curl",
+        "nombre_es": "Curl de Isquiotibiales con TRX",
+        "nombre_en": "TRX Hamstring Curl"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/trx-hamstring-curl-start.webp",
+        "end": "images/flat/trx-hamstring-curl-peak.webp"
+      },
+      "primary_muscles": [
+        "hamstrings"
+      ],
+      "secondary_muscles": [
+        "gastrocnemius",
+        "gluteus_maximus"
+      ],
+      "instructions": [
+        "Acuéstate boca arriba con los talones en los soportes del entrenador de suspensión, rodillas flexionadas a 90 grados.",
+        "Levanta tus caderas del suelo, creando una línea recta desde las rodillas hasta los hombros.",
+        "Extiende tus piernas hacia adelante, manteniendo las caderas elevadas y la tensión en el core.",
+        "Tira de tus talones hacia tus glúteos, contrayendo los isquiotibiales con fuerza.",
+        "Controla el movimiento, evitando que las caderas caigan durante toda la serie."
+      ],
+      "nuestro": {
+        "id": "curl-femoral-fitball",
+        "nombre": "Curl femoral deslizante",
+        "patron": "femoral",
+        "musculos": [
+          "femorales"
+        ],
+        "equipo": [],
+        "compuesto": false,
+        "desc": "Boca arriba con los talones sobre una toalla en suelo liso. Eleva la cadera y desliza los talones hacia ti y lejos."
+      }
+    },
+    {
+      "id": "gemelos-pie",
+      "nombre": "Elevación de gemelos de pie",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "standing-calf-raise",
+        "nombre_es": "Elevación de Talones de Pie",
+        "nombre_en": "Standing Calf Raise"
+      },
+      "alternativas": [
+        {
+          "id": "barbell-calf-raise",
+          "nombre": "Elevación de Talones con Barra",
+          "score": 0.5
+        },
+        {
+          "id": "dumbbell-calf-raise",
+          "nombre": "Elevación de Talones con Mancuernas",
+          "score": 0.5
+        },
+        {
+          "id": "seated-calf-raise",
+          "nombre": "Elevación de Talones Sentado",
+          "score": 0.5
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/standing-calf-raise-start.webp",
+        "end": "images/flat/standing-calf-raise-peak.webp"
+      },
+      "primary_muscles": [
+        "gastrocnemius"
+      ],
+      "secondary_muscles": [
+        "soleus"
+      ],
+      "instructions": [
+        "Párate en el borde de una plataforma o máquina de elevación de talones.",
+        "Baja los talones por debajo de la plataforma.",
+        "Empuja hacia arriba de puntillas.",
+        "Baja lentamente.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "gemelos-pie",
+        "nombre": "Elevación de gemelos de pie",
+        "patron": "gemelo",
+        "musculos": [
+          "gemelos"
+        ],
+        "equipo": [],
+        "compuesto": false,
+        "desc": "Puntas sobre un escalón. Sube lo más alto posible, pausa y baja estirando los talones por debajo del escalón. Sujeta mancuernas para añadir carga."
+      }
+    },
+    {
+      "id": "gemelos-maquina",
+      "nombre": "Elevación de gemelos en máquina",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "machine-calf-raise",
+        "nombre_es": "Elevación de Pantorrillas en Máquina",
+        "nombre_en": "Machine Calf Raise"
+      },
+      "alternativas": [
+        {
+          "id": "smith-machine-calf-raise",
+          "nombre": "Elevación de Talón en Máquina Smith",
+          "score": 1
+        },
+        {
+          "id": "hack-squat-calf-raise",
+          "nombre": "Elevación de Talones en Máquina Hack Squat",
+          "score": 0.71
+        },
+        {
+          "id": "plate-loaded-donkey-calf-raise",
+          "nombre": "Elevación de Pantorrilla a la Burra en Máquina",
+          "score": 0.68
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/machine-calf-raise-start.webp",
+        "end": "images/flat/machine-calf-raise-peak.webp"
+      },
+      "primary_muscles": [
+        "gastrocnemius",
+        "soleus"
+      ],
+      "secondary_muscles": [],
+      "instructions": [
+        "Párate en la máquina de elevación de pantorrillas con los metatarsos sobre la plataforma.",
+        "Coloca los rodillos de hombro firmemente.",
+        "Baja los talones por debajo de la plataforma para un estiramiento completo.",
+        "Empuja con los metatarsos para elevarte en los dedos de los pies.",
+        "Aprieta las pantorrillas en la parte superior.",
+        "Baja con control y repite."
+      ],
+      "nuestro": {
+        "id": "gemelos-maquina",
+        "nombre": "Elevación de gemelos en máquina",
+        "patron": "gemelo",
+        "musculos": [
+          "gemelos"
+        ],
+        "equipo": [
+          "maquinas"
+        ],
+        "compuesto": false,
+        "desc": "Recorrido completo: estira abajo y sube al máximo con pausa arriba."
+      }
+    },
+    {
+      "id": "aperturas-mancuernas",
+      "nombre": "Aperturas con mancuernas",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "db-fly",
+        "nombre_es": "Aperturas con Mancuernas",
+        "nombre_en": "Dumbbell Fly"
+      },
+      "alternativas": [
+        {
+          "id": "decline-db-fly",
+          "nombre": "Aperturas con Mancuernas en Banco Declinado",
+          "score": 0.68
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/db-fly-start.webp",
+        "end": "images/flat/db-fly-peak.webp"
+      },
+      "primary_muscles": [
+        "pectoralis_major"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoid"
+      ],
+      "instructions": [
+        "Túmbate en un banco con las mancuernas sobre el pecho y las palmas mirándose entre sí.",
+        "Con una ligera flexión de codos, baja las mancuernas hacia los lados.",
+        "Regresa a la posición inicial apretando el pecho.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "aperturas-mancuernas",
+        "nombre": "Aperturas con mancuernas",
+        "patron": "pecho_aisl",
+        "musculos": [
+          "pecho"
+        ],
+        "equipo": [
+          "mancuernas",
+          "banco"
+        ],
+        "compuesto": false,
+        "desc": "Codos ligeramente flexionados. Abre los brazos hasta notar estiramiento en el pecho y vuelve como si abrazaras un árbol."
+      }
+    },
+    {
+      "id": "cruce-poleas",
+      "nombre": "Cruce de poleas",
+      "estado": "auto",
+      "origen": "manual",
+      "razon": "Cruce de poleas = Aperturas con Cable",
+      "score": 1,
+      "repdb": {
+        "id": "cable-fly",
+        "nombre_es": "Aperturas con Cable",
+        "nombre_en": "Cable Fly"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/cable-fly-start.webp",
+        "end": "images/flat/cable-fly-peak.webp"
+      },
+      "primary_muscles": [
+        "pectoralis_major"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoid"
+      ],
+      "instructions": [
+        "Colócate entre dos columnas de cable con los agarres enganchados a las poleas altas.",
+        "Con una ligera flexión en los codos, abre los brazos hacia los lados.",
+        "Junta las manos frente al pecho en un movimiento de abrazo.",
+        "Vuelve lentamente a la posición inicial.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "cruce-poleas",
+        "nombre": "Cruce de poleas",
+        "patron": "pecho_aisl",
+        "musculos": [
+          "pecho"
+        ],
+        "equipo": [
+          "polea"
+        ],
+        "compuesto": false,
+        "desc": "Lleva las manos desde los lados hacia el frente del pecho con los codos fijos."
+      }
+    },
+    {
+      "id": "flexiones-diamante",
+      "nombre": "Flexiones cerradas",
+      "estado": "auto",
+      "origen": "manual",
+      "razon": "Flexiones cerradas = Flexiones en Diamante",
+      "score": 1,
+      "repdb": {
+        "id": "diamond-push-ups",
+        "nombre_es": "Flexiones en Diamante",
+        "nombre_en": "Diamond Push Ups"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/diamond-push-ups-start.webp",
+        "end": "images/flat/diamond-push-ups-peak.webp"
+      },
+      "primary_muscles": [
+        "pectoralis_major",
+        "triceps_brachii"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoid",
+        "serratus_anterior"
+      ],
+      "instructions": [
+        "Adopta la posición de flexión con las manos juntas formando un diamante.",
+        "Mantén los codos pegados a los costados.",
+        "Baja el pecho hacia las manos.",
+        "Empuja hacia arriba para extender los brazos.",
+        "Repite el número de repeticiones deseado."
+      ],
+      "nuestro": {
+        "id": "flexiones-diamante",
+        "nombre": "Flexiones cerradas",
+        "patron": "pecho_aisl",
+        "musculos": [
+          "pecho",
+          "triceps"
+        ],
+        "equipo": [],
+        "compuesto": false,
+        "desc": "Manos juntas bajo el pecho. Baja con los codos pegados al cuerpo."
+      }
+    },
+    {
+      "id": "elevaciones-laterales",
+      "nombre": "Elevaciones laterales",
+      "estado": "auto",
+      "origen": "manual",
+      "razon": "Elevaciones laterales = Elevación Lateral con Mancuernas",
+      "score": 1,
+      "repdb": {
+        "id": "lateral-raise",
+        "nombre_es": "Elevación Lateral con Mancuernas",
+        "nombre_en": "Dumbbell Lateral Raise"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/lateral-raise-start.webp",
+        "end": "images/flat/lateral-raise-peak.webp"
+      },
+      "primary_muscles": [
+        "lateral_deltoid"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoid"
+      ],
+      "instructions": [
+        "Párate con mancuernas a los costados.",
+        "Eleva las mancuernas hacia los lados hasta que los brazos queden paralelos al suelo.",
+        "Baja de forma controlada.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "elevaciones-laterales",
+        "nombre": "Elevaciones laterales",
+        "patron": "hombro_lat",
+        "musculos": [
+          "hombros"
+        ],
+        "equipo": [
+          "mancuernas"
+        ],
+        "compuesto": false,
+        "desc": "Eleva las mancuernas hacia los lados hasta la altura de los hombros con los codos algo flexionados."
+      }
+    },
+    {
+      "id": "laterales-polea",
+      "nombre": "Elevación lateral en polea",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "cable-lateral-raise",
+        "nombre_es": "Elevación Lateral en Polea",
+        "nombre_en": "Cable Lateral Raise"
+      },
+      "alternativas": [
+        {
+          "id": "cable-front-raise",
+          "nombre": "Elevación Frontal con Cable",
+          "score": 0.5
+        },
+        {
+          "id": "lateral-raise",
+          "nombre": "Elevación Lateral con Mancuernas",
+          "score": 0.5
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/cable-lateral-raise-start.webp",
+        "end": "images/flat/cable-lateral-raise-peak.webp"
+      },
+      "primary_muscles": [
+        "lateral_deltoid"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoid",
+        "trapezius"
+      ],
+      "instructions": [
+        "Colócate de lado a una polea baja y agarra el asa con la mano más alejada de la máquina.",
+        "Mantén una ligera flexión en el codo y deja que el cable cruce por delante del cuerpo.",
+        "Sube el brazo hacia el lado hasta quedar paralelo al suelo.",
+        "Baja con control. Repeticiones por lado, luego cambia.",
+        "Mantén la tensión — no dejes que el peso descanse abajo."
+      ],
+      "nuestro": {
+        "id": "laterales-polea",
+        "nombre": "Elevación lateral en polea",
+        "patron": "hombro_lat",
+        "musculos": [
+          "hombros"
+        ],
+        "equipo": [
+          "polea"
+        ],
+        "compuesto": false,
+        "desc": "Polea baja, de lado. Eleva el brazo hasta la altura del hombro."
+      }
+    },
+    {
+      "id": "laterales-bandas",
+      "nombre": "Elevaciones laterales con banda",
+      "estado": "revisar",
+      "origen": "manual",
+      "razon": "Elevaciones laterales con banda ≈ Caminata Lateral con Banda",
+      "score": 1,
+      "repdb": {
+        "id": "banded-lateral-walk",
+        "nombre_es": "Caminata Lateral con Banda",
+        "nombre_en": "Banded Lateral Walk"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/banded-lateral-walk-start.webp",
+        "end": "images/flat/banded-lateral-walk-peak.webp"
+      },
+      "primary_muscles": [
+        "gluteus_medius"
+      ],
+      "secondary_muscles": [
+        "gluteus_maximus",
+        "quadriceps"
+      ],
+      "instructions": [
+        "Coloca una banda circular alrededor de las piernas por encima de las rodillas (o en los tobillos para una versión más difícil).",
+        "Ponte en cuarto de sentadilla: pies a la anchura de los hombros, caderas atrás, pecho alto y rodillas alineadas con los pies.",
+        "Da un paso lateral con un pie directamente hacia el lado contra la tensión de la banda.",
+        "Acerca el pie de atrás hacia el de delante manteniendo la tensión de la banda en todo momento; no dejes que los pies se junten de golpe.",
+        "Sigue dando pasos laterales en una dirección durante las repeticiones o la distancia indicada y luego invierte.",
+        "Permanece abajo todo el rato; no te incorpores entre paso y paso."
+      ],
+      "nuestro": {
+        "id": "laterales-bandas",
+        "nombre": "Elevaciones laterales con banda",
+        "patron": "hombro_lat",
+        "musculos": [
+          "hombros"
+        ],
+        "equipo": [
+          "bandas"
+        ],
+        "compuesto": false,
+        "desc": "Pisa la banda y eleva los brazos hacia los lados."
+      }
+    },
+    {
+      "id": "curl-barra",
+      "nombre": "Curl de bíceps con barra",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 0.67,
+      "repdb": {
+        "id": "barbell-curl",
+        "nombre_es": "Curl con Barra",
+        "nombre_en": "Barbell Curl"
+      },
+      "alternativas": [
+        {
+          "id": "barbell-preacher-curl",
+          "nombre": "Curl Predicador con Barra",
+          "score": 0.5
+        },
+        {
+          "id": "barbell-wrist-curl",
+          "nombre": "Curl de Muñeca con Barra",
+          "score": 0.5
+        },
+        {
+          "id": "bicep-curl",
+          "nombre": "Curl de Bíceps con Mancuernas",
+          "score": 0.5
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/barbell-curl-start.webp",
+        "end": "images/flat/barbell-curl-peak.webp"
+      },
+      "primary_muscles": [
+        "biceps_brachii"
+      ],
+      "secondary_muscles": [
+        "brachialis",
+        "forearm_flexors"
+      ],
+      "instructions": [
+        "Párate sosteniendo una barra con agarre supino a la anchura de los hombros.",
+        "Sube la barra hacia los hombros.",
+        "Aprieta en la parte superior, luego baja de forma controlada.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "curl-barra",
+        "nombre": "Curl de bíceps con barra",
+        "patron": "biceps",
+        "musculos": [
+          "biceps"
+        ],
+        "equipo": [
+          "barra"
+        ],
+        "compuesto": false,
+        "desc": "Codos pegados al cuerpo. Flexiona sin balancear y baja controlando."
+      }
+    },
+    {
+      "id": "curl-mancuernas",
+      "nombre": "Curl de bíceps con mancuernas",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "bicep-curl",
+        "nombre_es": "Curl de Bíceps con Mancuernas",
+        "nombre_en": "Dumbbell Bicep Curl"
+      },
+      "alternativas": [
+        {
+          "id": "db-preacher-curl",
+          "nombre": "Curl Predicador con Mancuernas",
+          "score": 0.5
+        },
+        {
+          "id": "dumbbell-curl-and-press",
+          "nombre": "Curl y Press con Mancuernas",
+          "score": 0.5
+        },
+        {
+          "id": "hammer-curl",
+          "nombre": "Curl de Martillo con Mancuernas",
+          "score": 0.5
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/bicep-curl-start.webp",
+        "end": "images/flat/bicep-curl-peak.webp"
+      },
+      "primary_muscles": [
+        "biceps_brachii"
+      ],
+      "secondary_muscles": [
+        "brachialis",
+        "forearm_flexors"
+      ],
+      "instructions": [
+        "Párate sosteniendo mancuernas a los lados, palmas hacia adelante.",
+        "Sube las mancuernas hacia los hombros.",
+        "Aprieta en la parte superior, luego baja de forma controlada.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "curl-mancuernas",
+        "nombre": "Curl de bíceps con mancuernas",
+        "patron": "biceps",
+        "musculos": [
+          "biceps"
+        ],
+        "equipo": [
+          "mancuernas"
+        ],
+        "compuesto": false,
+        "desc": "Alterna o a la vez, girando las palmas hacia arriba al subir."
+      }
+    },
+    {
+      "id": "curl-polea",
+      "nombre": "Curl de bíceps en polea",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 0.67,
+      "repdb": {
+        "id": "cable-curl",
+        "nombre_es": "Curl con Cable",
+        "nombre_en": "Cable Curl"
+      },
+      "alternativas": [
+        {
+          "id": "bicep-curl",
+          "nombre": "Curl de Bíceps con Mancuernas",
+          "score": 0.5
+        },
+        {
+          "id": "cable-hammer-curl",
+          "nombre": "Curl de Martillo en Cable",
+          "score": 0.5
+        },
+        {
+          "id": "cable-wrist-curl",
+          "nombre": "Curl de Muñeca con Cable",
+          "score": 0.5
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/cable-curl-start.webp",
+        "end": "images/flat/cable-curl-peak.webp"
+      },
+      "primary_muscles": [
+        "biceps_brachii"
+      ],
+      "secondary_muscles": [
+        "brachialis"
+      ],
+      "instructions": [
+        "Colócate de pie frente a una polea baja con una barra recta o barra Z.",
+        "Agarra la barra con agarre supino y los codos pegados a los costados.",
+        "Sube la barra hacia los hombros.",
+        "Baja de forma controlada.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "curl-polea",
+        "nombre": "Curl de bíceps en polea",
+        "patron": "biceps",
+        "musculos": [
+          "biceps"
+        ],
+        "equipo": [
+          "polea"
+        ],
+        "compuesto": false,
+        "desc": "Polea baja. Flexiona los codos manteniéndolos fijos."
+      }
+    },
+    {
+      "id": "curl-bandas",
+      "nombre": "Curl de bíceps con banda",
+      "estado": "revisar",
+      "origen": "manual",
+      "razon": "Curl de bíceps con banda ≈ Curl de Bíceps TRX",
+      "score": 1,
+      "repdb": {
+        "id": "trx-bicep-curl",
+        "nombre_es": "Curl de Bíceps TRX",
+        "nombre_en": "TRX Bicep Curl"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/trx-bicep-curl-start.webp",
+        "end": "images/flat/trx-bicep-curl-peak.webp"
+      },
+      "primary_muscles": [
+        "biceps_brachii"
+      ],
+      "secondary_muscles": [
+        "brachialis",
+        "brachioradialis"
+      ],
+      "instructions": [
+        "Ajusta las correas del entrenador de suspensión a una longitud media.",
+        "Párate frente al punto de anclaje, sujeta las asas con un agarre supino e inclínate hacia atrás hasta que tus brazos estén completamente extendidos.",
+        "Mantén tu cuerpo recto y el core activado, jala tu pecho hacia tus manos doblando los codos.",
+        "Contrae tus bíceps en la parte superior del movimiento.",
+        "Extiende lentamente tus brazos de regreso a la posición inicial, controlando el descenso.",
+        "Mantén la tensión durante toda la serie."
+      ],
+      "nuestro": {
+        "id": "curl-bandas",
+        "nombre": "Curl de bíceps con banda",
+        "patron": "biceps",
+        "musculos": [
+          "biceps"
+        ],
+        "equipo": [
+          "bandas"
+        ],
+        "compuesto": false,
+        "desc": "Pisa la banda y flexiona los codos."
+      }
+    },
+    {
+      "id": "extension-triceps-polea",
+      "nombre": "Extensión de tríceps en polea",
+      "estado": "auto",
+      "origen": "manual",
+      "razon": "Extensión de tríceps en polea = Jalón de Tríceps en Cable",
+      "score": 1,
+      "repdb": {
+        "id": "tricep-pushdown",
+        "nombre_es": "Jalón de Tríceps en Cable",
+        "nombre_en": "Cable Tricep Pushdown"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/tricep-pushdown-start.webp",
+        "end": "images/flat/tricep-pushdown-peak.webp"
+      },
+      "primary_muscles": [
+        "triceps_brachii"
+      ],
+      "secondary_muscles": [],
+      "instructions": [
+        "Párate frente a una máquina de cable con un accesorio de barra recta.",
+        "Agarra la barra y pega los codos a los costados.",
+        "Empuja la barra hacia abajo hasta que los brazos estén completamente extendidos.",
+        "Regresa lentamente a la posición inicial.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "extension-triceps-polea",
+        "nombre": "Extensión de tríceps en polea",
+        "patron": "triceps",
+        "musculos": [
+          "triceps"
+        ],
+        "equipo": [
+          "polea"
+        ],
+        "compuesto": false,
+        "desc": "Codos pegados. Extiende los brazos hacia abajo por completo."
+      }
+    },
+    {
+      "id": "press-frances",
+      "nombre": "Extensión de tríceps con mancuerna",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "dumbbell-tricep-extension",
+        "nombre_es": "Extensión de Tríceps con Mancuerna",
+        "nombre_en": "Dumbbell Tricep Extension"
+      },
+      "alternativas": [
+        {
+          "id": "seated-dumbbell-tricep-extension",
+          "nombre": "Extensión de Tríceps con Mancuerna Sentado",
+          "score": 0.93
+        },
+        {
+          "id": "single-arm-dumbbell-overhead-tricep-extension",
+          "nombre": "Extensión de Tríceps sobre la Cabeza con Mancuerna a Un Brazo",
+          "score": 0.53
+        },
+        {
+          "id": "lying-tricep-extension",
+          "nombre": "Extensión de Tríceps Tumbado",
+          "score": 0.5
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/dumbbell-tricep-extension-start.webp",
+        "end": "images/flat/dumbbell-tricep-extension-peak.webp"
+      },
+      "primary_muscles": [
+        "triceps_brachii"
+      ],
+      "secondary_muscles": [],
+      "instructions": [
+        "Ponte de pie sujetando una mancuerna en cada mano con los brazos extendidos por encima de la cabeza.",
+        "Baja las mancuernas detrás de la cabeza doblando los codos.",
+        "Extiende los brazos de vuelta a la posición inicial.",
+        "Mantén los codos cerca de la cabeza.",
+        "Repite el número de repeticiones previsto."
+      ],
+      "nuestro": {
+        "id": "press-frances",
+        "nombre": "Extensión de tríceps con mancuerna",
+        "patron": "triceps",
+        "musculos": [
+          "triceps"
+        ],
+        "equipo": [
+          "mancuernas"
+        ],
+        "compuesto": false,
+        "desc": "Mancuerna sobre la cabeza con ambas manos. Baja detrás de la nuca flexionando solo los codos."
+      }
+    },
+    {
+      "id": "fondos-banco",
+      "nombre": "Fondos en banco o silla",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 0.85,
+      "repdb": {
+        "id": "bench-dips",
+        "nombre_es": "Fondos en Banco",
+        "nombre_en": "Bench Dips"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/bench-dips-start.webp",
+        "end": "images/flat/bench-dips-peak.webp"
+      },
+      "primary_muscles": [
+        "triceps_brachii"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoid",
+        "pectoralis_major"
+      ],
+      "instructions": [
+        "Siéntate en un banco y coloca las manos en el borde junto a las caderas.",
+        "Desliza las caderas fuera del banco con las piernas extendidas.",
+        "Baja el cuerpo flexionando los codos hasta 90 grados.",
+        "Empuja con las palmas para volver a la posición inicial.",
+        "Repite el número de repeticiones deseado."
+      ],
+      "nuestro": {
+        "id": "fondos-banco",
+        "nombre": "Fondos en banco o silla",
+        "patron": "triceps",
+        "musculos": [
+          "triceps"
+        ],
+        "equipo": [],
+        "compuesto": false,
+        "desc": "Manos en el borde de una silla estable. Baja flexionando los codos hacia atrás hasta 90°."
+      }
+    },
+    {
+      "id": "triceps-bandas",
+      "nombre": "Extensión de tríceps con banda",
+      "estado": "revisar",
+      "origen": "manual",
+      "razon": "Extensión de tríceps con banda ≈ Extensión de Tríceps TRX",
+      "score": 1,
+      "repdb": {
+        "id": "trx-tricep-extension",
+        "nombre_es": "Extensión de Tríceps TRX",
+        "nombre_en": "TRX Triceps Extension"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/trx-tricep-extension-start.webp",
+        "end": "images/flat/trx-tricep-extension-peak.webp"
+      },
+      "primary_muscles": [
+        "triceps_brachii"
+      ],
+      "secondary_muscles": [],
+      "instructions": [
+        "Ponte de espaldas al punto de anclaje, sosteniendo las asas del TRX con agarre prono, las palmas hacia abajo.",
+        "Inclínate hacia adelante, extendiendo tus brazos rectos frente a ti a la altura de los hombros, creando tensión en las correas.",
+        "Manteniendo los codos altos y fijos, dóblalos para bajar tu cuerpo, llevando tus manos hacia tus sienes.",
+        "Extiende los codos con fuerza para empujar tu cuerpo de vuelta a la posición inicial, contrayendo tus tríceps.",
+        "Mantén una posición de plancha rígida durante todo el movimiento, activando tu core y glúteos."
+      ],
+      "nuestro": {
+        "id": "triceps-bandas",
+        "nombre": "Extensión de tríceps con banda",
+        "patron": "triceps",
+        "musculos": [
+          "triceps"
+        ],
+        "equipo": [
+          "bandas"
+        ],
+        "compuesto": false,
+        "desc": "Banda anclada en alto. Extiende los codos hacia abajo."
+      }
+    },
+    {
+      "id": "face-pull",
+      "nombre": "Face pull",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "face-pull",
+        "nombre_es": "Face Pull en Polea",
+        "nombre_en": "Cable Face Pull"
+      },
+      "alternativas": [
+        {
+          "id": "dumbbell-face-pull",
+          "nombre": "Face Pull con Mancuernas",
+          "score": 0.93
+        },
+        {
+          "id": "ring-face-pull",
+          "nombre": "Face Pull en Anillas",
+          "score": 0.93
+        },
+        {
+          "id": "trx-face-pull",
+          "nombre": "Face Pull con TRX",
+          "score": 0.86
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/face-pull-start.webp",
+        "end": "images/flat/face-pull-peak.webp"
+      },
+      "primary_muscles": [
+        "posterior_deltoid",
+        "rhomboids"
+      ],
+      "secondary_muscles": [
+        "trapezius"
+      ],
+      "instructions": [
+        "Engancha una cuerda en una polea alta.",
+        "Tira de la cuerda hacia tu cara, separando los extremos.",
+        "Aprieta los deltoides posteriores y los rotadores externos.",
+        "Regresa a la posición inicial de forma controlada.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "face-pull",
+        "nombre": "Face pull",
+        "patron": "hombro_post",
+        "musculos": [
+          "hombros",
+          "espalda"
+        ],
+        "equipo": [
+          "polea"
+        ],
+        "compuesto": false,
+        "desc": "Cuerda a la altura de la cara. Tira hacia la frente separando las manos y llevando los codos altos."
+      }
+    },
+    {
+      "id": "pajaro",
+      "nombre": "Pájaros con mancuernas",
+      "estado": "revisar",
+      "origen": "manual",
+      "razon": "Pájaros con mancuernas ≈ Bird-Dog (patrón similar)",
+      "score": 1,
+      "repdb": {
+        "id": "bird-dog",
+        "nombre_es": "Bird-Dog",
+        "nombre_en": "Bird-Dog"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/bird-dog-start.webp",
+        "end": "images/flat/bird-dog-peak.webp"
+      },
+      "primary_muscles": [
+        "erector_spinae",
+        "transverse_abdominis"
+      ],
+      "secondary_muscles": [
+        "gluteus_maximus"
+      ],
+      "instructions": [
+        "Comienza a cuatro patas con la columna en posición neutra.",
+        "Extiende el brazo derecho hacia adelante y la pierna izquierda hacia atrás simultáneamente.",
+        "Aguanta un momento, luego vuelve.",
+        "Repite en el otro lado.",
+        "Alterna."
+      ],
+      "nuestro": {
+        "id": "pajaro",
+        "nombre": "Pájaros con mancuernas",
+        "patron": "hombro_post",
+        "musculos": [
+          "hombros",
+          "espalda"
+        ],
+        "equipo": [
+          "mancuernas"
+        ],
+        "compuesto": false,
+        "desc": "Torso inclinado. Abre los brazos hacia los lados juntando las escápulas."
+      }
+    },
+    {
+      "id": "plancha",
+      "nombre": "Plancha",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "plank",
+        "nombre_es": "Plancha",
+        "nombre_en": "Plank"
+      },
+      "alternativas": [
+        {
+          "id": "high-plank",
+          "nombre": "Plancha Alta",
+          "score": 0.68
+        },
+        {
+          "id": "planche",
+          "nombre": "Plancha Calisténica",
+          "score": 0.68
+        },
+        {
+          "id": "reverse-plank",
+          "nombre": "Plancha Inversa",
+          "score": 0.68
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/plank-main.webp",
+        "end": null
+      },
+      "primary_muscles": [
+        "rectus_abdominis",
+        "transverse_abdominis"
+      ],
+      "secondary_muscles": [
+        "erector_spinae"
+      ],
+      "instructions": [
+        "Apoya los antebrazos en el suelo con los codos bajo los hombros.",
+        "Extiende las piernas hacia atrás y apóyate sobre los dedos de los pies.",
+        "Mantén el cuerpo en línea recta de la cabeza a los talones.",
+        "Contrae el core y aprieta los glúteos.",
+        "Mantén la posición durante el tiempo deseado.",
+        "Baja las rodillas para salir de la posición."
+      ],
+      "nuestro": {
+        "id": "plancha",
+        "nombre": "Plancha",
+        "patron": "core",
+        "musculos": [
+          "abdomen"
+        ],
+        "equipo": [],
+        "compuesto": false,
+        "desc": "Antebrazos en el suelo, cuerpo recto de la cabeza a los talones. Aprieta abdomen y glúteos.",
+        "tipo": "tiempo"
+      }
+    },
+    {
+      "id": "dead-bug",
+      "nombre": "Dead bug",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "dead-bug",
+        "nombre_es": "Dead Bug",
+        "nombre_en": "Dead Bug"
+      },
+      "alternativas": [
+        {
+          "id": "dead-bug-hold",
+          "nombre": "Dead Bug Isométrico",
+          "score": 0.86
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/dead-bug-start.webp",
+        "end": "images/flat/dead-bug-peak.webp"
+      },
+      "primary_muscles": [
+        "rectus_abdominis",
+        "transverse_abdominis"
+      ],
+      "secondary_muscles": [
+        "hip_flexors"
+      ],
+      "instructions": [
+        "Túmbate boca arriba con los brazos extendidos hacia el techo y las rodillas a 90 grados.",
+        "Baja el brazo derecho y la pierna izquierda hacia el suelo manteniendo la zona lumbar presionada contra el suelo.",
+        "Regresa a la posición inicial.",
+        "Repite del otro lado.",
+        "Alterna."
+      ],
+      "nuestro": {
+        "id": "dead-bug",
+        "nombre": "Dead bug",
+        "patron": "core",
+        "musculos": [
+          "abdomen"
+        ],
+        "equipo": [],
+        "compuesto": false,
+        "desc": "Boca arriba con brazos y piernas en el aire. Extiende brazo y pierna contrarios sin despegar la zona lumbar del suelo."
+      }
+    },
+    {
+      "id": "elevacion-piernas",
+      "nombre": "Elevación de piernas colgado",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "hanging-leg-raise",
+        "nombre_es": "Elevación de Piernas Colgado",
+        "nombre_en": "Hanging Leg Raise"
+      },
+      "alternativas": [
+        {
+          "id": "lying-leg-raise",
+          "nombre": "Elevación de Piernas Acostado",
+          "score": 0.5
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/hanging-leg-raise-start.webp",
+        "end": "images/flat/hanging-leg-raise-peak.webp"
+      },
+      "primary_muscles": [
+        "hip_flexors",
+        "rectus_abdominis"
+      ],
+      "secondary_muscles": [
+        "obliques"
+      ],
+      "instructions": [
+        "Cuélgate de una barra de dominadas con agarre prono.",
+        "Sube las piernas hacia adelante hasta que queden paralelas al suelo.",
+        "Mantén brevemente y baja de forma controlada.",
+        "Evita balancearte.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "elevacion-piernas",
+        "nombre": "Elevación de piernas colgado",
+        "patron": "core",
+        "musculos": [
+          "abdomen"
+        ],
+        "equipo": [
+          "dominadas"
+        ],
+        "compuesto": false,
+        "desc": "Colgado de la barra, eleva las rodillas o las piernas rectas sin balancearte.",
+        "nivelMin": "intermedio"
+      }
+    },
+    {
+      "id": "crunch-polea",
+      "nombre": "Crunch en polea",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "cable-crunch",
+        "nombre_es": "Crunch con Cable",
+        "nombre_en": "Cable Crunch"
+      },
+      "alternativas": [
+        {
+          "id": "crunches",
+          "nombre": "Crunches",
+          "score": 0.5
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/cable-crunch-start.webp",
+        "end": "images/flat/cable-crunch-peak.webp"
+      },
+      "primary_muscles": [
+        "rectus_abdominis"
+      ],
+      "secondary_muscles": [
+        "obliques",
+        "transverse_abdominis"
+      ],
+      "instructions": [
+        "Arrodíllate frente a una máquina de cable con el accesorio de cuerda en la parte superior.",
+        "Sujeta la cuerda cerca de la frente con los codos flexionados.",
+        "Baja flexionando la columna y llevando los codos hacia los muslos.",
+        "Aprieta fuerte los abdominales en la parte inferior.",
+        "Vuelve a la posición inicial y repite."
+      ],
+      "nuestro": {
+        "id": "crunch-polea",
+        "nombre": "Crunch en polea",
+        "patron": "core",
+        "musculos": [
+          "abdomen"
+        ],
+        "equipo": [
+          "polea"
+        ],
+        "compuesto": false,
+        "desc": "De rodillas con la cuerda junto a la cabeza. Flexiona el tronco llevando los codos a los muslos."
+      }
+    },
+    {
+      "id": "plancha-lateral",
+      "nombre": "Plancha lateral",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "side-plank",
+        "nombre_es": "Plancha Lateral",
+        "nombre_en": "Side Plank"
+      },
+      "alternativas": [
+        {
+          "id": "trx-side-plank",
+          "nombre": "Plancha Lateral en TRX",
+          "score": 0.78
+        },
+        {
+          "id": "plank",
+          "nombre": "Plancha",
+          "score": 0.68
+        },
+        {
+          "id": "side-plank-leg-lift",
+          "nombre": "Plancha Lateral con Elevación de Pierna",
+          "score": 0.61
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/side-plank-main.webp",
+        "end": null
+      },
+      "primary_muscles": [
+        "obliques",
+        "transverse_abdominis"
+      ],
+      "secondary_muscles": [
+        "gluteus_medius",
+        "rectus_abdominis"
+      ],
+      "instructions": [
+        "Acuéstate de lado con el antebrazo en el suelo y el codo bajo el hombro.",
+        "Levanta las caderas del suelo formando una línea recta de la cabeza a los pies.",
+        "Mantén la posición con el core apretado.",
+        "Respira con regularidad.",
+        "Repite de ambos lados."
+      ],
+      "nuestro": {
+        "id": "plancha-lateral",
+        "nombre": "Plancha lateral",
+        "patron": "core",
+        "musculos": [
+          "abdomen"
+        ],
+        "equipo": [],
+        "compuesto": false,
+        "desc": "Apoyado en un antebrazo y el lateral del pie, cadera alta. Cambia de lado a mitad de tiempo.",
+        "tipo": "tiempo"
+      }
+    },
+    {
+      "id": "burpees",
+      "nombre": "Burpees",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "burpees",
+        "nombre_es": "Burpees",
+        "nombre_en": "Burpees"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/burpees-main.webp",
+        "end": null
+      },
+      "primary_muscles": [
+        "gluteus_maximus",
+        "pectoralis_major",
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoid",
+        "rectus_abdominis",
+        "triceps_brachii"
+      ],
+      "instructions": [
+        "Mantente en pie con los pies a la anchura de los hombros.",
+        "Baja en sentadilla y apoya las manos en el suelo delante de ti.",
+        "Salta o lleva los pies atrás a la posición de plank y haz una flexión.",
+        "Salta o lleva los pies adelante hasta las manos.",
+        "Levántate y salta explosivamente con los brazos arriba."
+      ],
+      "nuestro": {
+        "id": "burpees",
+        "nombre": "Burpees",
+        "patron": "metabolico",
+        "musculos": [
+          "cuadriceps",
+          "pecho"
+        ],
+        "equipo": [],
+        "compuesto": true,
+        "desc": "Agáchate, lleva los pies atrás a plancha, vuelve y salta con los brazos arriba."
+      }
+    },
+    {
+      "id": "escaladores",
+      "nombre": "Escaladores",
+      "estado": "auto",
+      "origen": "manual",
+      "razon": "Escaladores = Mountain Climbers",
+      "score": 1,
+      "repdb": {
+        "id": "mountain-climbers",
+        "nombre_es": "Mountain Climbers",
+        "nombre_en": "Mountain Climbers"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/mountain-climbers-start.webp",
+        "end": "images/flat/mountain-climbers-peak.webp"
+      },
+      "primary_muscles": [
+        "hip_flexors",
+        "rectus_abdominis"
+      ],
+      "secondary_muscles": [
+        "obliques",
+        "quadriceps"
+      ],
+      "instructions": [
+        "Comienza en posición de plancha alta.",
+        "Lleva una rodilla hacia el pecho.",
+        "Cambia rápidamente de pierna llevando la otra rodilla hacia adelante.",
+        "Continúa alternando a un ritmo brioso.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "escaladores",
+        "nombre": "Escaladores",
+        "patron": "metabolico",
+        "musculos": [
+          "abdomen",
+          "cuadriceps"
+        ],
+        "equipo": [],
+        "compuesto": false,
+        "desc": "En plancha alta, lleva las rodillas al pecho alternando a ritmo rápido.",
+        "tipo": "tiempo"
+      }
+    },
+    {
+      "id": "jumping-jacks",
+      "nombre": "Saltos de tijera",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "jumping-jacks",
+        "nombre_es": "Saltos de Tijera",
+        "nombre_en": "Jumping Jacks"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/jumping-jacks-start.webp",
+        "end": "images/flat/jumping-jacks-peak.webp"
+      },
+      "primary_muscles": [
+        "gastrocnemius",
+        "gluteus_medius",
+        "lateral_deltoid"
+      ],
+      "secondary_muscles": [
+        "abductors",
+        "quadriceps",
+        "soleus"
+      ],
+      "instructions": [
+        "Ponte de pie con los pies juntos y los brazos a los lados.",
+        "Simultáneamente, salta abriendo las piernas y levantando los brazos por encima de la cabeza.",
+        "Asegúrate de que tus brazos se junten o casi se junten por encima de tu cabeza.",
+        "Salta juntando los pies de nuevo mientras bajas los brazos a los lados.",
+        "Mantén un movimiento continuo y rítmico."
+      ],
+      "nuestro": {
+        "id": "jumping-jacks",
+        "nombre": "Saltos de tijera",
+        "patron": "metabolico",
+        "musculos": [
+          "gemelos"
+        ],
+        "equipo": [],
+        "compuesto": false,
+        "desc": "Salta abriendo piernas y brazos y vuelve a cerrar. Ritmo constante.",
+        "tipo": "tiempo"
+      }
+    },
+    {
+      "id": "prensa-horizontal",
+      "nombre": "Prensa horizontal",
+      "estado": "auto",
+      "origen": "manual",
+      "razon": "Prensa horizontal = Prensa de piernas horizontal",
+      "score": 1,
+      "repdb": {
+        "id": "horizontal-leg-press",
+        "nombre_es": "Prensa de piernas horizontal",
+        "nombre_en": "Horizontal Leg Press"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/horizontal-leg-press-start.webp",
+        "end": "images/flat/horizontal-leg-press-peak.webp"
+      },
+      "primary_muscles": [
+        "gluteus_maximus",
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "hamstrings"
+      ],
+      "instructions": [
+        "Siéntate en la prensa de piernas horizontal con la espalda apoyada en el respaldo y los pies a la anchura de los hombros sobre la plataforma.",
+        "Empuja con los pies para extender las piernas, sin llegar a bloquear las rodillas.",
+        "Flexiona las rodillas de forma controlada hasta acercarlas al pecho.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "prensa-horizontal",
+        "nombre": "Prensa horizontal",
+        "patron": "sentadilla",
+        "musculos": [
+          "cuadriceps",
+          "gluteos"
+        ],
+        "equipo": [
+          "maquinas"
+        ],
+        "compuesto": true,
+        "desc": "Pies en el centro de la plataforma. Baja hasta unos 90° de rodilla sin despegar la zona lumbar del respaldo y empuja sin bloquear las rodillas."
+      }
+    },
+    {
+      "id": "hack-squat",
+      "nombre": "Hack squat",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "hack-squat",
+        "nombre_es": "Hack Squat",
+        "nombre_en": "Hack Squat"
+      },
+      "alternativas": [
+        {
+          "id": "hack-squat-calf-raise",
+          "nombre": "Elevación de Talones en Máquina Hack Squat",
+          "score": 0.59
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/hack-squat-start.webp",
+        "end": "images/flat/hack-squat-peak.webp"
+      },
+      "primary_muscles": [
+        "gluteus_maximus",
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "gastrocnemius",
+        "hamstrings"
+      ],
+      "instructions": [
+        "Carga la máquina hack squat y colócate con la espalda y los hombros contra los almohadillados.",
+        "Sitúa los pies a la anchura de los hombros sobre la plataforma con los pies ligeramente girados hacia fuera.",
+        "Suelta los asideros de seguridad y baja el trineo flexionando rodillas y caderas.",
+        "Desciende hasta que los muslos estén al menos paralelos a la plataforma.",
+        "Empuja con los talones para extender las piernas y devolver el trineo a la posición inicial.",
+        "Vuelve a enganchar los asideros de seguridad al terminar la serie."
+      ],
+      "nuestro": {
+        "id": "hack-squat",
+        "nombre": "Hack squat",
+        "patron": "sentadilla",
+        "musculos": [
+          "cuadriceps",
+          "gluteos"
+        ],
+        "equipo": [
+          "maquinas"
+        ],
+        "compuesto": true,
+        "desc": "Espalda y hombros apoyados. Baja controlando hasta que los muslos queden paralelos y empuja con todo el pie."
+      }
+    },
+    {
+      "id": "hip-thrust-maquina",
+      "nombre": "Hip thrust en máquina",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "smith-machine-hip-thrust",
+        "nombre_es": "Hip Thrust en Máquina Smith",
+        "nombre_en": "Smith Machine Hip Thrust"
+      },
+      "alternativas": [
+        {
+          "id": "hip-thrust",
+          "nombre": "Hip thrust con barra",
+          "score": 0.58
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/smith-machine-hip-thrust-start.webp",
+        "end": "images/flat/smith-machine-hip-thrust-peak.webp"
+      },
+      "primary_muscles": [
+        "gluteus_maximus",
+        "gluteus_medius"
+      ],
+      "secondary_muscles": [
+        "hamstrings"
+      ],
+      "instructions": [
+        "Coloca un banco plano dentro de la máquina Smith, paralelo a la barra y situado de forma que la barra quede sobre el pliegue de tu cadera.",
+        "Baja la barra lo suficiente para poder pasar por debajo sentado en el suelo, y apoya la parte alta de la espalda en el banco.",
+        "Desliza las caderas bajo la barra para que quede sobre el pliegue de la cadera, ponle una almohadilla si la necesitas y desengánchala, con los pies planos y a la anchura de las caderas.",
+        "Empuja con los talones y extiende las caderas hasta que muslos y torso formen una línea recta, apretando los glúteos arriba.",
+        "Baja las caderas de forma controlada hasta quedar justo por encima del suelo y repite el número de repeticiones deseado."
+      ],
+      "nuestro": {
+        "id": "hip-thrust-maquina",
+        "nombre": "Hip thrust en máquina",
+        "patron": "bisagra",
+        "musculos": [
+          "gluteos",
+          "femorales"
+        ],
+        "equipo": [
+          "maquinas"
+        ],
+        "compuesto": true,
+        "desc": "Espalda alta en el respaldo y almohadilla sobre la cadera. Extiende la cadera apretando glúteos sin arquear la lumbar."
+      }
+    },
+    {
+      "id": "abductores-maquina",
+      "nombre": "Abductores en máquina",
+      "estado": "auto",
+      "origen": "manual",
+      "razon": "Abductores en máquina = Abducción de Cadera en Máquina",
+      "score": 1,
+      "repdb": {
+        "id": "hip-abduction",
+        "nombre_es": "Abducción de Cadera en Máquina",
+        "nombre_en": "Machine Hip Abduction"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/hip-abduction-start.webp",
+        "end": "images/flat/hip-abduction-peak.webp"
+      },
+      "primary_muscles": [
+        "gluteus_medius"
+      ],
+      "secondary_muscles": [
+        "abductors"
+      ],
+      "instructions": [
+        "Siéntate en la máquina de abducción de cadera con los apoyos contra la parte externa de los muslos.",
+        "Empuja las piernas hacia afuera contra la resistencia.",
+        "Mantén brevemente en el punto más amplio.",
+        "Vuelve a la posición inicial de forma controlada.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "abductores-maquina",
+        "nombre": "Abductores en máquina",
+        "patron": "gluteos_aisl",
+        "musculos": [
+          "gluteos"
+        ],
+        "equipo": [
+          "maquinas"
+        ],
+        "compuesto": false,
+        "desc": "Sentado con las piernas en las almohadillas. Abre las piernas contra la resistencia y vuelve despacio."
+      }
+    },
+    {
+      "id": "patada-gluteo",
+      "nombre": "Patada de glúteo en máquina",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 0.85,
+      "repdb": {
+        "id": "glute-kickback",
+        "nombre_es": "Patada de Glúteo",
+        "nombre_en": "Glute Kickback"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/glute-kickback-start.webp",
+        "end": "images/flat/glute-kickback-peak.webp"
+      },
+      "primary_muscles": [
+        "gluteus_maximus"
+      ],
+      "secondary_muscles": [
+        "erector_spinae",
+        "gluteus_medius",
+        "hamstrings"
+      ],
+      "instructions": [
+        "Comienza a cuatro patas con las manos bajo los hombros y las rodillas bajo las caderas.",
+        "Manteniendo la rodilla doblada a 90 grados, empuja el talón hacia el techo.",
+        "Aprieta el glúteo en la parte superior del movimiento.",
+        "Baja la pierna a la posición inicial con control.",
+        "Completa todas las repeticiones y cambia de lado."
+      ],
+      "nuestro": {
+        "id": "patada-gluteo",
+        "nombre": "Patada de glúteo en máquina",
+        "patron": "gluteos_aisl",
+        "musculos": [
+          "gluteos"
+        ],
+        "equipo": [
+          "maquinas"
+        ],
+        "compuesto": false,
+        "desc": "Apoyado en la máquina, empuja la pierna hacia atrás hasta extender la cadera. Aprieta el glúteo arriba."
+      }
+    },
+    {
+      "id": "pec-deck",
+      "nombre": "Aperturas en máquina (pec deck)",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 0.93,
+      "repdb": {
+        "id": "pec-deck",
+        "nombre_es": "Pec Deck",
+        "nombre_en": "Pec Deck"
+      },
+      "alternativas": [
+        {
+          "id": "machine-chest-fly",
+          "nombre": "Aperturas en Máquina",
+          "score": 0.68
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/pec-deck-start.webp",
+        "end": "images/flat/pec-deck-peak.webp"
+      },
+      "primary_muscles": [
+        "pectoralis_major"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoid",
+        "serratus_anterior"
+      ],
+      "instructions": [
+        "Siéntate en la máquina pec deck y agarra las asas con los brazos abiertos a los lados y los codos ligeramente flexionados.",
+        "Ajusta el asiento para que las asas queden a la altura media del pecho.",
+        "Junta las asas frente al pecho apretando.",
+        "Mantén la contracción brevemente en el centro.",
+        "Regresa con control a la posición inicial.",
+        "Repite el número de repeticiones deseado."
+      ],
+      "nuestro": {
+        "id": "pec-deck",
+        "nombre": "Aperturas en máquina (pec deck)",
+        "patron": "pecho_aisl",
+        "musculos": [
+          "pecho"
+        ],
+        "equipo": [
+          "maquinas"
+        ],
+        "compuesto": false,
+        "desc": "Codos a la altura del pecho. Junta los brazos al frente apretando el pecho y vuelve controlando el estiramiento."
+      }
+    },
+    {
+      "id": "press-inclinado-maquina",
+      "nombre": "Press inclinado en máquina",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "smith-machine-incline-bench-press",
+        "nombre_es": "Press Inclinado en Máquina Smith",
+        "nombre_en": "Smith Machine Incline Bench Press"
+      },
+      "alternativas": [
+        {
+          "id": "chest-press-machine",
+          "nombre": "Press de Pecho en Máquina",
+          "score": 0.5
+        },
+        {
+          "id": "machine-shoulder-press",
+          "nombre": "Press de Hombros en Máquina",
+          "score": 0.5
+        },
+        {
+          "id": "smith-machine-bench-press",
+          "nombre": "Press de Banca en Máquina Smith",
+          "score": 0.5
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/smith-machine-incline-bench-press-start.webp",
+        "end": "images/flat/smith-machine-incline-bench-press-peak.webp"
+      },
+      "primary_muscles": [
+        "anterior_deltoid",
+        "pectoralis_major"
+      ],
+      "secondary_muscles": [
+        "triceps_brachii"
+      ],
+      "instructions": [
+        "Ajusta un banco inclinado a 30-45 grados dentro de la máquina Smith.",
+        "Recuéstate y agarra la barra ligeramente más ancho que el ancho de hombros.",
+        "Desbloquea y baja la barra hasta la parte superior del pecho.",
+        "Haz una breve pausa en la parte inferior.",
+        "Empuja la barra hacia arriba hasta extender los brazos.",
+        "Repite el número de repeticiones deseado."
+      ],
+      "nuestro": {
+        "id": "press-inclinado-maquina",
+        "nombre": "Press inclinado en máquina",
+        "patron": "empuje_h",
+        "musculos": [
+          "pecho",
+          "hombros",
+          "triceps"
+        ],
+        "equipo": [
+          "maquinas"
+        ],
+        "compuesto": true,
+        "desc": "Asiento bajo para empujar en diagonal. Escápulas juntas y recorrido completo."
+      }
+    },
+    {
+      "id": "pullover-maquina",
+      "nombre": "Pullover en máquina",
+      "estado": "revisar",
+      "origen": "manual",
+      "razon": "Pullover en máquina ≈ Pullover con Disco",
+      "score": 1,
+      "repdb": {
+        "id": "plate-pullover",
+        "nombre_es": "Pullover con Disco",
+        "nombre_en": "Plate Pullover"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/plate-pullover-start.webp",
+        "end": "images/flat/plate-pullover-peak.webp"
+      },
+      "primary_muscles": [
+        "latissimus_dorsi",
+        "pectoralis_major"
+      ],
+      "secondary_muscles": [
+        "serratus_anterior",
+        "triceps_brachii"
+      ],
+      "instructions": [
+        "Acuéstate plano en un banco sujetando un disco con ambas manos.",
+        "Empuja el disco sobre el pecho con los brazos casi rectos.",
+        "Baja el disco en arco por detrás de la cabeza hasta sentir el estiramiento.",
+        "Tira del disco de regreso sobre el pecho por el mismo arco.",
+        "Repite el número de repeticiones indicado."
+      ],
+      "nuestro": {
+        "id": "pullover-maquina",
+        "nombre": "Pullover en máquina",
+        "patron": "tiron_v",
+        "musculos": [
+          "espalda",
+          "pecho"
+        ],
+        "equipo": [
+          "maquinas"
+        ],
+        "compuesto": false,
+        "desc": "Codos sobre la almohadilla. Baja los brazos en arco hasta las caderas llevando los codos al cuerpo."
+      }
+    },
+    {
+      "id": "remo-alto-maquina",
+      "nombre": "Remo al cuello en máquina",
+      "estado": "revisar",
+      "origen": "manual",
+      "razon": "No hay equivalente exacto; se propone Jalón al Cuello detrás de la cabeza",
+      "score": 1,
+      "repdb": {
+        "id": "behind-the-neck-lat-pulldown",
+        "nombre_es": "Jalón al Cuello Detrás de la Cabeza",
+        "nombre_en": "Behind-the-Neck Lat Pulldown"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/behind-the-neck-lat-pulldown-start.webp",
+        "end": "images/flat/behind-the-neck-lat-pulldown-peak.webp"
+      },
+      "primary_muscles": [
+        "latissimus_dorsi"
+      ],
+      "secondary_muscles": [
+        "posterior_deltoid",
+        "rhomboids",
+        "trapezius"
+      ],
+      "instructions": [
+        "Siéntate en la máquina de jalón con los muslos asegurados bajo el pad.",
+        "Agarra la barra con un agarre ancho prono, más ancho que la anchura de los hombros.",
+        "Mantén el torso erguido e inclina la barbilla ligeramente hacia adelante.",
+        "Tira de la barra hacia abajo detrás de la cabeza hasta que toque la base del cuello.",
+        "Vuelve de forma controlada al estiramiento completo sobre la cabeza.",
+        "Repite el número de repeticiones recomendado."
+      ],
+      "nuestro": {
+        "id": "remo-alto-maquina",
+        "nombre": "Remo al cuello en máquina",
+        "patron": "hombro_post",
+        "musculos": [
+          "hombros",
+          "espalda"
+        ],
+        "equipo": [
+          "maquinas"
+        ],
+        "compuesto": false,
+        "desc": "Asas altas. Tira llevando los codos hacia fuera y arriba, juntando las escápulas."
+      }
+    },
+    {
+      "id": "curl-biceps-maquina",
+      "nombre": "Curl de bíceps en máquina",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "machine-bicep-curl",
+        "nombre_es": "Curl de Bíceps en Máquina",
+        "nombre_en": "Machine Bicep Curl"
+      },
+      "alternativas": [
+        {
+          "id": "bicep-curl",
+          "nombre": "Curl de Bíceps con Mancuernas",
+          "score": 0.5
+        },
+        {
+          "id": "machine-preacher-curl",
+          "nombre": "Curl en Máquina de Predicador",
+          "score": 0.5
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/machine-bicep-curl-start.webp",
+        "end": "images/flat/machine-bicep-curl-peak.webp"
+      },
+      "primary_muscles": [
+        "biceps_brachii"
+      ],
+      "secondary_muscles": [
+        "brachialis"
+      ],
+      "instructions": [
+        "Siéntate en la máquina y ajusta el rodillo a la longitud de tus brazos.",
+        "Agarra las manijas con agarre en supinación.",
+        "Lleva las manijas hacia los hombros.",
+        "Baja con control.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "curl-biceps-maquina",
+        "nombre": "Curl de bíceps en máquina",
+        "patron": "biceps",
+        "musculos": [
+          "biceps"
+        ],
+        "equipo": [
+          "maquinas"
+        ],
+        "compuesto": false,
+        "desc": "Codos apoyados en la almohadilla. Flexiona sin mover los hombros y baja controlando."
+      }
+    },
+    {
+      "id": "extension-triceps-maquina",
+      "nombre": "Extensión de tríceps en máquina",
+      "estado": "auto",
+      "origen": "nombre",
+      "score": 1,
+      "repdb": {
+        "id": "machine-triceps-extension",
+        "nombre_es": "Extensión de Tríceps en Máquina",
+        "nombre_en": "Machine Triceps Extension"
+      },
+      "alternativas": [
+        {
+          "id": "dumbbell-tricep-extension",
+          "nombre": "Extensión de Tríceps con Mancuerna",
+          "score": 0.5
+        },
+        {
+          "id": "lying-tricep-extension",
+          "nombre": "Extensión de Tríceps Tumbado",
+          "score": 0.5
+        },
+        {
+          "id": "machine-back-extension",
+          "nombre": "Extensión de Espalda en Máquina",
+          "score": 0.5
+        }
+      ],
+      "imagenes": {
+        "start": "images/flat/machine-triceps-extension-start.webp",
+        "end": "images/flat/machine-triceps-extension-peak.webp"
+      },
+      "primary_muscles": [
+        "triceps_brachii"
+      ],
+      "secondary_muscles": [],
+      "instructions": [
+        "Siéntate en la máquina de extensión de tríceps con la espalda apoyada en el respaldo y los brazos apoyados de plano sobre el rodillo, delante del pecho.",
+        "Toma una manija con cada mano, con los codos flexionados y las manos a la altura de los hombros.",
+        "Manteniendo los brazos pegados al rodillo, extiende los codos para empujar las manijas hacia abajo y hacia delante hasta estirar los brazos por completo.",
+        "Aprieta el tríceps en la extensión completa y flexiona los codos para volver al inicio de forma controlada.",
+        "Repite el número de repeticiones deseado."
+      ],
+      "nuestro": {
+        "id": "extension-triceps-maquina",
+        "nombre": "Extensión de tríceps en máquina",
+        "patron": "triceps",
+        "musculos": [
+          "triceps"
+        ],
+        "equipo": [
+          "maquinas"
+        ],
+        "compuesto": false,
+        "desc": "Codos fijos. Extiende los brazos por completo y vuelve despacio sin mover los hombros."
+      }
+    },
+    {
+      "id": "gemelos-sentado",
+      "nombre": "Gemelos sentado en máquina",
+      "estado": "auto",
+      "origen": "manual",
+      "razon": "Gemelos sentado = Elevación de Talones Sentado",
+      "score": 1,
+      "repdb": {
+        "id": "seated-calf-raise",
+        "nombre_es": "Elevación de Talones Sentado",
+        "nombre_en": "Seated Calf Raise"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/seated-calf-raise-start.webp",
+        "end": "images/flat/seated-calf-raise-peak.webp"
+      },
+      "primary_muscles": [
+        "soleus"
+      ],
+      "secondary_muscles": [
+        "gastrocnemius"
+      ],
+      "instructions": [
+        "Siéntate en la máquina de elevación de talones con los pads apoyados en los muslos.",
+        "Baja los talones lo más posible.",
+        "Elévate sobre las puntas de los pies.",
+        "Baja con control.",
+        "Repite."
+      ],
+      "nuestro": {
+        "id": "gemelos-sentado",
+        "nombre": "Gemelos sentado en máquina",
+        "patron": "gemelo",
+        "musculos": [
+          "gemelos"
+        ],
+        "equipo": [
+          "maquinas"
+        ],
+        "compuesto": false,
+        "desc": "Rodillas bajo la almohadilla y puntas en la plataforma. Estira abajo y sube al máximo con pausa."
+      }
+    },
+    {
+      "id": "crunch-maquina",
+      "nombre": "Crunch en máquina",
+      "estado": "auto",
+      "origen": "manual",
+      "razon": "Crunch en máquina = Abdominales en Máquina Sentado",
+      "score": 1,
+      "repdb": {
+        "id": "machine-seated-crunch",
+        "nombre_es": "Abdominales en Máquina Sentado",
+        "nombre_en": "Machine Seated Crunch"
+      },
+      "alternativas": [],
+      "imagenes": {
+        "start": "images/flat/machine-seated-crunch-start.webp",
+        "end": "images/flat/machine-seated-crunch-peak.webp"
+      },
+      "primary_muscles": [
+        "rectus_abdominis"
+      ],
+      "secondary_muscles": [
+        "obliques",
+        "transverse_abdominis"
+      ],
+      "instructions": [
+        "Siéntate en la máquina de abdominales y sujeta las manijas.",
+        "Coloca la almohadilla de pecho contra tu torso.",
+        "Contrae el abdomen para flexionar el torso hacia adelante y abajo.",
+        "Contrae al final del recorrido.",
+        "Vuelve a la posición inicial con control.",
+        "Repite el número de repeticiones deseado."
+      ],
+      "nuestro": {
+        "id": "crunch-maquina",
+        "nombre": "Crunch en máquina",
+        "patron": "core",
+        "musculos": [
+          "abdomen"
+        ],
+        "equipo": [
+          "maquinas"
+        ],
+        "compuesto": false,
+        "desc": "Sujeto con los brazos y los pies fijos. Flexiona el tronco llevando el esternón hacia la pelvis."
+      }
+    }
+  ],
+  "sinMatchDetalle": [
+    {
+      "id": "press-hombro-bandas",
+      "nombre": "Press de hombros con banda",
+      "mejorIntento": null,
+      "razon": "Sin equivalente en RepDB: se conserva el dibujo SVG"
+    },
+    {
+      "id": "jalon-bandas",
+      "nombre": "Jalón con banda",
+      "mejorIntento": null,
+      "razon": "Sin equivalente en RepDB: se conserva el dibujo SVG"
+    },
+    {
+      "id": "curl-toalla",
+      "nombre": "Curl isométrico con toalla",
+      "mejorIntento": null,
+      "razon": "Sin equivalente en RepDB: se conserva el dibujo SVG"
+    },
+    {
+      "id": "aperturas-bandas",
+      "nombre": "Aperturas posteriores con banda",
+      "mejorIntento": {
+        "id": "banded-clamshell",
+        "nombre": "Almeja con Banda",
+        "score": 0.25
+      }
+    },
+    {
+      "id": "ytw",
+      "nombre": "Elevaciones Y-T-W boca abajo",
+      "mejorIntento": {
+        "id": "downward-dog",
+        "nombre": "Perro Boca Abajo",
+        "score": 0.33
+      }
+    },
+    {
+      "id": "aductores-maquina",
+      "nombre": "Aductores en máquina",
+      "mejorIntento": {
+        "id": "hip-abduction",
+        "nombre": "Abducción de Cadera en Máquina",
+        "score": 0.33
+      }
+    }
+  ]
+}

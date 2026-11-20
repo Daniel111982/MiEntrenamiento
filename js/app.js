@@ -53,7 +53,7 @@ import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from 
 // =====================================================================
 // Cada usuario guarda sus datos por separado: 'mientrenamiento:u:<id>'.
 // La lista de usuarios y cuál está activo van en 'mientrenamiento:usuarios'.
-const APP_VERSION = '2.10'; // versión de la app (ver VERSIONES/HISTORIAL.md)
+const APP_VERSION = '2.11'; // versión de la app (ver VERSIONES/HISTORIAL.md)
 const CLAVE = 'mientrenamiento:v2'; // formato anterior, de un solo usuario
 const CLAVE_USUARIOS = 'mientrenamiento:usuarios';
 const claveDe = id => `mientrenamiento:u:${id}`;
@@ -3666,6 +3666,8 @@ function ajAcerca() {
         <p>Puedes proteger la app con una contraseña que se guarda cifrada (SHA-256 con salt) en este dispositivo. Si la olvidas, tienes tres formas de recuperar el acceso: la pregunta de seguridad, un código por correo o el código maestro.</p></div>
       <div class="tarjeta"><h2>🎨 Iconos</h2>
         <p>Los iconos de los avatares y de la interfaz son del set <a href="https://lucide.dev" target="_blank" rel="noopener">Lucide</a> (licencia ISC).</p></div>
+      <div class="tarjeta"><h2>🖼️ Ilustraciones de ejercicios</h2>
+        <p>Ilustraciones de ejercicios por <a href="https://repdb.co" target="_blank" rel="noopener">RepDB (repdb.co)</a>. Se usan dentro de la app según su licencia gratuita.</p></div>
       <p class="tenue centro">${MARCA.nombre} · versión ${APP_VERSION} · ${modoNube() ? 'funciona sin conexión · tus entrenamientos siguen en tu dispositivo' : 'funciona sin conexión · tus datos no salen de tu dispositivo'}</p>
     `,
   });
@@ -5000,6 +5002,14 @@ const cerrarModal = () => $('#modal').open && $('#modal').close();
 $('#modal').addEventListener('click', e => { if (e.target === e.currentTarget && !e.currentTarget.dataset.fija) cerrarModal(); });
 $('#modal').addEventListener('cancel', e => { if (e.currentTarget.dataset.fija) e.preventDefault(); });
 
+// Si una ilustración remota no carga (sin red, archivo retirado), se elimina
+// y queda a la vista el dibujo SVG que lleva debajo. Fallback sin JavaScript
+// adicional ni dependencias.
+document.addEventListener('error', ev => {
+  const img = ev.target;
+  if (img instanceof HTMLImageElement && img.classList.contains('visor-img')) img.remove();
+}, true);
+
 // Confirmación propia (sustituye a confirm() del navegador). Devuelve una promesa con true/false.
 function confirmar(texto, { titulo = '¿Seguro?', ok = 'Aceptar', peligro = false } = {}) {
   const d = $('#confirmar');
@@ -5066,26 +5076,80 @@ const urlBusqueda = (e, tipo) => tipo === 'videos'
   ? `https://www.youtube.com/results?search_query=${encodeURIComponent(e.nombre + ' técnica correcta')}`
   : `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(e.nombre + ' ejercicio técnica')}`;
 
+// Nombres legibles de los identificadores musculares que trae RepDB.
+const MUSCULOS_REP = {
+  gluteus_maximus: 'Glúteo mayor', gluteus_medius: 'Glúteo medio',
+  hamstrings: 'Femorales', quadriceps: 'Cuádriceps',
+  triceps_brachii: 'Tríceps', biceps_brachii: 'Bíceps', brachialis: 'Braquial',
+  brachioradialis: 'Braquiorradial', forearm_flexors: 'Flexores del antebrazo',
+  anterior_deltoid: 'Deltoides anterior', lateral_deltoid: 'Deltoides lateral',
+  posterior_deltoid: 'Deltoides posterior',
+  pectoralis_major: 'Pectoral mayor', serratus_anterior: 'Serrato anterior',
+  latissimus_dorsi: 'Dorsal ancho', trapezius: 'Trapecio', rhomboids: 'Romboides',
+  erector_spinae: 'Erector de la columna', rectus_abdominis: 'Recto abdominal',
+  transverse_abdominis: 'Transverso abdominal', obliques: 'Oblicuos',
+  gastrocnemius: 'Gemelos', soleus: 'Sóleo',
+  hip_flexors: 'Flexores de cadera', abductors: 'Abductores', adductors: 'Aductores',
+};
+const nombreMusculoRep = id => MUSCULOS_REP[id]
+  || String(id).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+// El SVG queda debajo de la ilustración: si la imagen no carga (sin red o
+// archivo retirado) el listener de error la elimina y el dibujo sigue visible.
+function capaVisor(svg, url, alt) {
+  return `<div class="visor-capas"><div class="visor-base">${svg}</div>${
+    url ? `<img class="visor-img" src="${esc(url)}" alt="${esc(alt)}" loading="lazy" decoding="async">` : ''
+  }</div>`;
+}
+
 function tecnicaHTML(e, { compacta = false } = {}) {
   const g = guiaEjercicio(e);
   const [ini, fin] = pasosDibujo(e);
   const lista = (cls, items) => `<ul class="${cls}">${items.map(t => `<li>${esc(t)}</li>`).join('')}</ul>`;
+  const conMedia = Boolean(e.media_url);
+  const pasos = e.execution_steps?.length ? e.execution_steps : g.pasos;
+  const principales = e.primary_muscles || [];
+  const secundarios = e.secondary_muscles || [];
+  const zonas = conMedia && (principales.length || secundarios.length) ? `
+      <div class="zonas-rep">
+        <p class="tenue">Zonas trabajadas · <i class="lg" style="background:var(--acento)"></i>principal <i class="lg" style="background:var(--acento2)"></i>secundario</p>
+        <div class="badges centro-flex">
+          ${principales.map(m => `<span class="badge prim">${esc(nombreMusculoRep(m))}</span>`).join('')}
+          ${secundarios.map(m => `<span class="badge">${esc(nombreMusculoRep(m))}</span>`).join('')}
+        </div>
+      </div>` : '';
+  const atribucion = conMedia
+    ? '<p class="atribucion-rep">Ilustraciones de ejercicios por <a href="https://repdb.co" target="_blank" rel="noopener">RepDB (repdb.co)</a></p>'
+    : '';
   return `
     <div class="tarjeta tecnica">
       <h2>🎬 Cómo se hace</h2>
       <div class="dibujo-zona">
-        <div class="dibujo-grande">${dibujoSVG(e)}<span class="badge en-vivo">● Movimiento</span></div>
+        <div class="dibujo-grande ${conMedia ? 'con-anatomia' : ''}">
+          ${capaVisor(dibujoSVG(e), e.media_url, `Ilustración anatómica de ${e.nombre}`)}
+          <span class="badge en-vivo">● ${e.media_url_end ? 'Inicio' : 'Movimiento'}</span>
+        </div>
         <div class="posturas">
-          <figure>${dibujoSVG(e, { postura: 'A' })}<figcaption><b>1</b>${esc(ini)}</figcaption></figure>
-          <figure>${dibujoSVG(e, { postura: 'B' })}<figcaption><b>2</b>${esc(fin)}</figcaption></figure>
+          <figure class="${conMedia ? 'con-anatomia' : ''}">
+            ${capaVisor(dibujoSVG(e, { postura: 'A' }), e.media_url, `Postura inicial de ${e.nombre}`)}
+            <figcaption><b>1</b>${esc(ini)}</figcaption>
+          </figure>
+          <figure class="${conMedia && e.media_url_end ? 'con-anatomia' : ''}">
+            ${capaVisor(dibujoSVG(e, { postura: 'B' }), e.media_url_end, `Postura final de ${e.nombre}`)}
+            <figcaption><b>2</b>${esc(fin)}</figcaption>
+          </figure>
         </div>
       </div>
-      <p class="tenue centro nota-dibujo">Dibujo orientativo. Fíjate en la postura y el recorrido.</p>
+      <p class="tenue centro nota-dibujo">${conMedia
+        ? 'Ilustración anatómica de la postura y el recorrido del movimiento.'
+        : 'Dibujo orientativo. Fíjate en la postura y el recorrido.'}</p>
+      ${zonas}
+      ${atribucion}
       ${esTechnogym(e) ? '' : playerVideo(e)}
     </div>
     <div class="tarjeta guia">
       <h2>📝 Paso a paso</h2>
-      <ol class="pasos">${g.pasos.map(p => `<li>${esc(p)}</li>`).join('')}</ol>
+      <ol class="pasos">${pasos.map(p => `<li>${esc(p)}</li>`).join('')}</ol>
       <h2>✅ Claves</h2>${lista('claves', g.claves)}
       <h2>⚠️ Errores comunes</h2>${lista('errores', g.errores)}
       ${compacta ? '' : `<h2>🌬️ Respiración</h2><p>${esc(g.resp)}</p>

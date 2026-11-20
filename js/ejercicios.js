@@ -280,6 +280,12 @@ export function sincronizarEjerciciosGlobales(lista = []) {
         maquinaCustom: e.maquinaCustom, lineaCustom: e.lineaCustom,
         musculoCustom: e.musculoCustom, ajusteCustom: e.ajusteCustom,
       } : {}),
+      ...(e.media_url ? { media_url: e.media_url } : {}),
+      ...(e.media_url_end ? { media_url_end: e.media_url_end } : {}),
+      ...(e.primary_muscles ? { primary_muscles: e.primary_muscles } : {}),
+      ...(e.secondary_muscles ? { secondary_muscles: e.secondary_muscles } : {}),
+      ...(e.execution_steps ? { execution_steps: e.execution_steps } : {}),
+      ...(e.fuente_media ? { fuente_media: e.fuente_media } : {}),
       global: true,
     };
     EJERCICIOS.push(ej);

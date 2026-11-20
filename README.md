@@ -18,7 +18,7 @@ App web instalable (PWA) de entrenamiento y nutrición. **Entrena · Nutre · Ev
 - **Gráficos del diario:** anillo de calorías, donut de proteínas/hidratos/grasas, barras por comida y evolución de los últimos 7 días, todo dibujado con lo que has anotado. Cada alimento muestra sus gramos de macro y fibra, y al añadir una comida aparece una tarjeta visual con su reparto.
 - **Fibra y micronutrientes reales:** la fibra se muestra junto al resto de macros. Calcio, hierro, vitaminas D y C y potasio solo aparecen cuando Open Food Facts los declara en la ficha o los escribes a mano; nunca se estiman. Las referencias son orientativas para adultos y no sustituyen el consejo médico.
 - **Informe nutricional semanal** (`Nutrición → Informe`): barras de calorías por día con línea de objetivo, donut y barras de macros medios, comparación con la semana anterior y micronutrientes declarados solo en los días que los tienen. Media de calorías, proteína, fibra y agua, con opción de copiar o descargar el informe. Nunca rellena días sin registrar.
-- **Biblioteca** de 68 ejercicios con dibujo animado del movimiento, paso a paso, claves, errores comunes y respiración. Puedes guardar tu vídeo de YouTube y tu foto de cada ejercicio.
+- **Biblioteca** de 82 ejercicios con dibujo animado del movimiento, paso a paso, claves, errores comunes y respiración. La ficha añade **ilustraciones anatómicas de inicio y final** (dos posturas) cuando el ejercicio tiene imagen asignada; si no hay red o no hay imagen, sigue viéndose el dibujo animado de siempre. Puedes guardar tu vídeo de YouTube y tu foto de cada ejercicio.
 - **Ayudas** en todos los botones (ratón, teclado o pulsación larga) e iconos ⓘ en las zonas importantes.
 - **Usuarios:** gestor para crear, editar, cambiar y borrar usuarios; cada uno con su propio programa y seguimiento.
 - **Nube y beta:** cuentas reales, inicio de sesión persistente, sincronización entre dispositivos, códigos beta con duración elegida por el dueño y borrado de cuenta desde la app.
@@ -67,8 +67,26 @@ y abre http://localhost:8765.
 | `js/coach.js`, `js/llm.js` | Coach local y chat IA: clave propia, servidor de DanTal y motor local |
 | `supabase/esquema.sql`, `supabase/esquema-admin.sql`, `supabase/esquema-ia.sql`, `supabase/GUIA.md` | Tablas, permisos, límite de uso del coach y pasos del backend gratis |
 | `supabase/functions/coach-ia/index.ts` | Edge Function que sirve Gemini con una clave única guardada como secreto |
+| `supabase/esquema-media-ejercicios.sql` | Bucket público `exercise-media`: lectura pública, escritura solo del dueño |
+| `scripts/mapear-ejercicios.mjs` | Empareja los 82 ejercicios con el dataset de RepDB y genera `scripts/mapeo-revisar.json` |
+| `scripts/subir-media-supabase.mjs` | Sube las ilustraciones y actualiza `public.catalogos` (variables de entorno, nunca en el repo) |
 | `sw.js` | Funcionamiento sin conexión |
 | `VERSIONES/` | Copias completas por versión, historial y scripts para guardar o restaurar |
+
+## Ilustraciones anatómicas (RepDB)
+
+Usamos el dataset abierto de [RepDB](https://repdb.co) (708 ejercicios, ilustraciones WebP y nombres e instrucciones en español) bajo su licencia gratuita. El dataset se descarga solo en local, en `.tmp/repdb/` (ignorado por git): **no se redistribuye** y nunca entra en el build público.
+
+Flujo para el dueño:
+
+1. Ejecutar `supabase/esquema-media-ejercicios.sql` en el editor SQL de Supabase (crea el bucket `exercise-media`).
+2. Clonar el dataset en `.tmp/repdb/`: `git clone --depth 1 https://github.com/RepDB/exercise-dataset .tmp/repdb`.
+3. `node scripts/mapear-ejercicios.mjs` → genera `scripts/mapeo-revisar.json` con 67 coincidencias automáticas, 9 para revisar y 6 sin coincidencia. Revisar ese archivo antes de subir.
+4. `SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… node scripts/subir-media-supabase.mjs --dry-run` y, si todo cuadra, sin `--dry-run`. Añadir `--include-review` para incluir los 9 casos a revisar.
+
+Las imágenes se suben a `exercise-media/ejercicios/<id>-start.webp` y `-end.webp`. La app recibe las URL y los datos técnicos dentro de `public.catalogos.datos` (`media_url`, `media_url_end`, `primary_muscles`, `secondary_muscles`, `execution_steps`), sin columnas nuevas. La clave `service_role` solo vive en la variable de entorno del script: **nunca se guarda en el proyecto ni viaja a la app**.
+
+**Ilustraciones de ejercicios por [RepDB (repdb.co)](https://repdb.co).**
 
 ## Versiones
 
@@ -78,7 +96,7 @@ El proyecto guarda una copia completa de cada versión en `VERSIONES/`, para pod
 - `VERSIONES/nueva-version.cmd -Nota "..."` — guarda el estado actual como versión nueva.
 - `VERSIONES/restaurar.cmd -Version v1.00` — vuelve a una versión anterior.
 
-La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.10`). La caché del service worker es `dantal-v5.3` y los archivos estáticos usan `?v=5.3`. Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
+La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.11`). La caché del service worker es `dantal-v5.4` y los archivos estáticos usan `?v=5.4`. Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
 
 ## Privacidad y seguridad
 

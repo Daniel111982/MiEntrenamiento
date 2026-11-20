@@ -275,6 +275,11 @@ mayoría ya lo tienes).
   últimos 14 días y evolución de fuerza del ejercicio elegido, con el mismo estilo SVG
   que el diario. Las semanas sin sesiones se distinguen de los ceros medidos y la
   recuperación se calcula solo con sesiones reales. *(hecha: app 2.10)*
+- [ ] **Fase 3K — Ilustraciones anatómicas con RepDB (en curso).** Dataset abierto en
+  `.tmp/repdb/` (fuera del build), mapeo de los 82 ejercicios generado (67 coincidencias
+  automáticas, 9 a revisar, 6 sin coincidencia) y scripts de subida preparados. La ficha
+  ya muestra las dos posturas con fallback al SVG y la atribución. Falta ejecutar la
+  migración `esquema-media-ejercicios.sql` y subir las WebP a Supabase.
 - [ ] **Fase 4 — Android.** Paquete TWA y publicación en Google Play (requiere dominio propio).
 - [ ] **Fase 5 — iOS.** Envoltorio con Capacitor y publicación en la App Store.
 - [ ] **Fase 6 — Monetización y relojes.** Suscripciones con el pago de las tiendas

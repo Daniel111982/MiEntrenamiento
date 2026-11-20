@@ -525,6 +525,18 @@ body.sin-ayudas .info { display: none; }
 .dibujo .mueble { fill: var(--borde); }
 .dibujo .mueble-l { stroke: var(--borde); stroke-width: 4; stroke-linecap: round; }
 .dibujo .mueble-l.gruesa { stroke-width: 6; stroke: var(--tenue); }
+/* Visor anatómico: la ilustración tapa al SVG solo si llega a cargar.
+   Sin red o sin imagen asignada, el listener de error la retira y queda
+   el dibujo animado de siempre. */
+.visor-capas { position: relative; }
+.visor-base { display: grid; place-items: center; }
+.visor-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
+  background: var(--tarjeta2); border-radius: var(--radio-s); }
+.posturas .visor-img { border-radius: calc(var(--radio-s) - 2px); }
+.zonas-rep { margin-top: 12px; }
+.zonas-rep p { margin: 0 0 6px; font-size: .78rem; }
+.atribucion-rep { margin: 10px 0 0; font-size: .7rem; color: var(--tenue); text-align: center; }
+.atribucion-rep a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .nota-dibujo { margin: 10px 0 0; font-size: .78rem; }
 .guia h2 { margin-top: 16px; }
 .guia h2:first-child { margin-top: 0; }
