@@ -41,7 +41,7 @@ import {
 } from './nube.js';
 import { LOGROS, RETOS, retoDelMes, calcularLogros, progresoReto } from './logros.js';
 import { informeSemanal, textoInforme } from './informe.js';
-import { generarMenu, listaCompra, textoListaCompra, planAlimentacion } from './menu.js';
+import { generarMenu, listaCompra, textoListaCompra, planAlimentacion, candidatasReceta, comidaConReceta, recalcularComida, recalcularDia } from './menu.js';
 import { soportaCodigos, escanearCodigo, buscarAlimento, urlProducto, historialEscaner, limpiarHistorialEscaner, productoManual, guardarProductoLocal } from './escaner.js';
 import { reorganizarSemana, ajustarSesion, huecosLibres } from './planificador.js';
 import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from './rgpd.js';
@@ -51,7 +51,7 @@ import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from 
 // =====================================================================
 // Cada usuario guarda sus datos por separado: 'mientrenamiento:u:<id>'.
 // La lista de usuarios y cuál está activo van en 'mientrenamiento:usuarios'.
-const APP_VERSION = '2.05'; // versión de la app (ver VERSIONES/HISTORIAL.md)
+const APP_VERSION = '2.06'; // versión de la app (ver VERSIONES/HISTORIAL.md)
 const CLAVE = 'mientrenamiento:v2'; // formato anterior, de un solo usuario
 const CLAVE_USUARIOS = 'mientrenamiento:usuarios';
 const claveDe = id => `mientrenamiento:u:${id}`;
@@ -68,6 +68,7 @@ const vacio = () => ({
   progresoFotos: {},      // galería corporal privada: { id: {fecha, angulo, nota, datos} }
   metaCorporal: null,     // {peso, grasa, fecha}
   menu: null,             // menú semanal generado
+  menuPreferencias: { favoritas: [], excluidas: [] }, // recetas que el usuario quiere ver o evitar
   logrosVistos: [],       // ids de logros ya celebrados
   rgpd: null,             // registro de consentimiento
   coachChat: [],          // historial persistente del coach
@@ -154,6 +155,10 @@ function cargar(id = usuarios.activo) {
       progresoFotos: d.progresoFotos && typeof d.progresoFotos === 'object' ? d.progresoFotos : {},
       metaCorporal: d.metaCorporal && typeof d.metaCorporal === 'object' ? d.metaCorporal : null,
       menu: d.menu && typeof d.menu === 'object' ? d.menu : null,
+      menuPreferencias: {
+        favoritas: Array.isArray(d.menuPreferencias?.favoritas) ? d.menuPreferencias.favoritas : [],
+        excluidas: Array.isArray(d.menuPreferencias?.excluidas) ? d.menuPreferencias.excluidas : [],
+      },
       logrosVistos: Array.isArray(d.logrosVistos) ? d.logrosVistos : [],
       rgpd: d.rgpd && typeof d.rgpd === 'object' ? d.rgpd : null,
       coachChat: Array.isArray(d.coachChat) ? d.coachChat.slice(-60) : [],
@@ -622,6 +627,12 @@ function macrosEntrada(en) {
     };
   }
   if (en.tipo === 'receta') {
+    // Receta ajustada desde el menú: se guardan sus ingredientes reales.
+    if (Array.isArray(en.ingredientes) && en.ingredientes.length) {
+      const t = sumarMacros(en.ingredientes.map(i => macrosDe(alimentoPorId(i.id), Number(i.gramos) || 0)));
+      const k = Number(en.racion) || 1;
+      return { kcal: t.kcal * k, prot: t.prot * k, carbs: t.carbs * k, grasa: t.grasa * k, fibra: (t.fibra || 0) * k };
+    }
     const r = RECETAS.find(x => x.id === en.id);
     if (!r) return ceroMacros();
     const k = Number(en.racion) || 1;
@@ -5605,29 +5616,65 @@ function segObjetivo() {
   });
 }
 
+const preferenciasMenu = () => estado.menuPreferencias || { favoritas: [], excluidas: [] };
+
+// Menú guardado o, si todavía no se ha generado, uno nuevo con las preferencias.
+function menuActual() {
+  if (estado.menu) return estado.menu;
+  const pref = preferenciasMenu();
+  return generarMenu({
+    kcal: Math.round(metasNutricion()?.kcal || 2000),
+    objetivo: estado.nutricion?.objetivo || 'mantener',
+    semilla: ui.menuSemilla, favoritas: pref.favoritas, excluidas: pref.excluidas,
+  });
+}
+
+// Objetivo de calorías de una comida: el del menú si existe, o el reparto de
+// las metas del usuario si esa comida estaba libre.
+function objetivoKcalComida(dia, comida) {
+  const actual = estado.menu?.[dia]?.comidas?.[comida];
+  if (actual?.macros?.kcal > 0) return Math.round(actual.macros.kcal);
+  const kcal = Math.round(metasNutricion()?.kcal || 2000);
+  const parte = planAlimentacion({ kcal, objetivo: estado.nutricion?.objetivo || 'mantener' })[comida];
+  return Math.round(parte?.kcal || 300);
+}
+
 function nutricionMenu() {
   const metas = metasNutricion();
   const kcal = Math.round(metas?.kcal || 2000);
   const objetivo = estado.nutricion?.objetivo || 'mantener';
-  const menu = estado.menu || generarMenu({ kcal, objetivo, semilla: ui.menuSemilla });
+  const pref = preferenciasMenu();
+  const menu = estado.menu || generarMenu({ kcal, objetivo, semilla: ui.menuSemilla, favoritas: pref.favoritas, excluidas: pref.excluidas });
   const compra = listaCompra(menu);
   const diaHoy = menu[Math.min(menu.length - 1, Math.max(0, (new Date().getDay() + 6) % 7))];
+  const personalizadas = menu.reduce((n, d) => n + Object.values(d?.comidas || {}).filter(c => c?.personalizada).length, 0);
   return pagina({
     titulo: 'Menú semanal', padre: 'nutricion',
     sub: `${kcal} kcal/día · objetivo ${OBJETIVOS_NUTRI[objetivo]?.nombre || objetivo}`,
     cuerpo: `
       ${subnav(SUBNAV_NUTRICION, 'nutricion/menu')}
       <div class="tarjeta">
-        <div class="fila"><div><h2>🗓️ Tu semana</h2><p class="tenue">Recetas equilibradas ajustadas a tus calorías. Cámbialas cuando quieras.</p></div>
+        <div class="fila"><div><h2>🗓️ Tu semana</h2><p class="tenue">Recetas ajustadas a tus calorías. Cambia la receta, las cantidades o quita una comida: el menú y la compra se adaptan a ti.</p></div>
           <button class="btn sec" data-a="menuGenerar">🔄 Otras recetas</button></div>
+        <div class="fila"><span class="tenue">⭐ ${pref.favoritas.length} favoritas · 🚫 ${pref.excluidas.length} descartadas${personalizadas ? ` · ✏️ ${personalizadas} personalizadas` : ''}</span>
+          <button class="enlace" data-a="menuPreferencias">Elegir mis recetas ›</button></div>
       </div>
       <div class="celdas">${menu.map((dia, i) => `
         <div class="tarjeta ${diaHoy === dia ? 'menu-hoy' : ''}">
           <div class="fila"><h2>${DIAS[i]}</h2><span class="tenue">${fmtNum(dia.macros.kcal)} kcal · ${Math.round(dia.macros.prot)} g P</span></div>
-          ${Object.entries(dia.comidas).filter(([, c]) => c).map(([comida, c]) => `
-            <div class="fila info-comida"><span>${c.receta?.icono || '🍽️'} <b>${esc(c.receta?.nombre || comida)}</b>
-              <small class="tenue"> · ${fmtNum(c.macros?.kcal || 0)} kcal</small></span>
-              <button class="enlace" data-a="menuAnadir" data-dia="${i}" data-comida="${comida}" title="Añadir a mi diario">＋</button></div>`).join('')}
+          ${Object.entries(COMIDAS).map(([clave, info]) => {
+            const c = dia.comidas[clave];
+            if (!c) return `<div class="fila info-comida"><span class="tenue">${info.icono} ${info.nombre} libre</span>
+              <button class="enlace" data-a="menuCambiar" data-dia="${i}" data-comida="${clave}">＋ Elegir receta</button></div>`;
+            return `<div class="fila info-comida"><span>${c.receta?.icono || info.icono} <b>${esc(c.receta?.nombre || info.nombre)}</b>${c.personalizada ? ' <small title="Personalizada">✏️</small>' : ''}
+                <small class="tenue"> · ${fmtNum(c.macros?.kcal || 0)} kcal</small></span>
+              <span class="acciones">
+                <button class="icono peq" data-a="menuCambiar" data-dia="${i}" data-comida="${clave}" title="Cambiar receta">🔄</button>
+                <button class="icono peq" data-a="menuEditar" data-dia="${i}" data-comida="${clave}" title="Editar cantidades">⚖️</button>
+                <button class="icono peq" data-a="menuQuitar" data-dia="${i}" data-comida="${clave}" title="Quitar esta comida">🚫</button>
+                <button class="enlace" data-a="menuAnadir" data-dia="${i}" data-comida="${clave}" title="Añadir a mi diario">＋</button>
+              </span></div>`;
+          }).join('')}
         </div>`).join('')}</div>
       <div class="tarjeta">
         <div class="fila"><h2>🛒 Lista de la compra</h2><span class="tenue">${compra.length} alimentos</span></div>
@@ -5639,9 +5686,54 @@ function nutricionMenu() {
           <button class="btn" data-a="menuGuardar">💾 Guardar este menú</button>
         </div>
       </div>
-      <p class="tenue centro">El menú es una orientación. Ajusta las cantidades a tu hambre, entrenamiento y preferencias.</p>
+      <p class="tenue centro">El menú es una orientación, no un plan rígido. Ajusta las cantidades a tu hambre y a tu entrenamiento. Datos de alimentos: colaboradores de Open Food Facts (ODbL), comprueba la etiqueta.</p>
     `,
   });
+}
+
+function menuPreferencias() {
+  const pref = preferenciasMenu();
+  modal(`<h2>⭐ Mis preferencias de recetas</h2>
+    <p class="tenue">Marca las que te gustan para que aparezcan más a menudo, o descarta las que no quieres ver. Nunca dejamos una comida vacía: si descartas todas las de una comida, se usarán igualmente.</p>
+    <div class="celdas">${RECETAS.map(r => {
+      const fav = pref.favoritas.includes(r.id), exc = pref.excluidas.includes(r.id);
+      return `<div class="celda"><span class="ic ${fav ? 'amarillo' : exc ? 'rojo' : 'verde'}">${r.icono}</span>
+        <span class="celda-t"><b>${esc(r.nombre)}</b><small>${r.comidas.map(c => COMIDAS[c]?.nombre).filter(Boolean).join(' · ')}</small></span>
+        <span class="chips">
+          <button class="chip ${fav ? 'on' : ''}" data-a="prefReceta" data-id="${r.id}" data-tipo="favorita">⭐</button>
+          <button class="chip ${exc ? 'on' : ''}" data-a="prefReceta" data-id="${r.id}" data-tipo="excluida">🚫</button>
+        </span></div>`;
+    }).join('')}</div>
+    <div class="botones"><button class="btn" data-a="prefCerrar">Listo</button></div>`);
+}
+
+function menuCambiar(dia, comida) {
+  const pref = preferenciasMenu();
+  const kcal = objetivoKcalComida(dia, comida);
+  const candidatas = candidatasReceta(comida, pref.favoritas, pref.excluidas);
+  modal(`<h2>🔄 Cambiar ${COMIDAS[comida].nombre.toLowerCase()}</h2>
+    <p class="tenue">Elige otra receta y la ajustaremos a ${fmtNum(kcal)} kcal para no romper tu objetivo del día.</p>
+    <div class="celdas">${candidatas.map(r => `<button class="celda" data-a="menuElegirReceta" data-dia="${dia}" data-comida="${comida}" data-id="${r.id}">
+      <span class="ic naranja">${r.icono}</span>
+      <span class="celda-t"><b>${esc(r.nombre)}</b><small>${pref.favoritas.includes(r.id) ? '⭐ Favorita · ' : ''}${fmtNum(resumenReceta(r).total.kcal)} kcal de base</small></span>
+      <span class="chev">＋</span></button>`).join('')}</div>`);
+}
+
+function menuEditar(dia, comida) {
+  const c = estado.menu?.[dia]?.comidas?.[comida];
+  if (!c) return;
+  modal(`<h2>⚖️ Ajustar ${esc(c.receta?.nombre || COMIDAS[comida].nombre)}</h2>
+    <p class="tenue">Cambia los gramos de cada ingrediente. Las calorías del día y la lista de la compra se recalculan solas.</p>
+    <form id="formMenuGramos" data-dia="${dia}" data-comida="${comida}">
+      ${c.ingredientes.map((i, idx) => `<label class="campo">${esc(i.nombre || alimentoPorId(i.id)?.nombre || i.id)}
+        <input type="number" name="g${idx}" min="1" max="3000" step="1" value="${Number(i.gramos) || 0}" required></label>`).join('')}
+      <div class="botones">
+        <button class="btn sec" type="button" data-a="menuEscalar" data-factor="0.75" data-dia="${dia}" data-comida="${comida}">−25 %</button>
+        <button class="btn sec" type="button" data-a="menuEscalar" data-factor="1" data-dia="${dia}" data-comida="${comida}">Actual</button>
+        <button class="btn sec" type="button" data-a="menuEscalar" data-factor="1.25" data-dia="${dia}" data-comida="${comida}">+25 %</button>
+      </div>
+      <div class="botones"><button class="btn sec" type="button" data-a="prefCerrar">Cancelar</button><button class="btn" type="submit">Guardar cantidades</button></div>
+    </form>`);
 }
 
 function nutricionEscaner() {
@@ -5966,26 +6058,86 @@ document.addEventListener('click', async ev => {
       break;
     }
     case 'metaQuitar': estado.metaCorporal = null; guardar(); render(); toast('Meta corporal eliminada'); break;
-    case 'menuGenerar':
+    case 'menuGenerar': {
+      const pref = preferenciasMenu();
       ui.menuSemilla = (ui.menuSemilla || 0) + 1;
-      estado.menu = generarMenu({ kcal: Math.round(metasNutricion()?.kcal || 2000), objetivo: estado.nutricion?.objetivo || 'mantener', semilla: ui.menuSemilla });
+      estado.menu = generarMenu({
+        kcal: Math.round(metasNutricion()?.kcal || 2000),
+        objetivo: estado.nutricion?.objetivo || 'mantener',
+        semilla: ui.menuSemilla, favoritas: pref.favoritas, excluidas: pref.excluidas,
+      });
       guardar(); render(); toast('Menú y lista de la compra actualizados');
       break;
+    }
     case 'menuGuardar':
-      estado.menu = estado.menu || generarMenu({ kcal: Math.round(metasNutricion()?.kcal || 2000), objetivo: estado.nutricion?.objetivo || 'mantener', semilla: ui.menuSemilla });
+      estado.menu = menuActual();
       guardar(); toast('Menú guardado en tu dispositivo');
       break;
+    case 'menuPreferencias': menuPreferencias(); break;
+    case 'prefReceta': {
+      const pref = estado.menuPreferencias || (estado.menuPreferencias = { favoritas: [], excluidas: [] });
+      const clave = d.tipo === 'favorita' ? 'favoritas' : 'excluidas';
+      const otra = d.tipo === 'favorita' ? 'excluidas' : 'favoritas';
+      const lista = pref[clave] || (pref[clave] = []);
+      const i = lista.indexOf(d.id);
+      if (i >= 0) lista.splice(i, 1);
+      else {
+        lista.push(d.id);
+        const listaOtra = pref[otra] || (pref[otra] = []);
+        const j = listaOtra.indexOf(d.id);
+        if (j >= 0) listaOtra.splice(j, 1);
+      }
+      guardar(); menuPreferencias(); break;
+    }
+    case 'prefCerrar': cerrarModal(); render(); break;
+    case 'menuCambiar': menuCambiar(Number(d.dia), d.comida); break;
+    case 'menuElegirReceta': {
+      const receta = RECETAS.find(r => r.id === d.id);
+      const dia = estado.menu?.[Number(d.dia)];
+      if (!receta || !dia) break;
+      const kcal = objetivoKcalComida(Number(d.dia), d.comida);
+      dia.comidas[d.comida] = { ...comidaConReceta(receta, kcal), personalizada: true };
+      estado.menu[Number(d.dia)] = recalcularDia(dia);
+      cerrarModal(); guardar(); render(); toast(`${receta.nombre} puesta en tu menú`);
+      break;
+    }
+    case 'menuEditar': menuEditar(Number(d.dia), d.comida); break;
+    case 'menuEscalar': {
+      const form = $('#formMenuGramos');
+      if (!form) break;
+      const base = estado.menu?.[Number(d.dia)]?.comidas?.[d.comida]?.ingredientes || [];
+      const factor = Number(d.factor) || 1;
+      base.forEach((ing, i) => {
+        const inp = form.querySelector(`[name="g${i}"]`);
+        if (inp) inp.value = Math.max(1, Math.round((Number(ing.gramos) || 0) * factor));
+      });
+      break;
+    }
+    case 'menuQuitar': {
+      const dia = estado.menu?.[Number(d.dia)];
+      if (!dia?.comidas?.[d.comida]) break;
+      const si = await confirmar(`¿Quitar ${COMIDAS[d.comida].nombre.toLowerCase()} de ${DIAS[Number(d.dia)]}? Podrás elegir otra receta cuando quieras.`,
+        { titulo: '¿Quitar esta comida?', ok: 'Quitar' });
+      if (!si) break;
+      dia.comidas[d.comida] = null;
+      estado.menu[Number(d.dia)] = recalcularDia(dia);
+      guardar(); render(); toast('Comida quitada del menú');
+      break;
+    }
     case 'menuAnadir': {
-      const menu = estado.menu || generarMenu({ kcal: Math.round(metasNutricion()?.kcal || 2000), objetivo: estado.nutricion?.objetivo || 'mantener', semilla: ui.menuSemilla });
-      const receta = menu[Number(d.dia)]?.comidas?.[d.comida]?.receta;
+      const comida = menuActual()[Number(d.dia)]?.comidas?.[d.comida];
+      const receta = comida?.receta;
       if (!receta) { toast('No hay receta para ese día.'); break; }
-      anadirEntrada(d.comida, { tipo: 'receta', id: receta.id, racion: 1 });
+      anadirEntrada(d.comida, {
+        tipo: 'receta', id: receta.id, nombre: receta.nombre, racion: 1,
+        ingredientes: (comida.ingredientes || []).map(i => ({ id: i.id, gramos: Number(i.gramos) || 0 })),
+      });
       toast(`${receta.nombre} añadida a tu diario`);
       break;
     }
-    case 'copiarCompra': copiarTexto(textoListaCompra(listaCompra(estado.menu || generarMenu({ kcal: Math.round(metasNutricion()?.kcal || 2000) })))); break;
+    case 'copiarCompra': copiarTexto(textoListaCompra(listaCompra(menuActual()))); break;
     case 'descargarCompra':
-      descargarTexto(`dantal-compra-${hoy()}.txt`, textoListaCompra(listaCompra(estado.menu || generarMenu({ kcal: Math.round(metasNutricion()?.kcal || 2000) }))));
+      descargarTexto(`dantal-compra-${hoy()}.txt`, textoListaCompra(listaCompra(menuActual())));
       break;
     case 'escanear': {
       toast('Abriendo la cámara…');
@@ -6675,6 +6827,19 @@ document.addEventListener('submit', async ev => {
     ui.escanerManual = null;
     render();
     toast('Producto guardado en este dispositivo. Revisa las cantidades.');
+    return;
+  }
+  if (ev.target.id === 'formMenuGramos') {
+    const dia = Number(ev.target.getAttribute('data-dia'));
+    const comida = ev.target.getAttribute('data-comida');
+    const actual = estado.menu?.[dia]?.comidas?.[comida];
+    if (!actual) return;
+    const ingredientes = (actual.ingredientes || []).map((i, idx) => ({
+      id: i.id, gramos: Number(f.get(`g${idx}`)) || 0,
+    }));
+    estado.menu[dia].comidas[comida] = recalcularComida(actual, ingredientes);
+    estado.menu[dia] = recalcularDia(estado.menu[dia]);
+    cerrarModal(); guardar(); render(); toast('Cantidades actualizadas en tu menú');
     return;
   }
   if (ev.target.id === 'formBorrarCuenta') {

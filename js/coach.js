@@ -96,6 +96,12 @@ function macrosEntradaCoach(en) {
     };
   }
   if (en.tipo === 'receta') {
+    // Receta personalizada desde el menú: sus ingredientes son los que valen.
+    if (Array.isArray(en.ingredientes) && en.ingredientes.length) {
+      const t = sumarMacros(en.ingredientes.map(i => macrosDe(alimentoPorId(i.id), Number(i.gramos) || 0)));
+      const k = Number(en.racion) || 1;
+      return { kcal: t.kcal * k, prot: t.prot * k, carbs: t.carbs * k, grasa: t.grasa * k, fibra: (t.fibra || 0) * k };
+    }
     const r = RECETAS.find(x => x.id === en.id);
     if (!r) return { kcal: 0, prot: 0, carbs: 0, grasa: 0, fibra: 0 };
     const k = Number(en.racion) || 1;

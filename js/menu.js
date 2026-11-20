@@ -60,11 +60,16 @@ export function planAlimentacion({ kcal = 2000, objetivo = 'mantener' } = {}) {
 }
 
 // Rotación determinista: cambia con el día, la semilla y la comida (nunca Math.random).
-function elegirReceta(comida, dia, semilla) {
-  const candidatas = RECETAS.filter(r => r.comidas.includes(comida));
-  if (!candidatas.length) return null;
-  const indice = mod(semilla + dia + ORDEN_COMIDAS.indexOf(comida), candidatas.length);
-  return candidatas[indice];
+// Las favoritas aparecen el doble de veces; las descartadas se omiten salvo que
+// no quede ninguna receta para esa comida (nunca dejamos una comida vacía).
+function elegirReceta(comida, dia, semilla, favoritas = [], excluidas = []) {
+  const base = RECETAS.filter(r => r.comidas.includes(comida));
+  if (!base.length) return null;
+  const activas = base.filter(r => !excluidas.includes(r.id));
+  const candidatas = activas.length ? activas : base;
+  const ponderadas = candidatas.flatMap(r => favoritas.includes(r.id) ? [r, r] : [r]);
+  const indice = mod(semilla + dia + ORDEN_COMIDAS.indexOf(comida), ponderadas.length);
+  return ponderadas[indice];
 }
 
 // Escala todos los gramos por el mismo factor objetivo/base y redondea.
@@ -89,7 +94,7 @@ function macrosDeIngredientes(ingredientes) {
   return limpiarMacros(sumarMacros(ingredientes.map(i => macrosDe(alimentoPorId(i.id), i.gramos))));
 }
 
-export function generarMenu({ kcal = 2000, objetivo = 'mantener', dias = 7, semilla = 0 } = {}) {
+export function generarMenu({ kcal = 2000, objetivo = 'mantener', dias = 7, semilla = 0, favoritas = [], excluidas = [] } = {}) {
   const objetivoPorComida = planAlimentacion({ kcal, objetivo });
   const totalDias = Math.max(0, Math.min(7, Math.trunc(Number(dias) || 0)));
   const sem = Math.trunc(Number(semilla) || 0);
@@ -100,7 +105,7 @@ export function generarMenu({ kcal = 2000, objetivo = 'mantener', dias = 7, semi
     let totalDia = { kcal: 0, prot: 0, carbs: 0, grasa: 0 };
 
     for (const nombreComida of ORDEN_COMIDAS) {
-      const receta = elegirReceta(nombreComida, dia, sem);
+      const receta = elegirReceta(nombreComida, dia, sem, favoritas, excluidas);
       // Sin recetas de snack: la comida es null y no aporta kcal.
       if (!receta) {
         comidas[nombreComida] = null;
@@ -114,6 +119,43 @@ export function generarMenu({ kcal = 2000, objetivo = 'mantener', dias = 7, semi
     menu.push({ dia, comidas, macros: totalDia });
   }
   return menu;
+}
+
+// Recetas que el usuario puede elegir para una comida (favoritas primero).
+export function candidatasReceta(comida, favoritas = [], excluidas = []) {
+  const base = RECETAS.filter(r => r.comidas.includes(comida));
+  const activas = base.filter(r => !excluidas.includes(r.id));
+  const lista = activas.length ? activas : base;
+  return [...lista].sort((a, b) =>
+    Number(favoritas.includes(b.id)) - Number(favoritas.includes(a.id)) ||
+    a.nombre.localeCompare(b.nombre, 'es'));
+}
+
+// Crea una comida del menú a partir de una receta y un objetivo de calorías.
+export function comidaConReceta(receta, kcalObjetivo) {
+  if (!receta) return null;
+  const ingredientes = escalarIngredientes(receta, Number(kcalObjetivo) || 0);
+  return { receta, ingredientes, macros: macrosDeIngredientes(ingredientes) };
+}
+
+// Recalcula una comida después de editar sus gramos a mano.
+export function recalcularComida(comida, ingredientes) {
+  const limpios = (ingredientes || []).map(i => ({
+    ...i,
+    nombre: i.nombre || alimentoPorId(i.id)?.nombre || i.id,
+    gramos: Math.max(1, Math.round(Number(i.gramos) || 0)),
+  }));
+  return { ...(comida || {}), ingredientes: limpios, macros: macrosDeIngredientes(limpios), personalizada: true };
+}
+
+// Recalcula el total del día tras cambiar, editar o quitar una comida.
+export function recalcularDia(dia) {
+  let total = { kcal: 0, prot: 0, carbs: 0, grasa: 0 };
+  for (const comida of ORDEN_COMIDAS) {
+    const m = dia?.comidas?.[comida]?.macros;
+    if (m) total = limpiarMacros(sumarMacros([total, m]));
+  }
+  return { ...(dia || {}), macros: total };
 }
 
 export function listaCompra(menu) {

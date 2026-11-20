@@ -21,7 +21,7 @@ App web instalable (PWA) de entrenamiento y nutrición. **Entrena · Nutre · Ev
 - **Nube y beta:** cuentas reales, inicio de sesión persistente, sincronización entre dispositivos, códigos beta con duración elegida por el dueño y borrado de cuenta desde la app.
 - **Fotos de progreso:** galería corporal privada que **nunca sale del dispositivo**, con fecha, ángulo y nota.
 - **Meta corporal:** peso y grasa objetivo con fecha, y evolución frente al registro real.
-- **Nutrición ampliada:** menú semanal con lista de la compra, **26.856 productos de supermercados españoles** (Lidl, Dia, Carrefour, Hacendado, Eroski, Aldi, Consum, Alcampo, Bonpreu, Gadis…) buscables por nombre o marca y **escáner de códigos de barras** con ficha editable, caché e historial. Solo se envía el EAN a Open Food Facts; los datos son colaborativos (ODbL) y la etiqueta manda.
+- **Nutrición ampliada:** **menú semanal personalizable** (recetas favoritas o descartadas, cambiar la receta de cualquier día, editar gramos y quitar comidas; la lista de la compra se recalcula sola), **26.856 productos de supermercados españoles** (Lidl, Dia, Carrefour, Hacendado, Eroski, Aldi, Consum, Alcampo, Bonpreu, Gadis…) buscables por nombre o marca y **escáner de códigos de barras** con ficha editable, caché e historial. Solo se envía el EAN a Open Food Facts; los datos son colaborativos (ODbL) y la etiqueta manda.
 - **Constancia:** insignias y retos mensuales e **informe semanal** con sesiones, minutos, volumen, racha, peso y agua.
 - **Planificación adaptativa:** mueve las sesiones perdidas a huecos libres y ajusta cada sesión a tu material y tiempo.
 - **Coach mejorado:** explica técnica con pasos reales, alternativas según tu material, detecta estancamiento y compara tus metas con tu ingesta real del día.
@@ -54,7 +54,7 @@ y abre http://localhost:8765.
 | `js/ayudas.js` | Ayudas contextuales |
 | `js/nube.js` | Cliente Supabase: cuentas, sync, borrado y contenidos |
 | `js/logros.js`, `js/informe.js` | Insignias, retos e informe semanal |
-| `js/menu.js`, `js/escaner.js` | Menú semanal, compra y escáner de alimentos (caché, historial y productos a mano) |
+| `js/menu.js`, `js/escaner.js` | Menú personalizable (preferencias, recetas, gramos) y escáner (caché, historial y productos a mano) |
 | `supabase/catalogo-supermercados.json` | Catálogo completo de marcas españolas, ODbL, cargado bajo demanda y sin conexión |
 | `supabase/importar-catalogo-supermercados.sql` | Muestra curada de 563 productos en `public.catalogos` para el panel del dueño |
 | `js/planificador.js` | Reorganización y ajuste de sesiones |
@@ -73,7 +73,7 @@ El proyecto guarda una copia completa de cada versión en `VERSIONES/`, para pod
 - `VERSIONES/nueva-version.cmd -Nota "..."` — guarda el estado actual como versión nueva.
 - `VERSIONES/restaurar.cmd -Version v1.00` — vuelve a una versión anterior.
 
-La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.05`). La caché del service worker es `dantal-v4.8` y los archivos estáticos usan `?v=4.8`. Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
+La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.06`). La caché del service worker es `dantal-v4.9` y los archivos estáticos usan `?v=4.9`. Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
 
 ## Privacidad y seguridad
 

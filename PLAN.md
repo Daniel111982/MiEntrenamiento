@@ -250,8 +250,13 @@ mayoría ya lo tienes).
   español, ingredientes, alérgenos, fibra, caché e historial), producto a mano y catálogo
   de 26.856 productos de supermercados españoles de Open Food Facts. El catálogo completo
   va en la PWA para buscar sin red; una muestra curada de 563 productos se importó en
-  `public.catalogos` para que el dueño pueda editarla. Siguiente: 2.06 menú personalizable
-  y 2.07 calorías adaptativas. *(hecha: app 2.05)*
+  `public.catalogos` para que el dueño pueda editarla. *(hecha: app 2.05)*
+- [x] **Fase 3F — Menú personalizable.** El usuario marca recetas favoritas o las descarta,
+  cambia la receta de cualquier día/comida, edita los gramos de cada ingrediente y puede
+  dejar una comida libre. Se recalculan las calorías del día y la lista de la compra, y
+  al añadir la comida al diario se conservan las cantidades elegidas (también ve el coach).
+  No es un plan rígido: no hay ayunos ni comidas obligatorias. Siguiente: 2.07 calorías
+  adaptativas. *(hecha: app 2.06)*
 - [ ] **Fase 4 — Android.** Paquete TWA y publicación en Google Play (requiere dominio propio).
 - [ ] **Fase 5 — iOS.** Envoltorio con Capacitor y publicación en la App Store.
 - [ ] **Fase 6 — Monetización y relojes.** Suscripciones con el pago de las tiendas
