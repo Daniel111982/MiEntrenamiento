@@ -51,11 +51,11 @@ import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from 
 // =====================================================================
 // Cada usuario guarda sus datos por separado: 'mientrenamiento:u:<id>'.
 // La lista de usuarios y cuál está activo van en 'mientrenamiento:usuarios'.
-const APP_VERSION = '2.06'; // versión de la app (ver VERSIONES/HISTORIAL.md)
+const APP_VERSION = '2.07'; // versión de la app (ver VERSIONES/HISTORIAL.md)
 const CLAVE = 'mientrenamiento:v2'; // formato anterior, de un solo usuario
 const CLAVE_USUARIOS = 'mientrenamiento:usuarios';
 const claveDe = id => `mientrenamiento:u:${id}`;
-const NUTRICION_DEF = { sexo: 'hombre', edad: 30, altura: 175, peso: null, actividad: 'moderado', objetivo: 'mantener' };
+const NUTRICION_DEF = { sexo: 'hombre', edad: 30, altura: 175, peso: null, actividad: 'moderado', objetivo: 'mantener', adaptativo: true, kcalManual: null };
 const VASO_ML = 250; // capacidad de un vaso de agua
 const vacio = () => ({
   perfil: null, plan: null, historial: [], enCurso: null, misSesiones: [], videos: {}, fotos: {}, medidas: [],
@@ -587,6 +587,62 @@ const SUBNAV_NUTRICION = [
 // =====================================================================
 const ceroMacros = () => ({ kcal: 0, prot: 0, carbs: 0, grasa: 0, fibra: 0 });
 
+// Ritmo semanal razonable para cada objetivo nutricional (kg/semana).
+const RITMO_OBJETIVO = {
+  perder: { esperado: -0.5, texto: 'perder grasa' },
+  recomp: { esperado: -0.2, texto: 'recomponer' },
+  mantener: { esperado: 0, texto: 'mantener tu peso' },
+  ganar: { esperado: 0.25, texto: 'ganar músculo' },
+};
+
+// Ajuste suave del objetivo con datos reales. El peso manda; si no hay bastantes
+// pesajes se usa lo registrado en el diario. Nunca saltos bruscos ni ayunos.
+function calcularAdaptacion(n, { bmr, tdee, base, objetivo }) {
+  const suelo = Math.max(1200, Math.round(bmr));
+  const techo = Math.round(tdee * 1.25);
+  const aplicar = kcal => Math.max(
+    Math.max(suelo, base - 200),
+    Math.min(Math.min(techo, base + 200), Math.round(kcal / 10) * 10),
+  );
+  const sinDatos = motivo => ({ base, kcal: base, ajuste: 0, motivo, senal: 'ninguna', detalle: 'Sin datos suficientes', suficiente: false });
+
+  const puntos = valoresMedida('peso').filter(p => p.fecha >= sumarDias(hoy(), -28));
+  const primero = puntos[0], ultimo = puntos[puntos.length - 1];
+  const dias = primero && ultimo ? Math.round((deIso(ultimo.fecha) - deIso(primero.fecha)) / 86400000) : 0;
+  if (puntos.length >= 2 && dias >= 10 && primero.v > 0 && ultimo.v > 0) {
+    const ritmo = (ultimo.v - primero.v) / dias * 7;
+    const esperado = RITMO_OBJETIVO[objetivo]?.esperado ?? 0;
+    const dif = ritmo - esperado;
+    const paso = Math.abs(dif) >= 0.3 ? 200 : Math.abs(dif) >= 0.1 ? 100 : 0;
+    const kcal = aplicar(base - paso * Math.sign(dif));
+    const ajuste = kcal - base;
+    const ritmoTxt = `${ritmo >= 0 ? '+' : '−'}${Math.abs(ritmo).toFixed(2)} kg/semana`;
+    let motivo;
+    if (!ajuste) motivo = 'Tu peso evoluciona como cabe esperar para tu objetivo. Mantenemos el cálculo.';
+    else if (ajuste > 0) motivo = `Tu peso se mueve más rápido de lo previsto (${ritmoTxt}). Subimos ${ajuste} kcal para conservar músculo.`;
+    else motivo = `Tu peso se mueve más despacio de lo previsto (${ritmoTxt}). Bajamos ${Math.abs(ajuste)} kcal.`;
+    return { base, kcal, ajuste, motivo, senal: 'peso', detalle: `${puntos.length} pesajes · ${dias} días · ${ritmoTxt}`, suficiente: true };
+  }
+
+  const corte = sumarDias(hoy(), -14);
+  const fechas = Object.keys(estado.comidas || {}).filter(f =>
+    f >= corte && f <= hoy() && Object.values(estado.comidas[f] || {}).some(v => Array.isArray(v) && v.length));
+  const ingestas = fechas.map(f => macrosDia(f).kcal).filter(k => k > 0);
+  if (ingestas.length >= 5) {
+    const media = Math.round(ingestas.reduce((a, b) => a + b, 0) / ingestas.length);
+    const dif = media - base;
+    const paso = Math.abs(dif) >= 400 ? 200 : Math.abs(dif) >= 200 ? 100 : 0;
+    const kcal = aplicar(base + paso * Math.sign(dif));
+    const ajuste = kcal - base;
+    let motivo;
+    if (!ajuste) motivo = 'Tus registros encajan con el cálculo. Mantenemos el objetivo.';
+    else if (ajuste > 0) motivo = `Registras de media ${fmtNum(media)} kcal al día, por encima del cálculo. Subimos ${ajuste} kcal para acercarnos a lo que comes de verdad.`;
+    else motivo = `Registras de media ${fmtNum(media)} kcal al día, por debajo del cálculo. Bajamos ${Math.abs(ajuste)} kcal para que el objetivo sea realista.`;
+    return { base, kcal, ajuste, motivo, senal: 'diario', detalle: `${ingestas.length} días registrados · media ${fmtNum(media)} kcal`, suficiente: true };
+  }
+  return sinDatos('Necesito dos pesajes con 10 días de diferencia o cinco días de comidas registradas para ajustar. Mientras tanto usamos el cálculo base.');
+}
+
 // Gasto energético y reparto de macros a partir del perfil nutricional.
 function metasNutricion(n = estado.nutricion) {
   const ult = ultimoPeso();
@@ -598,8 +654,16 @@ function metasNutricion(n = estado.nutricion) {
   const obj = OBJETIVOS_NUTRI[n.objetivo] || OBJETIVOS_NUTRI.mantener;
   const bmr = 10 * peso + 6.25 * cm - 5 * edad + (n.sexo === 'mujer' ? -161 : 5);
   const tdee = bmr * act.factor;
-  const kcal = Math.round(tdee * (1 + obj.factor));
-  if (!Number.isFinite(kcal) || kcal <= 0) return null;
+  const base = Math.round(tdee * (1 + obj.factor));
+  if (!Number.isFinite(base) || base <= 0) return null;
+  const adapt = calcularAdaptacion(n, { bmr, tdee, base, objetivo: n?.objetivo });
+  const manual = Number(n?.kcalManual);
+  const usaManual = Number.isFinite(manual) && manual > 0;
+  const adaptativo = n?.adaptativo !== false;
+  const kcal = usaManual
+    ? Math.max(Math.max(1200, Math.round(bmr)), Math.min(Math.round(tdee * 1.4), Math.round(manual)))
+    : adaptativo ? adapt.kcal : base;
+  const modo = usaManual ? 'manual' : adaptativo ? 'adaptativo' : 'base';
   const protMin = Math.round(peso * obj.prot[0]);
   const protMax = Math.round(peso * obj.prot[1]);
   const protG = Math.round((protMin + protMax) / 2);
@@ -608,7 +672,7 @@ function metasNutricion(n = estado.nutricion) {
   const fibraG = Math.round(kcal * 14 / 1000);
   const aguaMl = Math.round((peso * 0.035 + 0.5) * 1000);
   const imc = peso / Math.pow(cm / 100, 2);
-  return { peso, cm, edad, bmr, tdee, kcal, protMin, protMax, protG, grasaG, carbsG, fibraG, aguaMl, imc, act, obj };
+  return { peso, cm, edad, bmr, tdee, kcal, kcalBase: base, ajuste: kcal - base, modo, adaptativo, adapt, protMin, protMax, protG, grasaG, carbsG, fibraG, aguaMl, imc, act, obj };
 }
 
 const diaNutri = () => ui.diaNutri || hoy();
@@ -2045,6 +2109,8 @@ function nutricionDeForm(f) {
     peso: String(f.get('peso') || '').trim() === '' ? null : Number(f.get('peso')),
     actividad: ACTIVIDADES[actividad] ? actividad : 'moderado',
     objetivo: OBJETIVOS_NUTRI[objetivo] ? objetivo : 'mantener',
+    adaptativo: f.has('adaptativo'),
+    kcalManual: String(f.get('kcalManual') || '').trim() === '' ? null : Number(f.get('kcalManual')),
   };
 }
 
@@ -2110,6 +2176,10 @@ function formNutricionHTML() {
         ${Object.entries(OBJETIVOS_NUTRI).map(([k, o]) => `<option value="${k}" ${n.objetivo === k ? 'selected' : ''}>${o.nombre}</option>`).join('')}
       </select></label>
     </div>
+    <div class="nutri-grid">
+      <label class="chip"><input type="checkbox" name="adaptativo" data-a="nutricion" ${n.adaptativo !== false ? 'checked' : ''}> 🔁 Ajustar según mi evolución</label>
+      <label class="campo">Objetivo fijo (kcal, opcional)<input type="number" name="kcalManual" inputmode="numeric" min="1200" max="5000" step="50" value="${n.kcalManual || ''}" placeholder="—" data-a="nutricion"></label>
+    </div>
     <p class="tenue" id="nutriPesoNota">${notaPesoHTML(n, ult)}</p>
     <p class="tenue">Los resultados se actualizan al escribir. Fórmula de Mifflin-St Jeor.</p>
   </form>`;
@@ -2122,7 +2192,7 @@ function segNutricion() {
       ${formNutricionHTML()}
       <div id="nutriResultados"></div>
       <div class="botones"><a class="btn sec" href="#seguimiento/medidas">⚖️ Registrar mi peso</a></div>
-      <p class="tenue">Es una estimación, no consejo médico. Ajusta las calorías según tu evolución real: si en 2-3 semanas no cambia tu peso, mueve 100-200 kcal.</p>
+      <p class="tenue">Es una estimación, no consejo médico. DanTal ajusta el objetivo hasta 200 kcal según tu peso y tus registros; también puedes fijar tu propio número.</p>
     `,
   });
 }
@@ -2134,47 +2204,44 @@ function actualizarNutricion() {
   const ult = ultimoPeso();
   const nota = $('#nutriPesoNota');
   if (nota) nota.innerHTML = notaPesoHTML(n, ult);
-  const kg = Number(n.peso) || 0;
-  const cm = Number(n.altura) || 0;
-  const edad = Number(n.edad) || 0;
-  if (!kg || !cm || !edad) {
+  const m = metasNutricion(n);
+  if (!m) {
     cont.innerHTML = '<div class="tarjeta"><p class="tenue centro">Completa peso, altura y edad para ver el cálculo.</p></div>';
     return;
   }
-  const act = ACTIVIDADES[n.actividad] || ACTIVIDADES.moderado;
-  const obj = OBJETIVOS_NUTRI[n.objetivo] || OBJETIVOS_NUTRI.mantener;
-  const bmr = 10 * kg + 6.25 * cm - 5 * edad + (n.sexo === 'mujer' ? -161 : 5);
-  const tdee = bmr * act.factor;
-  const kcal = Math.round(tdee * (1 + obj.factor));
-  if (!Number.isFinite(kcal) || kcal <= 0) {
-    cont.innerHTML = '<div class="tarjeta"><p class="tenue centro">Revisa los datos: el cálculo no sale con esos valores.</p></div>';
-    return;
-  }
-  const protMin = Math.round(kg * obj.prot[0]);
-  const protMax = Math.round(kg * obj.prot[1]);
-  const protG = Math.round((protMin + protMax) / 2);
-  const grasaG = Math.round(kcal * 0.25 / 9);
-  const carbsG = Math.max(0, Math.round((kcal - protG * 4 - grasaG * 9) / 4));
-  const fibraG = Math.round(kcal * 14 / 1000);
-  const aguaL = Math.round((kg * 0.035 + 0.5) * 10) / 10;
-  const imc = kg / Math.pow(cm / 100, 2);
+  const { bmr, tdee, kcal, protMin, protMax, protG, grasaG, carbsG, fibraG, imc, act, obj } = m;
+  const aguaL = Math.round(m.aguaMl / 100) / 10;
   const imcCat = imc < 18.5 ? 'Bajo peso' : imc < 25 ? 'Normopeso' : imc < 30 ? 'Sobrepeso' : 'Obesidad';
   const signo = obj.factor > 0 ? '+' : obj.factor < 0 ? '−' : '';
-  const ajuste = Math.abs(kcal - tdee);
+  const diferencia = Math.abs(kcal - tdee);
   const exceso = protG * 4 + grasaG * 9 > kcal;
   cont.innerHTML = `
     <div class="tiles cuatro">
       ${tile('🔥', fmtNum(kcal), 'kcal al día', 'naranja')}
       ${tile('🥩', `${protG} g`, 'proteína', 'verde')}
-      ${tile('⚖️', `${fmtDec(kg)} kg`, 'peso usado', 'azul')}
+      ${tile('⚖️', `${fmtDec(m.peso)} kg`, 'peso usado', 'azul')}
       ${tile('📊', imc.toFixed(1), imcCat.toLowerCase(), 'violeta')}
     </div>
     <div class="tarjeta">
       <h2>🔥 Cómo sale el número</h2>
       <div class="nutri-linea"><span>Tasa metabólica basal (TMB)</span><b>${fmtNum(bmr)} kcal</b></div>
       <div class="nutri-linea"><span>Gasto total · ${act.nombre}</span><b>${fmtNum(tdee)} kcal</b></div>
-      <div class="nutri-linea destacada"><span>${obj.nombre}${obj.factor ? ` (${signo}${Math.abs(Math.round(obj.factor * 100))} %)` : ''}</span><b>${fmtNum(kcal)} kcal</b></div>
-      <p class="tenue">${obj.desc}${obj.factor ? `<br>${obj.factor < 0 ? 'Déficit' : 'Superávit'} de ${fmtNum(ajuste)} kcal al día.` : ''}</p>
+      <div class="nutri-linea"><span>${obj.nombre}${obj.factor ? ` (${signo}${Math.abs(Math.round(obj.factor * 100))} %)` : ''}</span><b>${fmtNum(m.kcalBase)} kcal</b></div>
+      ${m.ajuste ? `<div class="nutri-linea"><span>Ajuste adaptativo</span><b>${m.ajuste > 0 ? '+' : '−'}${fmtNum(Math.abs(m.ajuste))} kcal</b></div>` : ''}
+      <div class="nutri-linea destacada"><span>Objetivo que usa DanTal</span><b>${fmtNum(kcal)} kcal</b></div>
+      <p class="tenue">${obj.desc}${obj.factor ? `<br>${obj.factor < 0 ? 'Déficit' : 'Superávit'} de ${fmtNum(diferencia)} kcal al día sobre tu gasto.` : ''}</p>
+    </div>
+    <div class="tarjeta" id="nutriAdapt">
+      <h2>🔁 Calorías adaptativas</h2>
+      ${m.modo === 'manual'
+        ? `<p class="tenue">Estás usando un objetivo fijo de <b>${fmtNum(kcal)} kcal</b>. Para volver al ajuste automático, deja vacío el campo «Objetivo fijo».</p>`
+        : m.modo === 'base'
+          ? `<p class="tenue">El ajuste automático está desactivado. Se usa el cálculo inicial de <b>${fmtNum(m.kcalBase)} kcal</b>.</p>`
+          : `<div class="nutri-linea"><span>Cálculo inicial</span><b>${fmtNum(m.kcalBase)} kcal</b></div>
+             <div class="nutri-linea destacada"><span>Objetivo adaptado</span><b>${fmtNum(kcal)} kcal</b></div>
+             <p class="tenue">${esc(m.adapt.motivo)}</p>
+             <p class="tenue">${esc(m.adapt.detalle)}.${m.adapt.suficiente ? '' : ' Sigue registrando peso y comidas para afinar el número.'}</p>`}
+      <p class="tenue">Es una orientación, no un diagnóstico. El ajuste es como máximo de 200 kcal y nunca sustituye el consejo de un profesional.</p>
     </div>
     <div class="tarjeta">
       <h2>🍽️ Reparto diario</h2>
@@ -2417,7 +2484,7 @@ function nutricionObjetivos() {
       ${formNutricionHTML()}
       <div id="nutriResultados"></div>
       <div class="botones"><a class="btn sec" href="#seguimiento/medidas">⚖️ Registrar mi peso</a></div>
-      <p class="tenue">Es una estimación, no consejo médico. Ajusta las calorías según tu evolución real: si en 2-3 semanas no cambia tu peso, mueve 100-200 kcal.</p>
+      <p class="tenue">Es una estimación, no consejo médico. DanTal ajusta el objetivo hasta 200 kcal según tu peso y tus registros; también puedes fijar tu propio número.</p>
     `,
   });
 }
@@ -5650,7 +5717,7 @@ function nutricionMenu() {
   const personalizadas = menu.reduce((n, d) => n + Object.values(d?.comidas || {}).filter(c => c?.personalizada).length, 0);
   return pagina({
     titulo: 'Menú semanal', padre: 'nutricion',
-    sub: `${kcal} kcal/día · objetivo ${OBJETIVOS_NUTRI[objetivo]?.nombre || objetivo}`,
+    sub: `${kcal} kcal/día${metas?.ajuste ? ` · ${metas.ajuste > 0 ? '+' : '−'}${Math.abs(metas.ajuste)} kcal adaptadas` : ''} · objetivo ${OBJETIVOS_NUTRI[objetivo]?.nombre || objetivo}`,
     cuerpo: `
       ${subnav(SUBNAV_NUTRICION, 'nutricion/menu')}
       <div class="tarjeta">

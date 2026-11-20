@@ -255,8 +255,11 @@ mayoría ya lo tienes).
   cambia la receta de cualquier día/comida, edita los gramos de cada ingrediente y puede
   dejar una comida libre. Se recalculan las calorías del día y la lista de la compra, y
   al añadir la comida al diario se conservan las cantidades elegidas (también ve el coach).
-  No es un plan rígido: no hay ayunos ni comidas obligatorias. Siguiente: 2.07 calorías
-  adaptativas. *(hecha: app 2.06)*
+  No es un plan rígido: no hay ayunos ni comidas obligatorias. *(hecha: app 2.06)*
+- [x] **Fase 3G — Calorías adaptativas.** El objetivo se ajusta hasta ±200 kcal con la
+  tendencia real del peso (o con la ingesta registrada si no hay pesajes suficientes),
+  con límites de seguridad, motivo visible y opción de fijar un número propio o
+  desactivar el ajuste. Siguiente: 2.08 fibra y micronutrientes. *(hecha: app 2.07)*
 - [ ] **Fase 4 — Android.** Paquete TWA y publicación en Google Play (requiere dominio propio).
 - [ ] **Fase 5 — iOS.** Envoltorio con Capacitor y publicación en la App Store.
 - [ ] **Fase 6 — Monetización y relojes.** Suscripciones con el pago de las tiendas

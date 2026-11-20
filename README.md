@@ -14,7 +14,7 @@ App web instalable (PWA) de entrenamiento y nutrición. **Entrena · Nutre · Ev
 - **Sesión guiada:** carga sugerida, botones −/+, temporizador de descanso, Tabata, drop set, pirámide y pantalla siempre encendida.
 - **Seguimiento:** recuperación y equilibrio muscular sobre una silueta, récords, gráfica de 1RM por ejercicio, actividad, historial y calculadora de 1RM.
 - **Peso y medidas:** registra peso, grasa corporal y perímetros (cintura, pecho, cadera, brazo y muslo) con gráfica de evolución, historial editable y notas.
-- **Calorías y proteína:** calculadora de gasto diario (Mifflin-St Jeor), calorías objetivo según tu meta, reparto de macros, proteína, fibra, agua e IMC, tomando tu último peso registrado.
+- **Calorías y proteína:** calculadora de gasto diario (Mifflin-St Jeor), calorías objetivo según tu meta, reparto de macros, proteína, fibra, agua e IMC, tomando tu último peso registrado. Las **calorías son adaptativas**: DanTal ajusta hasta ±200 kcal según tu tendencia de peso (o tus comidas registradas), explica el motivo y te deja fijar tu propio número o desactivar el ajuste.
 - **Biblioteca** de 68 ejercicios con dibujo animado del movimiento, paso a paso, claves, errores comunes y respiración. Puedes guardar tu vídeo de YouTube y tu foto de cada ejercicio.
 - **Ayudas** en todos los botones (ratón, teclado o pulsación larga) e iconos ⓘ en las zonas importantes.
 - **Usuarios:** gestor para crear, editar, cambiar y borrar usuarios; cada uno con su propio programa y seguimiento.
@@ -73,7 +73,7 @@ El proyecto guarda una copia completa de cada versión en `VERSIONES/`, para pod
 - `VERSIONES/nueva-version.cmd -Nota "..."` — guarda el estado actual como versión nueva.
 - `VERSIONES/restaurar.cmd -Version v1.00` — vuelve a una versión anterior.
 
-La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.06`). La caché del service worker es `dantal-v4.9` y los archivos estáticos usan `?v=4.9`. Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
+La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.07`). La caché del service worker es `dantal-v5.0` y los archivos estáticos usan `?v=5.0`. Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
 
 ## Privacidad y seguridad
 
