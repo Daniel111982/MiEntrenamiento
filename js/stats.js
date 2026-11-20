@@ -58,14 +58,40 @@ export function volumenMuscular(historial, dias = 7) {
   return res;
 }
 
+// Semanas naturales (lunes a domingo) con volumen real de las últimas n semanas.
+// Las semanas sin sesiones se devuelven a cero para dibujarlas como "sin dato".
+export function volumenSemanas(historial, semanas = 8, hoy = hoyIso()) {
+  const inicio = lunes(hoy);
+  const porSemana = new Map();
+  for (const h of historial || []) {
+    if (!h?.fecha || Number.isNaN(Date.parse(h.fecha))) continue;
+    const clave = lunes(String(h.fecha).slice(0, 10));
+    const actual = porSemana.get(clave) || { kg: 0, sesiones: 0 };
+    actual.kg += volumenSesion(h);
+    actual.sesiones += 1;
+    porSemana.set(clave, actual);
+  }
+  return Array.from({ length: semanas }, (_, i) => {
+    const fecha = sumarDias(inicio, -7 * (semanas - 1 - i));
+    const datos = porSemana.get(fecha) || { kg: 0, sesiones: 0 };
+    return {
+      fecha,
+      etiqueta: new Date(fecha + 'T12:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
+      kg: Math.round(datos.kg),
+      sesiones: datos.sesiones,
+    };
+  });
+}
+
 // Recuperación estimada de cada músculo (0-100 %) según series y horas desde el último trabajo.
-export function recuperacion(historial) {
-  const ahora = Date.now();
+// `momento` permite calcularla también en días pasados para las gráficas.
+export function recuperacion(historial, momento = Date.now()) {
+  const ahora = momento;
   const res = Object.fromEntries(Object.keys(MUSCULOS).map(m => [m, { pct: 100, horas: null }]));
   for (const h of historial) {
     const t = new Date(h.fecha).getTime();
     const horas = (ahora - t) / 36e5;
-    if (horas > 96) continue;
+    if (horas < 0 || horas > 96) continue;
     const carga = {};
     for (const e of h.ejercicios) {
       const ej = porId[e.id];
@@ -80,6 +106,27 @@ export function recuperacion(historial) {
     }
   }
   return res;
+}
+
+// Recuperación media de los últimos días, calculada solo con sesiones reales.
+// Se suma cada músculo por igual; también se indica el músculo más fatigado.
+export function recuperacionDiaria(historial, dias = 14, hoy = hoyIso()) {
+  return Array.from({ length: dias }, (_, i) => {
+    const fecha = sumarDias(hoy, -dias + 1 + i);
+    const finDelDia = new Date(fecha + 'T23:59:59').getTime();
+    const rec = recuperacion(historial, finDelDia);
+    const entries = Object.entries(rec);
+    const pct = Math.round(entries.reduce((t, [, r]) => t + r.pct, 0) / entries.length);
+    let peor = null;
+    for (const [m, r] of entries) if (!peor || r.pct < peor.r.pct) peor = { m, r };
+    return {
+      fecha,
+      etiqueta: new Date(fecha + 'T12:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
+      pct,
+      masFatigado: peor ? MUSCULOS[peor.m] : '',
+      masFatigadoPct: peor ? peor.r.pct : 100,
+    };
+  });
 }
 
 export function historialCSV(historial) {

@@ -723,6 +723,33 @@ input[type=url] { width: 100%; padding: 12px; border-radius: 12px; border: 1px s
 .g-comp-fila b { text-align: right; font-variant-numeric: tabular-nums; }
 .g-comp-fila small { color: var(--tenue); font-size: .66rem; font-weight: 500; }
 
+/* ---------- 2.10: gráficos de entrenamiento ---------- */
+.g-vol svg, .g-rec svg { display: block; overflow: visible; }
+.g-vol-barra { fill: color-mix(in srgb, var(--violeta) 78%, var(--acento)); }
+.g-vol-barra.actual { fill: var(--acento); }
+.g-vol-barra.sin { fill: none; stroke: var(--borde); stroke-width: 2; stroke-dasharray: 3 3; }
+.g-vol-media { stroke: var(--amarillo); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.g-vol-media-txt { fill: var(--tenue); font-size: 9px; font-weight: 700; }
+.g-vol-dia { fill: var(--tenue); font-size: 9px; font-weight: 700; }
+.g-vol-dia.actual { fill: var(--acento); }
+.g-vol-leyenda, .g-rec-leyenda { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; color: var(--tenue); font-size: .72rem; margin-top: 6px; }
+.g-vol-leyenda i, .g-rec-leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+.g-vol-leyenda .con { background: var(--acento); }
+.g-vol-leyenda .sin { background: transparent; border: 1px dashed var(--borde); }
+.g-vol-leyenda .med { background: var(--amarillo); }
+.g-vol.mini .g-vol-leyenda { display: none; }
+.g-rec-rejilla { stroke: var(--borde); stroke-width: 1; stroke-dasharray: 3 5; opacity: .75; }
+.g-rec-etq, .g-rec-dia { fill: var(--tenue); font-size: 9px; font-weight: 700; }
+.g-rec-area { fill: color-mix(in srgb, var(--violeta) 18%, transparent); }
+.g-rec-linea { fill: none; stroke: var(--violeta); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.g-rec-punto { fill: var(--violeta); stroke: var(--tarjeta); stroke-width: 1.5; }
+.g-rec-punto.media { fill: var(--amarillo); }
+.g-rec-punto.baja { fill: var(--peligro); }
+.g-rec-leyenda i.alta { background: var(--violeta); }
+.g-rec-leyenda i.media { background: var(--amarillo); }
+.g-rec-leyenda i.baja { background: var(--peligro); }
+.g-fuerza .stats { margin-bottom: 0; }
+
 .agua-vasos { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
 .vaso-btn { width: 44px; height: 56px; border-radius: 8px 8px 14px 14px; border: 2px solid var(--borde); background: var(--tarjeta2);
   cursor: pointer; padding: 0; position: relative; overflow: hidden; transition: transform .1s; }

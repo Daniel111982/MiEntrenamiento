@@ -3,7 +3,8 @@
 // Una sola clave de Gemini, guardada como secreto IA_CLAVE en Supabase.
 // El navegador solo envía su JWT y el contexto del usuario; nunca ve la
 // clave. El gateway verifica el JWT (verify_jwt=true) y esta función
-// comprueba la sesión y el límite diario antes de llamar a Gemini.
+// comprueba la sesión y el límite diario antes de llamar a Gemini
+// (la cuenta del dueño, administradora, no tiene límite).
 // =====================================================================
 
 const CORS = {

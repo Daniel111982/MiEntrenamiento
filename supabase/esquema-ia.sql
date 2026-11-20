@@ -4,6 +4,8 @@
 -- Ejecutar una vez en SQL Editor. La Edge Function `coach-ia` llama a
 -- `registrar_ia_uso` con la sesión del usuario: nadie puede leer ni
 -- escribir esta tabla directamente (solo la función security definer).
+-- La cuenta del dueño (administradora) no tiene límite: la exención se decide
+-- en la base de datos con public.es_admin(), no en el código de la app.
 -- No se usa service_role: la clave de Gemini queda como secreto de la
 -- Edge Function y jamás viaja a la app.
 -- =====================================================================
@@ -35,6 +37,11 @@ begin
   end if;
   if p_limite is null or p_limite < 1 then
     p_limite := 25;
+  end if;
+
+  -- El dueño usa el coach sin tope. Se comprueba en servidor; "-" indica ilimitado.
+  if public.es_admin() then
+    return -1;
   end if;
 
   insert into public.ia_uso as u (usuario, dia, consultas)

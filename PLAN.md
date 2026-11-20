@@ -243,7 +243,8 @@ mayoría ya lo tienes).
   alimentos y rutinas, gestión de cuentas cloud y permisos reforzados en Supabase.
   Requiere ejecutar `supabase/esquema-admin.sql` en el proyecto existente. *(hecha: app 2.01)*
 - [x] **Fase 3D — Coach IA incluido.** Edge Function `coach-ia` en Supabase con una
-  clave de Gemini guardada como secreto y límite de 25 consultas por cuenta y día.
+  clave de Gemini guardada como secreto y límite de 25 consultas por cuenta y día
+  (la cuenta del dueño, administradora, está exenta: se comprueba en `registrar_ia_uso()`).
   Orden: clave propia > servidor > motor local. La IA del navegador se retiró en la
   app 2.04: confundía y era difícil de activar. *(hecha: app 2.03, simplificada: 2.04)*
 - [x] **Fase 3E — Nutrición: escáner y supermercados.** Escáner corregido (macros reales,
@@ -269,6 +270,11 @@ mayoría ya lo tienes).
   calorías por día (objetivo incluido), macros y agua medios, comparación con la semana
   anterior y micronutrientes declarados solo en los días con dato. Medias calculadas
   únicamente sobre días registrados; se puede copiar o descargar. *(hecha: app 2.09)*
+- [x] **Fase 3J — Gráficos de entrenamiento.** `Seguimiento → Rendimiento` añade
+  volumen por semana natural (kg × repeticiones), recuperación muscular media de los
+  últimos 14 días y evolución de fuerza del ejercicio elegido, con el mismo estilo SVG
+  que el diario. Las semanas sin sesiones se distinguen de los ceros medidos y la
+  recuperación se calcula solo con sesiones reales. *(hecha: app 2.10)*
 - [ ] **Fase 4 — Android.** Paquete TWA y publicación en Google Play (requiere dominio propio).
 - [ ] **Fase 5 — iOS.** Envoltorio con Capacitor y publicación en la App Store.
 - [ ] **Fase 6 — Monetización y relojes.** Suscripciones con el pago de las tiendas

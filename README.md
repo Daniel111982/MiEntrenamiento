@@ -12,7 +12,7 @@ App web instalable (PWA) de entrenamiento y nutrición. **Entrena · Nutre · Ev
 - **Ciclos de 12 semanas** en tres fases (acumulación, intensificación y realización) con semanas de descarga.
 - **Calendario semanal:** mover sesiones, sesiones perdidas, adelantar o añadir días.
 - **Sesión guiada:** carga sugerida, botones −/+, temporizador de descanso, Tabata, drop set, pirámide y pantalla siempre encendida.
-- **Seguimiento:** recuperación y equilibrio muscular sobre una silueta, récords, gráfica de 1RM por ejercicio, actividad, historial y calculadora de 1RM.
+- **Seguimiento:** recuperación y equilibrio muscular sobre una silueta, récords, gráfica de 1RM por ejercicio, actividad, historial y calculadora de 1RM. **`Seguimiento → Rendimiento`** reúne el volumen de las últimas 8 semanas, la recuperación estimada de los últimos 14 días y la evolución de fuerza del ejercicio que elijas, con gráficos SVG y solo datos registrados.
 - **Peso y medidas:** registra peso, grasa corporal y perímetros (cintura, pecho, cadera, brazo y muslo) con gráfica de evolución, historial editable y notas.
 - **Calorías y proteína:** calculadora de gasto diario (Mifflin-St Jeor), calorías objetivo según tu meta, reparto de macros, proteína, fibra, agua e IMC, tomando tu último peso registrado. Las **calorías son adaptativas**: DanTal ajusta hasta ±200 kcal según tu tendencia de peso (o tus comidas registradas), explica el motivo y te deja fijar tu propio número o desactivar el ajuste.
 - **Gráficos del diario:** anillo de calorías, donut de proteínas/hidratos/grasas, barras por comida y evolución de los últimos 7 días, todo dibujado con lo que has anotado. Cada alimento muestra sus gramos de macro y fibra, y al añadir una comida aparece una tarjeta visual con su reparto.
@@ -52,14 +52,14 @@ y abre http://localhost:8765.
 | `js/app.js` | Páginas, navegación y acciones |
 | `js/generador.js` | Generador de programas, fases y fechas |
 | `js/ejercicios.js` | Biblioteca de ejercicios |
-| `js/stats.js` | Récords, rachas, volumen y recuperación |
+| `js/stats.js` | Récords, rachas, volumen semanal, recuperación diaria y exportación CSV |
 | `js/tecnica.js` | Dibujos animados y guía de técnica |
 | `js/ayudas.js` | Ayudas contextuales |
 | `js/nube.js` | Cliente Supabase: cuentas, sync, borrado y contenidos |
 | `js/logros.js`, `js/informe.js` | Insignias, retos e informe semanal de entrenamiento |
 | `js/informe-nutricion.js` | Datos del informe nutricional semanal y texto para copiar o descargar |
 | `js/menu.js`, `js/escaner.js` | Menú personalizable (preferencias, recetas, gramos) y escáner (caché, historial, micronutrientes declarados y productos a mano) |
-| `js/graficos.js` | Gráficos SVG del diario (calorías, macros, comidas, semana y tarjeta de comida) |
+| `js/graficos.js` | Gráficos SVG del diario y del entrenamiento (calorías, macros, comidas, semana, volumen, recuperación y fuerza) |
 | `supabase/catalogo-supermercados.json` | Catálogo completo de marcas españolas, ODbL, cargado bajo demanda y sin conexión |
 | `supabase/importar-catalogo-supermercados.sql` | Muestra curada de 563 productos en `public.catalogos` para el panel del dueño |
 | `js/planificador.js` | Reorganización y ajuste de sesiones |
@@ -78,7 +78,7 @@ El proyecto guarda una copia completa de cada versión en `VERSIONES/`, para pod
 - `VERSIONES/nueva-version.cmd -Nota "..."` — guarda el estado actual como versión nueva.
 - `VERSIONES/restaurar.cmd -Version v1.00` — vuelve a una versión anterior.
 
-La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.07`). La caché del service worker es `dantal-v5.0` y los archivos estáticos usan `?v=5.0`. Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
+La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.10`). La caché del service worker es `dantal-v5.3` y los archivos estáticos usan `?v=5.3`. Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
 
 ## Privacidad y seguridad
 
@@ -88,5 +88,5 @@ La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahor
 - Los avisos globales se guardan en la tabla `avisos` de Supabase: lectura para cuentas autenticadas, escritura solo para el administrador.
 - Los catálogos globales viven en la tabla `catalogos`: las cuentas normales solo leen los activos; el dueño ve también los ocultos y puede escribir. Las cuentas normales no pueden borrar usuarios: la función `borrar_usuario_admin(uuid)` comprueba `es_admin()` en la base de datos.
 - Las tablas nuevas ya están creadas en el proyecto real; si faltaran, la app sigue funcionando con sus catálogos de serie y el panel indica qué archivo SQL hay que ejecutar.
-- El coach IA del servidor usa una sola clave de Gemini como secreto `IA_CLAVE` en Supabase. Nunca viaja a la app ni se guarda en el dispositivo. Cada cuenta tiene un límite de 25 consultas al día (`public.ia_uso` / `registrar_ia_uso()`). Si no hay cuenta o el servidor falla, el chat lo avisa y responde con el motor local. La IA del navegador se ha retirado: era confusa y difícil de activar para el usuario.
+- El coach IA del servidor usa una sola clave de Gemini como secreto `IA_CLAVE` en Supabase. Nunca viaja a la app ni se guarda en el dispositivo. Cada cuenta tiene un límite de 25 consultas al día (`public.ia_uso` / `registrar_ia_uso()`), **excepto la cuenta del dueño (administradora), que no tiene límite**: la exención se comprueba en la base de datos con `public.es_admin()`, no en la app. Si no hay cuenta o el servidor falla, el chat lo avisa y responde con el motor local. La IA del navegador se ha retirado: era confusa y difícil de activar para el usuario.
 - Política y consentimiento RGPD disponibles en **Ajustes → Privacidad y RGPD**.

@@ -5,7 +5,7 @@ import {
 } from './generador.js';
 import { dibujoSVG, pasosDibujo, guiaEjercicio } from './tecnica.js';
 import { aplicarAyudas, esconder as esconderAyuda } from './ayudas.js';
-import { volumenSesion, mejorSerie, recordAntes, recordsDeSesion, racha, volumenMuscular, recuperacion, historialCSV } from './stats.js';
+import { volumenSesion, mejorSerie, recordAntes, recordsDeSesion, racha, volumenMuscular, recuperacion, volumenSemanas, recuperacionDiaria, historialCSV } from './stats.js';
 import { MARCA, logoDantal, isotipoCuadrado, cabeceraMarca } from './marca.js';
 import { COMIDAS, CATEGORIAS_ALIMENTO, ALIMENTOS, alimentoPorId, macrosDe, sumarMacros, buscarAlimentos, RECETAS, resumenReceta, sincronizarAlimentosGlobales, cargarCatalogoSupermercados } from './alimentos.js';
 import { generarInsightsDantal } from './ia.js';
@@ -44,7 +44,7 @@ import { informeSemanal, textoInforme } from './informe.js';
 import { informeNutricional, textoInformeNutricional } from './informe-nutricion.js';
 import { generarMenu, listaCompra, textoListaCompra, planAlimentacion, candidatasReceta, comidaConReceta, recalcularComida, recalcularDia } from './menu.js';
 import { soportaCodigos, escanearCodigo, buscarAlimento, urlProducto, historialEscaner, limpiarHistorialEscaner, productoManual, guardarProductoLocal, CLAVES_MICROS } from './escaner.js';
-import { anilloKcal, donutMacros, miniMacros, barrasComidas, sparklineKcal, tarjetaEntrada, barraMicro, barrasSemana, barrasComparacion } from './graficos.js';
+import { anilloKcal, donutMacros, miniMacros, barrasComidas, sparklineKcal, tarjetaEntrada, barraMicro, barrasSemana, barrasComparacion, barrasVolumen, lineaRecuperacion, evolucionFuerza } from './graficos.js';
 import { reorganizarSemana, ajustarSesion, huecosLibres } from './planificador.js';
 import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from './rgpd.js';
 
@@ -53,7 +53,7 @@ import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from 
 // =====================================================================
 // Cada usuario guarda sus datos por separado: 'mientrenamiento:u:<id>'.
 // La lista de usuarios y cuál está activo van en 'mientrenamiento:usuarios'.
-const APP_VERSION = '2.09'; // versión de la app (ver VERSIONES/HISTORIAL.md)
+const APP_VERSION = '2.10'; // versión de la app (ver VERSIONES/HISTORIAL.md)
 const CLAVE = 'mientrenamiento:v2'; // formato anterior, de un solo usuario
 const CLAVE_USUARIOS = 'mientrenamiento:usuarios';
 const claveDe = id => `mientrenamiento:u:${id}`;
@@ -254,7 +254,7 @@ function avisoBeta() {
 
 // Estado de interfaz que se reinicia al cambiar de usuario.
 const UI_INICIAL = {
-  semanaVista: null, mesVista: null, ejSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null,
+  semanaVista: null, mesVista: null, ejSel: null, fuerzaSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null,
   medidaEdit: null, pasoEdit: null, metricaMedida: 'peso', periodoMedida: 'todo', diaNutri: null,
   comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, videoAbierto: null,
   verMaestro: false, recMetodo: null, incFiltro: 'nuevas', coachChat: [], coachPensando: false,
@@ -413,6 +413,7 @@ const RUTAS = [
   [/^seguimiento\/medidas$/, segMedidas, 'seguimiento'],
   [/^seguimiento\/pasos$/, segPasos, 'seguimiento'],
   [/^seguimiento\/nutricion$/, segNutricion, 'seguimiento'],
+  [/^seguimiento\/rendimiento$/, segRendimiento, 'seguimiento'],
   [/^seguimiento\/progreso$/, segProgreso, 'seguimiento'],
   [/^seguimiento\/records$/, segRecords, 'seguimiento'],
   [/^seguimiento\/historial$/, segHistorial, 'seguimiento'],
@@ -528,6 +529,7 @@ function render() {
   if (navAct && navEl.scrollWidth > navEl.clientWidth) navEl.scrollLeft = navAct.offsetLeft - (navEl.clientWidth - navAct.offsetWidth) / 2;
   coachFab(tab);
   if ($('#grafica')) dibujarGrafica();
+  if ($('#graficaFuerza')) dibujarGraficaFuerza();
   if ($('#graficaMedidas')) dibujarGraficaMedidas();
   if ($('#graficaPasos')) dibujarGraficaPasos();
   if ($('#nutriResultados')) actualizarNutricion();
@@ -1738,6 +1740,7 @@ function seguimiento() {
   const volSemana = hist.filter(h => lunes(iso(new Date(h.fecha))) === lunes(hoy())).reduce((t, h) => t + volumenSesion(h), 0);
   const recs = totalRecords();
   const ids = ejerciciosEntrenados();
+  const semanas = volumenSemanas(hist, 4);
   return pagina({
     titulo: 'Seguimiento', sub: hist.length ? `Última sesión: ${fmtCorta(hist[hist.length - 1].fecha)}` : 'Tu evolución aparecerá aquí',
     cuerpo: `
@@ -1747,6 +1750,10 @@ function seguimiento() {
         ${tile('🏆', recs, 'récords', 'amarillo')}
         ${tile('📦', fmtNum(volSemana), 'kg esta semana', 'verde')}
       </div>
+      <a class="tarjeta enlace-tarjeta" href="#seguimiento/rendimiento">
+        <div class="fila"><h2>📊 Volumen, recuperación y fuerza</h2><span class="chev">›</span></div>
+        ${barrasVolumen(semanas, { mini: true })}
+      </a>
       <a class="tarjeta enlace-tarjeta" href="#seguimiento/recuperacion">
         <div class="fila"><h2>Recuperación muscular</h2><span class="chev">›</span></div>
         ${cuerpoSVG(coloresRecuperacion(recuperacion(hist)), { mini: true })}
@@ -1754,6 +1761,7 @@ function seguimiento() {
       </a>
       ${grupo('Análisis',
         celda('seguimiento/actividad', '📅', 'Actividad', 'Calendario de tus entrenamientos', 'azul') +
+        celda('seguimiento/rendimiento', '📊', 'Rendimiento', 'Volumen, recuperación y fuerza', 'naranja') +
         celda('seguimiento/equilibrio', '⚖️', 'Equilibrio muscular', 'Series por músculo en 7 días', 'violeta') +
         celda('seguimiento/progreso', '📈', 'Progreso por ejercicio', 'Evolución del 1RM y mejores series', 'verde', ids.length || '') +
         celda('seguimiento/records', '🏆', 'Récords personales', 'Tus mejores marcas', 'amarillo', recs || ''))}
@@ -1769,6 +1777,59 @@ function seguimiento() {
       ${grupo('Registro',
         celda('seguimiento/historial', '🗂️', 'Historial de sesiones', 'Todas tus sesiones con detalle', 'azul', hist.length || '') +
         celda('seguimiento/calculadora', '🧮', 'Calculadora de 1RM', 'Estima tu máximo y tus porcentajes', 'naranja'))}
+    `,
+  });
+}
+
+function graficaFuerzaHTML(id) {
+  const puntos = datosEjercicio(id);
+  const unidad = puntos.some(p => p.m.kg) ? 'kg (1RM est.)' : porId[id]?.tipo === 'tiempo' ? 's' : 'reps';
+  return evolucionFuerza(puntos, { unidad, nombre: nombreEj(id) });
+}
+
+function dibujarGraficaFuerza() {
+  const cont = $('#graficaFuerza');
+  if (cont) cont.innerHTML = graficaFuerzaHTML(ui.fuerzaSel);
+}
+
+function segRendimiento() {
+  const hist = estado.historial;
+  const semanas = volumenSemanas(hist, 8);
+  const dias = recuperacionDiaria(hist, 14);
+  const ids = ejerciciosEntrenados();
+  ui.fuerzaSel = ids.includes(ui.fuerzaSel) ? ui.fuerzaSel : ids[0] || null;
+  const activas = semanas.filter(s => s.sesiones > 0);
+  const media = activas.length ? Math.round(activas.reduce((t, s) => t + s.kg, 0) / activas.length) : 0;
+  const sesiones8 = semanas.reduce((t, s) => t + s.sesiones, 0);
+  const recActual = dias[dias.length - 1]?.pct ?? 100;
+  const selector = ids.length
+    ? `<select id="fuerzaSel" data-a="selFuerza" aria-label="Ejercicio">${ids.map(id =>
+        `<option value="${esc(id)}" ${id === ui.fuerzaSel ? 'selected' : ''}>${esc(nombreEj(id))}</option>`).join('')}</select>`
+    : '';
+  return pagina({
+    titulo: 'Rendimiento', padre: 'seguimiento', sub: 'Gráficos con tus sesiones reales',
+    cuerpo: `
+      <div class="tiles cuatro">
+        ${tile('📦', fmtNum(media), 'kg/semana (media)', 'verde')}
+        ${tile('🏋️', sesiones8, 'sesiones · 8 semanas', 'azul')}
+        ${tile('💤', `${recActual}%`, 'recuperación media', 'violeta')}
+        ${tile('🔥', racha(hist), 'semanas seguidas', 'naranja')}
+      </div>
+      <div class="tarjeta">
+        <div class="fila"><h2>📦 Volumen semanal</h2>${activas.length ? `<span class="chip-mini alt">${activas.length} semanas activas</span>` : ''}</div>
+        ${barrasVolumen(semanas, { media: true })}
+        <p class="tenue">Suma de kg × repeticiones de cada sesión. Las barras punteadas son semanas sin sesiones registradas, no un cero medido.</p>
+      </div>
+      <div class="tarjeta">
+        <div class="fila"><h2>💤 Recuperación estimada</h2><span class="chip-mini">14 días</span></div>
+        ${lineaRecuperacion(dias)}
+        <p class="tenue">Media de los músculos calculada con las series y las horas desde cada sesión. 100 % significa que no queda fatiga estimada en las últimas 96 h; no es una medida médica.</p>
+      </div>
+      ${ids.length ? `<div class="tarjeta">
+        <div class="fila"><h2>💪 Evolución de fuerza</h2>${selector}</div>
+        <div id="graficaFuerza"></div>
+      </div>` : `<div class="tarjeta">${vacioMsg('📈', 'Sin datos de fuerza', 'Completa una sesión para ver cómo sube tu mejor serie.', '<a class="btn" href="#hoy">Ir a Hoy</a>')}</div>`}
+      <p class="tenue centro">Los gráficos usan solo lo que has registrado. Si borras una sesión, sus barras y puntos desaparecen.</p>
     `,
   });
 }
@@ -2835,42 +2896,10 @@ function dibujarGrafica() {
   const cont = $('#grafica');
   if (!cont) return;
   const id = ui.ejSel;
-  const tiempo = porId[id]?.tipo === 'tiempo';
-  const puntos = estado.historial.map(h => {
-    const e = h.ejercicios.find(x => x.id === id);
-    if (!e) return null;
-    const m = mejorSerie(e.series);
-    return m ? { fecha: h.fecha, v: m.val, m } : null;
-  }).filter(Boolean);
+  const puntos = datosEjercicio(id);
   if (!puntos.length) { cont.innerHTML = '<p class="tenue">Sin datos.</p>'; return; }
-  const conKg = puntos.some(p => p.m.kg);
-  const unidad = conKg ? 'kg (1RM est.)' : tiempo ? 's' : 'reps';
-  const W = 320, H = 150, P = 30;
-  const vals = puntos.map(p => p.v);
-  const min = Math.min(...vals) * 0.95, max = Math.max(...vals) * 1.05;
-  const x = i => P + (puntos.length === 1 ? (W - 2 * P) / 2 : i * (W - 2 * P) / (puntos.length - 1));
-  const y = v => H - P - (v - min) / (max - min || 1) * (H - 2 * P);
-  const linea = puntos.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
-  const area = `${linea} L${x(puntos.length - 1).toFixed(1)},${H - P} L${x(0).toFixed(1)},${H - P} Z`;
-  const record = Math.max(...vals);
-  const mejor = puntos.find(p => p.v === record).m;
-  const ult = puntos[puntos.length - 1];
-  cont.innerHTML = `
-    <svg viewBox="0 0 ${W} ${H}" class="svg-graf" role="img" aria-label="Evolución de ${esc(nombreEj(id))}">
-      <defs><linearGradient id="gr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--acento)" stop-opacity=".35"/><stop offset="1" stop-color="var(--acento)" stop-opacity="0"/></linearGradient></defs>
-      <line x1="${P}" y1="${H - P}" x2="${W - P}" y2="${H - P}" class="eje"/>
-      <text x="${P - 4}" y="${y(Math.max(...vals)) + 4}" text-anchor="end" class="etq">${Math.round(Math.max(...vals))}</text>
-      <text x="${P - 4}" y="${y(Math.min(...vals)) + 4}" text-anchor="end" class="etq">${Math.round(Math.min(...vals))}</text>
-      <path d="${area}" fill="url(#gr)"/>
-      <path d="${linea}" class="trazo"/>
-      ${puntos.map((p, i) => `<circle cx="${x(i)}" cy="${y(p.v)}" r="${p.v === record ? 5 : 3.5}" class="punto ${p.v === record ? 'rec' : ''}"><title>${fmtCorta(p.fecha)}: ${p.v} ${unidad}</title></circle>`).join('')}
-    </svg>
-    <div class="stats mini">
-      <div><b>${ult.v}</b><span>actual · ${unidad}</span></div>
-      <div><b>🏆 ${record}</b><span>récord</span></div>
-      <div><b>${mejor.kg ? `${mejor.kg}×${mejor.reps}` : mejor.reps}</b><span>mejor serie</span></div>
-    </div>
-    <p class="tenue">${puntos.length} sesiones registradas.</p>`;
+  const unidad = puntos.some(p => p.m.kg) ? 'kg (1RM est.)' : porId[id]?.tipo === 'tiempo' ? 's' : 'reps';
+  cont.innerHTML = evolucionFuerza(puntos, { unidad, nombre: nombreEj(id) });
 }
 
 // =====================================================================
@@ -6929,6 +6958,7 @@ document.addEventListener('change', async ev => {
     return;
   }
   if (t.dataset.a === 'selEj') { ui.ejSel = t.value; dibujarGrafica(); }
+  if (t.dataset.a === 'selFuerza') { ui.fuerzaSel = t.value; dibujarGraficaFuerza(); }
   if (t.dataset.a === 'metrica') { ui.metricaMedida = MEDIDAS_CAMPOS[t.value] ? t.value : 'peso'; dibujarGraficaMedidas(); }
   if (t.dataset.a === 'periodoMedida') { ui.periodoMedida = ['semanal', 'mensual'].includes(t.value) ? t.value : 'todo'; dibujarGraficaMedidas(); }
   if (t.dataset.a === 'escanerComida') { ui.escanerComida = t.value; }
