@@ -243,9 +243,9 @@ mayoría ya lo tienes).
   alimentos y rutinas, gestión de cuentas cloud y permisos reforzados en Supabase.
   Requiere ejecutar `supabase/esquema-admin.sql` en el proyecto existente. *(hecha: app 2.01)*
 - [x] **Fase 3D — Coach IA incluido.** Edge Function `coach-ia` en Supabase con una
-  clave de Gemini guardada como secreto, límite de 25 consultas por cuenta y día,
-  arreglo de la IA del navegador (prompt compacto y detección de modelos que solo
-  hacen eco). Orden: clave propia > servidor > navegador > motor local. *(hecha: app 2.03)*
+  clave de Gemini guardada como secreto y límite de 25 consultas por cuenta y día.
+  Orden: clave propia > servidor > motor local. La IA del navegador se retiró en la
+  app 2.04: confundía y era difícil de activar. *(hecha: app 2.03, simplificada: 2.04)*
 - [ ] **Fase 4 — Android.** Paquete TWA y publicación en Google Play (requiere dominio propio).
 - [ ] **Fase 5 — iOS.** Envoltorio con Capacitor y publicación en la App Store.
 - [ ] **Fase 6 — Monetización y relojes.** Suscripciones con el pago de las tiendas

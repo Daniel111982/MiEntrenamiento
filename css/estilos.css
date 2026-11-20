@@ -805,10 +805,6 @@ input[type=url] { width: 100%; padding: 12px; border-radius: 12px; border: 1px s
 .coach-expl .ciencia-puntos { margin: 8px 0 0; padding-left: 18px; }
 .coach-expl .ciencia-puntos li { font-size: .86rem; margin-bottom: 6px; }
 
-/* Barra de descarga de la IA del navegador */
-.nano-barra { height: 8px; border-radius: 99px; background: var(--tarjeta2); border: 1px solid var(--borde); overflow: hidden; margin: 10px 0 4px; }
-.nano-barra i { display: block; height: 100%; background: linear-gradient(90deg, var(--acento), var(--acento2)); transition: width .25s ease; }
-
 .coach-cta { display: flex; align-items: center; gap: 12px; }
 .aviso-ia { border-radius: var(--radio-s); padding: 10px 12px; font-size: .88rem; margin: 12px 0 0; font-weight: 600; }
 .aviso-ia.ok { background: color-mix(in srgb, var(--acento) 14%, var(--tarjeta2)); color: var(--acento); }
