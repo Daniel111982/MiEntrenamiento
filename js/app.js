@@ -53,7 +53,7 @@ import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from 
 // =====================================================================
 // Cada usuario guarda sus datos por separado: 'mientrenamiento:u:<id>'.
 // La lista de usuarios y cuál está activo van en 'mientrenamiento:usuarios'.
-const APP_VERSION = '2.11'; // versión de la app (ver VERSIONES/HISTORIAL.md)
+const APP_VERSION = '2.12'; // versión de la app (ver VERSIONES/HISTORIAL.md)
 const CLAVE = 'mientrenamiento:v2'; // formato anterior, de un solo usuario
 const CLAVE_USUARIOS = 'mientrenamiento:usuarios';
 const claveDe = id => `mientrenamiento:u:${id}`;
@@ -856,14 +856,14 @@ const PREGUNTAS_SEG = [
 const recuperacionProc = { ok: false, codigo: null, expira: 0, usuario: null };
 
 // Silueta de frente y de espalda con cada músculo coloreado.
-function cuerpoSVG(colores = {}, { mini = false } = {}) {
+function cuerpoSVG(colores = {}, { mini = false, nombres = {} } = {}) {
   const c = m => colores[m] || 'var(--cuerpo)';
-  const t = m => `<title>${MUSCULOS[m]}</title>`;
+  const t = m => `<title>${(nombres[m] || []).join(', ') || MUSCULOS[m]}</title>`;
   const base = `<circle cx="50" cy="15" r="11"/><rect x="45" y="24" width="10" height="9" rx="3"/>
     <path d="M30 38 Q50 31 70 38 L67 104 Q50 112 33 104 Z"/><path d="M33 100 Q50 110 67 100 L67 118 Q50 124 33 118 Z"/>
     <ellipse cx="17" cy="98" rx="5" ry="15"/><ellipse cx="83" cy="98" rx="5" ry="15"/>
     <ellipse cx="41" cy="184" rx="6" ry="18"/><ellipse cx="59" cy="184" rx="6" ry="18"/>`;
-  const par = (m, forma) => `<g fill="${c(m)}" class="musc">${t(m)}${forma}</g>`;
+  const par = (m, forma) => `<g fill="${c(m)}" class="musc ${colores[m] ? 'activo' : ''}">${t(m)}${forma}</g>`;
   const frente = `<g fill="var(--cuerpo-base)">${base}</g>
     ${par('hombros', '<ellipse cx="27" cy="44" rx="8" ry="8"/><ellipse cx="73" cy="44" rx="8" ry="8"/>')}
     ${par('pecho', '<path d="M34 46 Q42 41 49 45 L49 63 Q40 68 34 61 Z"/><path d="M51 45 Q58 41 66 46 L66 61 Q60 68 51 63 Z"/>')}
@@ -2997,15 +2997,12 @@ function ejercicioDetalle(id) {
   ui.ejSel = id;
   const puntos = datosEjercicio(id);
   const alt = alternativas(id, estado.perfil).slice(0, 5);
-  const colores = Object.fromEntries(e.musculos.map((m, i) => [m, i ? 'var(--acento2)' : 'var(--acento)']));
   const enPlan = estado.plan.sesiones.filter(s => !s.oculta && s.ejercicios.some(x => x.id === id)).map(s => s.nombre);
   return pagina({
     titulo: esc(e.nombre), padre: e.propio ? 'ejercicios/mios' : 'ejercicios', sub: PATRONES[e.patron],
     extra: e.propio ? `<a class="icono" href="#ejercicio/${id}/editar" title="Editar ejercicio">✎</a>` : '',
     cuerpo: `
       <div class="tarjeta">
-        ${cuerpoSVG(colores)}
-        <p class="leyenda centro"><i class="lg" style="background:var(--acento)"></i>principal <i class="lg" style="background:var(--acento2)"></i>secundario</p>
         <div class="badges centro-flex">${e.musculos.map((m, i) => `<span class="badge ${i ? '' : 'prim'}">${MUSCULOS[m]}</span>`).join('')}
           <span class="badge">🧰 ${equipoTxt(e)}</span>${e.compuesto ? '<span class="badge">Multiarticular</span>' : '<span class="badge">Aislamiento</span>'}${e.propio ? '<span class="badge">🧩 Propio</span>' : ''}</div>
       </div>
@@ -5094,6 +5091,34 @@ const MUSCULOS_REP = {
 const nombreMusculoRep = id => MUSCULOS_REP[id]
   || String(id).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
+// Cada músculo de RepDB se pinta en su zona del mapa corporal. Si una zona
+// sale como principal y como secundaria, gana el color principal.
+const ZONA_REP = {
+  anterior_deltoid: 'hombros', lateral_deltoid: 'hombros', posterior_deltoid: 'hombros',
+  pectoralis_major: 'pecho', serratus_anterior: 'pecho',
+  biceps_brachii: 'biceps', brachialis: 'biceps', brachioradialis: 'biceps', forearm_flexors: 'biceps',
+  triceps_brachii: 'triceps',
+  latissimus_dorsi: 'espalda', trapezius: 'espalda', rhomboids: 'espalda', erector_spinae: 'espalda',
+  rectus_abdominis: 'abdomen', transverse_abdominis: 'abdomen', obliques: 'abdomen', hip_flexors: 'abdomen',
+  quadriceps: 'cuadriceps', hamstrings: 'femorales',
+  gluteus_maximus: 'gluteos', gluteus_medius: 'gluteos', abductors: 'gluteos', adductors: 'gluteos',
+  gastrocnemius: 'gemelos', soleus: 'gemelos',
+};
+function mapaZonasRep(e) {
+  const colores = {};
+  const nombres = {};
+  const aplicar = (lista, color) => (lista || []).forEach(id => {
+    const zona = ZONA_REP[id];
+    if (!zona) return;
+    if (!colores[zona] || color === 'var(--acento)') colores[zona] = color;
+    (nombres[zona] ||= []).push(nombreMusculoRep(id));
+  });
+  aplicar(e.secondary_muscles, 'var(--acento2)');
+  aplicar(e.primary_muscles, 'var(--acento)');
+  Object.entries(nombres).forEach(([zona, lista]) => { nombres[zona] = [...new Set(lista)]; });
+  return { colores, nombres };
+}
+
 // El SVG queda debajo de la ilustración: si la imagen no carga (sin red o
 // archivo retirado) el listener de error la elimina y el dibujo sigue visible.
 function capaVisor(svg, url, alt) {
@@ -5110,12 +5135,18 @@ function tecnicaHTML(e, { compacta = false } = {}) {
   const pasos = e.execution_steps?.length ? e.execution_steps : g.pasos;
   const principales = e.primary_muscles || [];
   const secundarios = e.secondary_muscles || [];
-  const zonas = conMedia && (principales.length || secundarios.length) ? `
+  const mapa = mapaZonasRep(e);
+  const coloresZonas = Object.keys(mapa.colores).length ? mapa.colores
+    : Object.fromEntries((e.musculos || []).map((m, i) => [m, i ? 'var(--acento2)' : 'var(--acento)']));
+  const etiquetas = principales.length || secundarios.length
+    ? [...principales.map(m => [nombreMusculoRep(m), true]), ...secundarios.map(m => [nombreMusculoRep(m), false])]
+    : (e.musculos || []).map((m, i) => [MUSCULOS[m], i === 0]);
+  const zonas = etiquetas.length ? `
       <div class="zonas-rep">
-        <p class="tenue">Zonas trabajadas · <i class="lg" style="background:var(--acento)"></i>principal <i class="lg" style="background:var(--acento2)"></i>secundario</p>
-        <div class="badges centro-flex">
-          ${principales.map(m => `<span class="badge prim">${esc(nombreMusculoRep(m))}</span>`).join('')}
-          ${secundarios.map(m => `<span class="badge">${esc(nombreMusculoRep(m))}</span>`).join('')}
+        ${cuerpoSVG(coloresZonas, { mini: true, nombres: mapa.nombres })}
+        <div class="zonas-texto">
+          <p class="tenue">Zonas trabajadas · <i class="lg" style="background:var(--acento)"></i>principal <i class="lg" style="background:var(--acento2)"></i>secundario</p>
+          <div class="badges centro-flex">${etiquetas.map(([nombre, principal]) => `<span class="badge ${principal ? 'prim' : ''}">${esc(nombre)}</span>`).join('')}</div>
         </div>
       </div>` : '';
   const atribucion = conMedia
