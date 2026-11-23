@@ -62,10 +62,9 @@ Sigue estos pasos. Tardarás unos 10 minutos.
    confirmar el correo). Para producción, déjalo activado.
 3. En **Authentication → URL Configuration**, pon en **Site URL** la dirección de tu
    app: `https://dantal-app.pages.dev/`
-   (la copia antigua `https://daniel111982.github.io/MiEntrenamiento/` sigue funcionando).
+   (la copia de GitHub Pages sigue funcionando).
    **Ya está configurado** (19-11-2026): Site URL `https://dantal-app.pages.dev` y dos
-   *Redirect URLs*: `https://dantal-app.pages.dev/**` y
-   `https://daniel111982.github.io/MiEntrenamiento/**`.
+   *Redirect URLs*: `https://dantal-app.pages.dev/**` y la de la copia de GitHub Pages.
 
 ## Paso 5 — Copiar las claves
 

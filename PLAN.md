@@ -11,7 +11,7 @@
 - **Tecnología:** HTML · CSS · JavaScript ES6 (módulos). Sin npm ni compilación.
 - **Tipo:** PWA (web instalable) con **backend en Supabase (plan gratis)**.
 - **Dónde vive ahora:** Cloudflare Pages → **https://dantal-app.pages.dev**
-  (GitHub Pages sigue como copia: https://daniel111982.github.io/MiEntrenamiento/)
+  (GitHub Pages sigue como copia, sin datos personales en la documentación)
 - **Qué ya hace:** programa personalizado, sesiones guiadas, nutrición, Running,
   seguimiento, usuarios, avisos, ideas e incidencias, **cuentas beta con código de
   invitación y caducidad**, **gestión de betas a distancia**, **sincronización de
@@ -304,7 +304,7 @@ disponible como copia.
 2. En el panel: **Workers & Pages → Create application → Pages → Connect to Git**.
    Se autorizó la app **Cloudflare Workers and Pages** en GitHub con acceso **solo al
    repositorio `MiEntrenamiento`**.
-3. Repositorio `Daniel111982/MiEntrenamiento`, rama `main`.
+3. Repositorio de GitHub del proyecto, rama `main`.
 4. Configuración de compilación usada:
    - **Project name:** `dantal-app` → `https://dantal-app.pages.dev`
    - **Production branch:** `main`

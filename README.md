@@ -2,7 +2,7 @@
 
 App web instalable (PWA) de entrenamiento y nutrición. **Entrena · Nutre · Evoluciona.** Genera un programa a tu medida, te guía en cada sesión y registra tu progreso. Funciona sin conexión y, si tienes cuenta, copia tus datos a la nube para recuperarlos en otro móvil.
 
-**Probarla:** https://dantal-app.pages.dev/ (copia en https://daniel111982.github.io/MiEntrenamiento/)
+**Probarla:** https://dantal-app.pages.dev/ (también disponible en GitHub Pages)
 
 **Cuentas:** acceso con correo y contraseña (Supabase, plan gratis). La primera cuenta es la administradora; las demás entran con un código beta que reparte el dueño, con caducidad o sin límite. Sin conexión se sigue usando igual; al volver la red se sincroniza. El dueño gestiona desde el panel de administración los catálogos globales y las cuentas cloud.
 
@@ -112,7 +112,7 @@ El proyecto guarda una copia completa de cada versión en `VERSIONES/`, para pod
 - `VERSIONES/nueva-version.cmd -Nota "..."` — guarda el estado actual como versión nueva.
 - `VERSIONES/restaurar.cmd -Version v1.00` — vuelve a una versión anterior.
 
-La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.16`). La caché del service worker es `dantal-v5.9` y los archivos estáticos usan `?v=5.9`. Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
+La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.17`). La caché del service worker es `dantal-v6.0` y los archivos estáticos usan `?v=6.0`. Además, cada `commit` guarda automáticamente una copia fechada en la carpeta `VERSIONES/` del proyecto (índice en `INDICE.md`).
 
 ## Privacidad y seguridad
 
@@ -124,3 +124,4 @@ La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahor
 - Las tablas nuevas ya están creadas en el proyecto real; si faltaran, la app sigue funcionando con sus catálogos de serie y el panel indica qué archivo SQL hay que ejecutar.
 - El coach IA del servidor usa una sola clave de Gemini como secreto `IA_CLAVE` en Supabase. Nunca viaja a la app ni se guarda en el dispositivo. Cada cuenta tiene un límite de 25 consultas al día (`public.ia_uso` / `registrar_ia_uso()`), **excepto la cuenta del dueño (administradora), que no tiene límite**: la exención se comprueba en la base de datos con `public.es_admin()`, no en la app. Si no hay cuenta o el servidor falla, el chat lo avisa y responde con el motor local. La IA del navegador se ha retirado: era confusa y difícil de activar para el usuario.
 - Política y consentimiento RGPD disponibles en **Ajustes → Privacidad y RGPD**.
+- Correo de contacto de la aplicación: **dantal.admin@gmail.com**. En la interfaz y en la política no aparece el nombre ni el correo personal del dueño.

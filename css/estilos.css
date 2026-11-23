@@ -998,6 +998,7 @@ input[type=url] { width: 100%; padding: 12px; border-radius: 12px; border: 1px s
 .politica h2 { margin-top: 18px; font-size: 1rem; color: var(--acento); }
 .politica ul { padding-left: 20px; }
 .politica li { margin-bottom: 7px; font-size: .9rem; }
+.politica a { color: var(--acento); text-decoration: underline; text-underline-offset: 2px; }
 .tarjeta.peligro { border-color: color-mix(in srgb, var(--peligro) 40%, var(--borde)); }
 .tarjeta.peligro h2 { color: var(--peligro); }
 .aviso-global { border-color: color-mix(in srgb, var(--acento) 45%, var(--borde)); background: color-mix(in srgb, var(--acento2) 8%, var(--tarjeta)); }

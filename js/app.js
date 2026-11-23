@@ -55,7 +55,7 @@ import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from 
 // =====================================================================
 // Cada usuario guarda sus datos por separado: 'mientrenamiento:u:<id>'.
 // La lista de usuarios y cuál está activo van en 'mientrenamiento:usuarios'.
-const APP_VERSION = '2.16'; // versión de la app (ver VERSIONES/HISTORIAL.md)
+const APP_VERSION = '2.17'; // versión de la app (ver VERSIONES/HISTORIAL.md)
 const CLAVE = 'mientrenamiento:v2'; // formato anterior, de un solo usuario
 const CLAVE_USUARIOS = 'mientrenamiento:usuarios';
 const claveDe = id => `mientrenamiento:u:${id}`;
@@ -3689,6 +3689,8 @@ function ajAcerca() {
         <p>Los iconos de los avatares y de la interfaz son del set <a href="https://lucide.dev" target="_blank" rel="noopener">Lucide</a> (licencia ISC).</p></div>
       <div class="tarjeta"><h2>🖼️ Ilustraciones de ejercicios</h2>
         <p>Ilustraciones de ejercicios por <a href="https://repdb.co" target="_blank" rel="noopener">RepDB (repdb.co)</a>. Se usan dentro de la app según su licencia gratuita.</p></div>
+      <div class="tarjeta"><h2>✉️ Contacto y privacidad</h2>
+        <p>Para dudas, sugerencias o para ejercer tus derechos de privacidad, escribe a <a href="mailto:dantal.admin@gmail.com">dantal.admin@gmail.com</a>. También puedes abrir la <a href="#ajustes/privacidad">política de privacidad</a> desde Ajustes.</p></div>
       <p class="tenue centro">${MARCA.nombre} · versión ${APP_VERSION} · ${modoNube() ? 'funciona sin conexión · tus entrenamientos siguen en tu dispositivo' : 'funciona sin conexión · tus datos no salen de tu dispositivo'}</p>
     `,
   });
