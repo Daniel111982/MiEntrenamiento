@@ -5,6 +5,7 @@ import {
 } from './generador.js';
 import { pasosDibujo, guiaEjercicio } from './tecnica.js';
 import { urlGif, GIF_ATRIBUCION, GIF_URL } from './gifs.js';
+import { CUERPO_REAL, ZONA_A_GRUPOS, NOMBRES_GRUPOS } from './cuerpo-real.js';
 import { aplicarAyudas, esconder as esconderAyuda } from './ayudas.js';
 import { volumenSesion, mejorSerie, recordAntes, recordsDeSesion, racha, volumenMuscular, recuperacion, volumenSemanas, recuperacionDiaria, historialCSV } from './stats.js';
 import { MARCA, logoDantal, isotipoCuadrado, cabeceraMarca } from './marca.js';
@@ -54,7 +55,7 @@ import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from 
 // =====================================================================
 // Cada usuario guarda sus datos por separado: 'mientrenamiento:u:<id>'.
 // La lista de usuarios y cuál está activo van en 'mientrenamiento:usuarios'.
-const APP_VERSION = '2.15'; // versión de la app (ver VERSIONES/HISTORIAL.md)
+const APP_VERSION = '2.16'; // versión de la app (ver VERSIONES/HISTORIAL.md)
 const CLAVE = 'mientrenamiento:v2'; // formato anterior, de un solo usuario
 const CLAVE_USUARIOS = 'mientrenamiento:usuarios';
 const claveDe = id => `mientrenamiento:u:${id}`;
@@ -873,32 +874,31 @@ const PREGUNTAS_SEG = [
 // Estado temporal del proceso de recuperación (no se guarda).
 const recuperacionProc = { ok: false, codigo: null, expira: 0, usuario: null };
 
-// Silueta de frente y de espalda con cada músculo coloreado.
+// Mapa corporal anatómico: foto base recortada a la silueta y músculos separados.
+const GRUPO_A_ZONA = Object.fromEntries(Object.entries(ZONA_A_GRUPOS).flatMap(([zona, grupos]) => grupos.map(g => [g, zona])));
+let seqCuerpo = 0;
 function cuerpoSVG(colores = {}, { mini = false, nombres = {} } = {}) {
-  const c = m => colores[m] || 'var(--cuerpo)';
-  const t = m => `<title>${(nombres[m] || []).join(', ') || MUSCULOS[m]}</title>`;
-  const base = `<circle cx="50" cy="15" r="11"/><rect x="45" y="24" width="10" height="9" rx="3"/>
-    <path d="M30 38 Q50 31 70 38 L67 104 Q50 112 33 104 Z"/><path d="M33 100 Q50 110 67 100 L67 118 Q50 124 33 118 Z"/>
-    <ellipse cx="17" cy="98" rx="5" ry="15"/><ellipse cx="83" cy="98" rx="5" ry="15"/>
-    <ellipse cx="41" cy="184" rx="6" ry="18"/><ellipse cx="59" cy="184" rx="6" ry="18"/>`;
-  const par = (m, forma) => `<g fill="${c(m)}" class="musc ${colores[m] ? 'activo' : ''}">${t(m)}${forma}</g>`;
-  const frente = `<g fill="var(--cuerpo-base)">${base}</g>
-    ${par('hombros', '<ellipse cx="27" cy="44" rx="8" ry="8"/><ellipse cx="73" cy="44" rx="8" ry="8"/>')}
-    ${par('pecho', '<path d="M34 46 Q42 41 49 45 L49 63 Q40 68 34 61 Z"/><path d="M51 45 Q58 41 66 46 L66 61 Q60 68 51 63 Z"/>')}
-    ${par('biceps', '<ellipse cx="21" cy="69" rx="5.5" ry="12"/><ellipse cx="79" cy="69" rx="5.5" ry="12"/>')}
-    ${par('abdomen', '<rect x="41" y="68" width="18" height="34" rx="6"/>')}
-    ${par('cuadriceps', '<ellipse cx="41" cy="140" rx="8.5" ry="24"/><ellipse cx="59" cy="140" rx="8.5" ry="24"/>')}`;
-  const espalda = `<g fill="var(--cuerpo-base)">${base}</g>
-    ${par('hombros', '<ellipse cx="27" cy="44" rx="8" ry="8"/><ellipse cx="73" cy="44" rx="8" ry="8"/>')}
-    ${par('espalda', '<path d="M34 44 Q50 38 66 44 L62 96 Q50 102 38 96 Z"/>')}
-    ${par('triceps', '<ellipse cx="21" cy="69" rx="5.5" ry="12"/><ellipse cx="79" cy="69" rx="5.5" ry="12"/>')}
-    ${par('gluteos', '<ellipse cx="42" cy="113" rx="9" ry="10"/><ellipse cx="58" cy="113" rx="9" ry="10"/>')}
-    ${par('femorales', '<ellipse cx="41" cy="143" rx="7.5" ry="20"/><ellipse cx="59" cy="143" rx="7.5" ry="20"/>')}
-    ${par('gemelos', '<ellipse cx="41" cy="183" rx="6.5" ry="15"/><ellipse cx="59" cy="183" rx="6.5" ry="15"/>')}`;
-  return `<div class="cuerpo ${mini ? 'mini' : ''}">
-    <figure><svg viewBox="0 0 100 205" role="img" aria-label="Músculos de frente">${frente}</svg><figcaption>Frente</figcaption></figure>
-    <figure><svg viewBox="0 0 100 205" role="img" aria-label="Músculos de espalda">${espalda}</svg><figcaption>Espalda</figcaption></figure>
-  </div>`;
+  const uid = `cuerpo-${++seqCuerpo}`;
+  const vista = (clave, etiqueta) => {
+    const d = CUERPO_REAL.vistas[clave];
+    const clip = `${uid}-${clave}`;
+    const musculos = d.musculos.map(([grupo, forma]) => {
+      const zona = GRUPO_A_ZONA[grupo];
+      const color = zona ? colores[zona] : null;
+      const activo = Boolean(color);
+      const titulo = activo && nombres[zona]?.length
+        ? nombres[zona].join(', ')
+        : NOMBRES_GRUPOS[grupo] || (zona ? MUSCULOS[zona] : grupo);
+      return `<path class="musc${activo ? ' activo' : ''}" d="${forma}" fill="${color || 'var(--cuerpo)'}"><title>${esc(titulo)}</title></path>`;
+    }).join('');
+    return `<figure><svg viewBox="${CUERPO_REAL.viewBox}" role="img" aria-label="Músculos de ${etiqueta}">
+      <defs><clipPath id="${clip}"><path d="${d.silueta}"/></clipPath></defs>
+      <image class="cuerpo-foto" href="${d.foto}" x="0" y="0" width="1024" height="1536" preserveAspectRatio="xMidYMid slice" clip-path="url(#${clip})"/>
+      <path class="cuerpo-contorno" d="${d.silueta}"/>
+      ${musculos}
+    </svg><figcaption>${etiqueta === 'frente' ? 'Frente' : 'Espalda'}</figcaption></figure>`;
+  };
+  return `<div class="cuerpo ${mini ? 'mini' : ''}">${vista('frente', 'frente')}${vista('espalda', 'espalda')}</div>`;
 }
 const colorRec = pct => pct >= 90 ? 'var(--acento)' : pct >= 60 ? 'var(--amarillo)' : 'var(--peligro)';
 const coloresRecuperacion = rec => Object.fromEntries(Object.entries(rec).map(([m, r]) => [m, r.horas == null ? 'var(--cuerpo-ok)' : colorRec(r.pct)]));
@@ -5187,7 +5187,7 @@ function tecnicaHTML(e, { compacta = false } = {}) {
     ? '<p class="atribucion-rep">Ilustraciones de ejercicios por <a href="https://repdb.co" target="_blank" rel="noopener">RepDB (repdb.co)</a></p>'
     : ''}${gif
     ? `<p class="atribucion-rep">${GIF_ATRIBUCION} · <a href="${GIF_URL}" target="_blank" rel="noopener">ver fuente</a></p>`
-    : ''}`;
+    : ''}<p class="atribucion-rep">Mapa muscular por <a href="https://github.com/Jsplice/MuscleMap" target="_blank" rel="noopener">MuscleMap (MIT)</a></p>`;
   const posturas = (e.media_url || e.media_url_end) ? `
         <div class="posturas">
           ${e.media_url ? `<figure class="${conMedia ? 'con-anatomia' : ''}">

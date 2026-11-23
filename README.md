@@ -96,6 +96,14 @@ La lista y la ficha de cada ejercicio muestran un **GIF animado del movimiento**
 - `js/gifs.js` contiene el emparejamiento de los 82 ejercicios; `urlGif(id)` devuelve la URL o `null`.
 - **Aviso de licencia:** el repositorio de los GIFs indica que las imágenes se recopilaron de Internet y que sus autores son otros. Conviene revisar ese punto antes de usar la app con fines comerciales.
 
+### Mapa corporal anatómico
+
+El mapa de «Zonas trabajadas» ya no es una silueta de círculos: muestra un cuerpo con foto gris recortada a la silueta y **cada músculo dibujado por separado**. Los 26 identificadores de RepDB siguen agrupándose en las 10 zonas de siempre, así que el color principal/secundario funciona igual que antes.
+
+- `js/cuerpo-real.js`: paths musculares y mapeo de zonas, extraídos de [MuscleMap](https://github.com/Jsplice/MuscleMap) (MIT). Se generó con `.tmp/generar-cuerpo-real.mjs` desde los assets del repositorio citado.
+- `icons/cuerpo-frente.webp` e `icons/cuerpo-espalda.webp`: fotos base incluidas en el build y en la caché offline.
+- La ficha del ejercicio muestra el crédito «Mapa muscular por MuscleMap (MIT)» junto a las atribuciones existentes de RepDB y de los GIFs.
+
 ## Versiones
 
 El proyecto guarda una copia completa de cada versión en `VERSIONES/`, para poder deshacer cambios.
@@ -104,7 +112,7 @@ El proyecto guarda una copia completa de cada versión en `VERSIONES/`, para pod
 - `VERSIONES/nueva-version.cmd -Nota "..."` — guarda el estado actual como versión nueva.
 - `VERSIONES/restaurar.cmd -Version v1.00` — vuelve a una versión anterior.
 
-La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.15`). La caché del service worker es `dantal-v5.8` y los archivos estáticos usan `?v=5.8`. Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
+La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.16`). La caché del service worker es `dantal-v5.9` y los archivos estáticos usan `?v=5.9`. Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
 
 ## Privacidad y seguridad
 

@@ -102,6 +102,7 @@ button.tarjeta { cursor: pointer; }
 .hero-cuerpo { margin: 8px 0 0; }
 .hero-cuerpo .cuerpo { --cuerpo: rgba(255, 255, 255, .22); --cuerpo-base: rgba(255, 255, 255, .1); }
 .hero-cuerpo figcaption { color: rgba(255, 255, 255, .75); }
+.hero-cuerpo .cuerpo-foto { opacity: .42; }
 .musculos { font-size: .9rem; color: var(--tenue); margin: 8px 0 0; }
 .badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
 .badge { font-size: .75rem; padding: 4px 10px; border-radius: 99px; background: color-mix(in srgb, var(--texto) 9%, transparent); font-weight: 600; white-space: nowrap; }
@@ -171,14 +172,16 @@ button.tarjeta { cursor: pointer; }
   background: conic-gradient(var(--acento) calc(var(--p) * 360deg), color-mix(in srgb, var(--texto) 10%, transparent) 0); }
 .anillo-mini b { width: 46px; height: 46px; border-radius: 50%; background: var(--tarjeta); display: grid; place-items: center; font-size: .8rem; }
 
-/* ---------- Silueta muscular ---------- */
+/* ---------- Mapa corporal anatómico (foto + músculos) ---------- */
 .cuerpo { display: flex; justify-content: center; gap: 18px; }
 .cuerpo figure { margin: 0; text-align: center; }
-.cuerpo svg { width: 120px; height: auto; display: block; }
-.cuerpo.mini svg { width: 84px; }
+.cuerpo svg { width: 132px; height: auto; display: block; }
+.cuerpo.mini svg { width: 92px; }
 .cuerpo figcaption { font-size: .72rem; color: var(--tenue); margin-top: 2px; }
-.cuerpo .musc { transition: fill .3s; }
-.cuerpo .musc.activo { stroke: color-mix(in srgb, var(--texto) 55%, transparent); stroke-width: 1.4; paint-order: stroke; }
+.cuerpo-foto { filter: grayscale(1) brightness(1.12) contrast(1.05); }
+.cuerpo-contorno { fill: none; stroke: rgba(15, 23, 42, .5); stroke-width: 2.5; }
+.cuerpo .musc { fill-opacity: .2; stroke: rgba(15, 23, 42, .32); stroke-width: 1.1; transition: fill .3s, fill-opacity .3s; }
+.cuerpo .musc.activo { fill-opacity: .88; stroke: rgba(255, 255, 255, .85); stroke-width: 1.8; paint-order: stroke; }
 .leyenda { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: center; font-size: .78rem; color: var(--tenue); margin: 8px 0 0; }
 .lg { display: inline-block; width: 11px; height: 11px; border-radius: 4px; vertical-align: -1px; margin-right: 2px; }
 
@@ -535,7 +538,7 @@ body.sin-ayudas .info { display: none; }
 .posturas .visor-img { border-radius: calc(var(--radio-s) - 2px); }
 .zonas-rep { margin-top: 12px; display: flex; align-items: center; gap: 14px; }
 .zonas-rep .cuerpo { flex: none; gap: 6px; }
-.zonas-rep .cuerpo svg { width: 74px; }
+.zonas-rep .cuerpo svg { width: 96px; }
 .zonas-rep .zonas-texto { min-width: 0; }
 .zonas-rep p { margin: 0 0 6px; font-size: .78rem; }
 @media (max-width: 420px) { .zonas-rep { flex-direction: column; align-items: flex-start; } }

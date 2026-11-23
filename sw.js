@@ -1,14 +1,15 @@
 // Service worker: guarda la app en caché para que funcione sin conexión.
 // Estrategia: primero la red (siempre la versión más reciente) y, sin conexión, la caché.
-const VERSION = 'dantal-v5.8';
+const VERSION = 'dantal-v5.9';
 const ARCHIVOS = [
   './', './index.html', './css/estilos.css', './manifest.webmanifest',
   './js/app.js', './js/ejercicios.js', './js/generador.js', './js/stats.js', './js/ayudas.js', './js/tecnica.js',
   './js/marca.js', './js/alimentos.js', './js/technogym.js', './js/videos.js', './js/ia.js', './js/incidencias.js', './js/asistente.js', './js/salud.js', './js/ciencia.js',
-  './js/gifs.js',
+  './js/gifs.js', './js/cuerpo-real.js',
   './js/coach.js', './js/llm.js', './js/avatares.js', './js/carrera.js', './js/beta.js', './js/nube.js',
   './js/logros.js', './js/informe.js', './js/informe-nutricion.js', './js/menu.js', './js/escaner.js', './js/planificador.js', './js/rgpd.js', './js/graficos.js',
   './icons/icono.svg', './icons/icono.ico', './icons/icono-192.png', './icons/icono-512.png',
+  './icons/cuerpo-frente.webp', './icons/cuerpo-espalda.webp',
 ];
 
 self.addEventListener('install', e => {
