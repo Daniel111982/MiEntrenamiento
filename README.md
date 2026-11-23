@@ -18,7 +18,7 @@ App web instalable (PWA) de entrenamiento y nutrición. **Entrena · Nutre · Ev
 - **Gráficos del diario:** anillo de calorías, donut de proteínas/hidratos/grasas, barras por comida y evolución de los últimos 7 días, todo dibujado con lo que has anotado. Cada alimento muestra sus gramos de macro y fibra, y al añadir una comida aparece una tarjeta visual con su reparto.
 - **Fibra y micronutrientes reales:** la fibra se muestra junto al resto de macros. Calcio, hierro, vitaminas D y C y potasio solo aparecen cuando Open Food Facts los declara en la ficha o los escribes a mano; nunca se estiman. Las referencias son orientativas para adultos y no sustituyen el consejo médico.
 - **Informe nutricional semanal** (`Nutrición → Informe`): barras de calorías por día con línea de objetivo, donut y barras de macros medios, comparación con la semana anterior y micronutrientes declarados solo en los días que los tienen. Media de calorías, proteína, fibra y agua, con opción de copiar o descargar el informe. Nunca rellena días sin registrar.
-- **Biblioteca** de 82 ejercicios con dibujo animado del movimiento, paso a paso, claves, errores comunes y respiración. La ficha añade **ilustraciones anatómicas de inicio y final** (dos posturas) cuando el ejercicio tiene imagen asignada; si no hay red o no hay imagen, sigue viéndose el dibujo animado de siempre. Puedes guardar tu vídeo de YouTube y tu foto de cada ejercicio.
+- **Biblioteca** de 82 ejercicios con imagen/GIF real del movimiento, paso a paso, claves, errores comunes y respiración. La ficha añade **ilustraciones anatómicas de inicio y final** (dos posturas) cuando el ejercicio tiene imagen asignada. Ya no se muestran dibujos de palos: la lista y la ficha usan GIF o imagen real. Puedes guardar tu vídeo de YouTube y tu foto de cada ejercicio.
 - **Ayudas** en todos los botones (ratón, teclado o pulsación larga) e iconos ⓘ en las zonas importantes.
 - **Usuarios:** gestor para crear, editar, cambiar y borrar usuarios; cada uno con su propio programa y seguimiento.
 - **Nube y beta:** cuentas reales, inicio de sesión persistente, sincronización entre dispositivos, códigos beta con duración elegida por el dueño y borrado de cuenta desde la app.
@@ -90,7 +90,7 @@ Las imágenes se suben a `exercise-media/ejercicios/<id>-start.webp` y `-end.web
 
 ### Animaciones de los ejercicios
 
-La ficha de cada ejercicio muestra un **GIF animado del movimiento** de [Exercise Gym GIFs DB](https://github.com/JahelCuadrado/ExerciseGymGifsDB), servido desde su CDN pública (jsDelivr), sin subir nada a Supabase ni usar claves. Si el GIF no carga, queda el dibujo animado de siempre como respaldo.
+La lista y la ficha de cada ejercicio muestran un **GIF animado del movimiento** de [Exercise Gym GIFs DB](https://github.com/JahelCuadrado/ExerciseGymGifsDB), servido desde su CDN pública (jsDelivr), sin subir nada a Supabase ni usar claves. Si el GIF no carga, se prueba la imagen de RepDB y después el emoji; nunca aparece un dibujo de palos.
 
 - `scripts/mapear-gifs.mjs` genera candidatos; `scripts/generar-gifs.mjs` comprueba las 82 rutas y escribe `js/gifs.js`.
 - `js/gifs.js` contiene el emparejamiento de los 82 ejercicios; `urlGif(id)` devuelve la URL o `null`.
@@ -104,7 +104,7 @@ El proyecto guarda una copia completa de cada versión en `VERSIONES/`, para pod
 - `VERSIONES/nueva-version.cmd -Nota "..."` — guarda el estado actual como versión nueva.
 - `VERSIONES/restaurar.cmd -Version v1.00` — vuelve a una versión anterior.
 
-La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.14`). La caché del service worker es `dantal-v5.7` y los archivos estáticos usan `?v=5.7`. Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
+La versión que ve el usuario está en `js/app.js` → `const APP_VERSION` (ahora `2.15`). La caché del service worker es `dantal-v5.8` y los archivos estáticos usan `?v=5.8`. Además, cada `commit` guarda automáticamente una copia fechada en `C:\Users\talaso\Desktop\Proyectos open code\Versiones\` (índice en `INDICE.md`).
 
 ## Privacidad y seguridad
 

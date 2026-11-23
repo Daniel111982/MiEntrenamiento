@@ -3,14 +3,14 @@ import {
   OBJETIVOS, METODOS, FRECUENCIAS, frecuenciaPosible, SEMANAS_CICLO, fase, prescribir, generarPrograma, generarAgenda, alternativas, unoRM,
   duracionEstimada, ajustarDuracion, sesionALaCarta, descansoRecomendado, hoyIso, iso, deIso, lunes, sumarDias,
 } from './generador.js';
-import { dibujoSVG, pasosDibujo, guiaEjercicio } from './tecnica.js';
+import { pasosDibujo, guiaEjercicio } from './tecnica.js';
 import { urlGif, GIF_ATRIBUCION, GIF_URL } from './gifs.js';
 import { aplicarAyudas, esconder as esconderAyuda } from './ayudas.js';
 import { volumenSesion, mejorSerie, recordAntes, recordsDeSesion, racha, volumenMuscular, recuperacion, volumenSemanas, recuperacionDiaria, historialCSV } from './stats.js';
 import { MARCA, logoDantal, isotipoCuadrado, cabeceraMarca } from './marca.js';
 import { COMIDAS, CATEGORIAS_ALIMENTO, ALIMENTOS, alimentoPorId, macrosDe, sumarMacros, buscarAlimentos, RECETAS, resumenReceta, sincronizarAlimentosGlobales, cargarCatalogoSupermercados } from './alimentos.js';
 import { generarInsightsDantal } from './ia.js';
-import { EQUIPO_TECHNOGYM, urlVideoTechnogym, infoTechnogym, esTechnogym, ilustracionTechnogymSVG } from './technogym.js';
+import { EQUIPO_TECHNOGYM, urlVideoTechnogym, infoTechnogym, esTechnogym } from './technogym.js';
 import { videoEjercicio } from './videos.js';
 import {
   CLAVE_INCIDENCIAS, TIPOS_INCIDENCIA, CATEGORIAS_INCIDENCIA, ESTADOS_INCIDENCIA, cargarIncidencias, guardarIncidencias,
@@ -54,7 +54,7 @@ import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from 
 // =====================================================================
 // Cada usuario guarda sus datos por separado: 'mientrenamiento:u:<id>'.
 // La lista de usuarios y cuál está activo van en 'mientrenamiento:usuarios'.
-const APP_VERSION = '2.14'; // versión de la app (ver VERSIONES/HISTORIAL.md)
+const APP_VERSION = '2.15'; // versión de la app (ver VERSIONES/HISTORIAL.md)
 const CLAVE = 'mientrenamiento:v2'; // formato anterior, de un solo usuario
 const CLAVE_USUARIOS = 'mientrenamiento:usuarios';
 const claveDe = id => `mientrenamiento:u:${id}`;
@@ -581,10 +581,22 @@ const ICONO_PATRON = {
   cuadriceps_aisl: '🦵', femoral: '🦵', gemelo: '🦶', pecho_aisl: '💪', hombro_lat: '🤷', hombro_post: '🎯',
   biceps: '💪', triceps: '💪', core: '🧱', metabolico: '🔥',
 };
-// Miniatura real del ejercicio cuando RepDB la tiene; si no, el icono de siempre.
-const iconoReal = e => e?.media_url
-  ? `<span class="ic-foto" data-icono="${ICONO_PATRON[e?.patron] || '🏋️'}"><img class="ic-foto-img" src="${esc(e.media_url)}" alt="" loading="lazy" decoding="async"></span>`
-  : `<span class="ic azul">${ICONO_PATRON[e?.patron] || '🏋️'}</span>`;
+// Miniatura real del ejercicio: imagen de RepDB si existe, si no su GIF.
+// El emoji queda solo como último recurso si tampoco hay GIF.
+const iconoReal = e => {
+  const emoji = ICONO_PATRON[e?.patron] || '🏋️';
+  const gif = urlGif(e?.id);
+  const src = e?.media_url || gif;
+  if (!src) return `<span class="ic azul">${emoji}</span>`;
+  const fallback = gif && src !== gif ? esc(gif) : '';
+  return `<span class="ic-foto" data-icono="${emoji}" data-fallback="${fallback}"><img class="ic-foto-img" src="${esc(src)}" alt="" loading="lazy" decoding="async"></span>`;
+};
+
+// Celda de lista con miniatura real en vez de emoji.
+const celdaReal = (href, e, titulo, sub = '', valor = '') =>
+  `<a class="celda" href="#${href}">${iconoReal(e)}
+    <span class="celda-t"><b>${titulo}</b>${sub ? `<small>${sub}</small>` : ''}</span>
+    ${valor !== '' ? `<span class="celda-v">${valor}</span>` : ''}<span class="chev">›</span></a>`;
 
 const vacioMsg = (icono, titulo, texto, boton = '') => `<div class="vacio"><div class="vacio-ic">${icono}</div><h2>${titulo}</h2><p class="tenue">${texto}</p>${boton}</div>`;
 const subnav = (items, actual) => `<nav class="subnav">${items.map(([h, t]) => `<a href="#${h}" class="${h === actual ? 'on' : ''}">${t}</a>`).join('')}</nav>`;
@@ -2790,9 +2802,9 @@ function segProgreso() {
       const p = datosEjercicio(id);
       const ult = p[p.length - 1], pri = p[0];
       const dif = ult && pri ? Math.round((ult.v - pri.v) * 10) / 10 : 0;
-      return celda(`ejercicio/${id}`, ICONO_PATRON[porId[id]?.patron] || '🏋️', esc(nombreEj(id)),
+      return celdaReal(`ejercicio/${id}`, porId[id], esc(nombreEj(id)),
         `${p.length} ${p.length === 1 ? 'sesión' : 'sesiones'}${ult?.m.kg ? ` · 1RM est. ${ult.v} kg` : ult ? ` · ${ult.v} reps` : ''}`,
-        'verde', dif > 0 ? `<span class="sube">▲ ${dif}</span>` : dif < 0 ? `<span class="baja">▼ ${-dif}</span>` : '');
+        dif > 0 ? `<span class="sube">▲ ${dif}</span>` : dif < 0 ? `<span class="baja">▼ ${-dif}</span>` : '');
     }).join('')}</div>`
       : vacioMsg('📈', 'Sin datos todavía', 'Completa tu primera sesión para empezar a ver tu progreso.', '<a class="btn" href="#hoy">Ir a Hoy</a>'),
   });
@@ -2956,9 +2968,15 @@ function technogymHTML(e) {
   const vid = info.video || '';
   const esId = /^[A-Za-z0-9_-]{11}$/.test(vid); // identificador de YouTube incrustable
   const esUrl = /^https?:/i.test(vid);
+  const gif = urlGif(e.id);
+  const media = gif || e.media_url;
+  const fallback = gif && e.media_url ? e.media_url : '';
+  const ilustracion = media
+    ? `<img class="tg-ilus tg-foto" src="${esc(media)}" alt="Movimiento de ${esc(e.nombre)}" data-fallback="${esc(fallback)}" loading="lazy" decoding="async">`
+    : '';
   return `<div class="tarjeta">
     <div class="tg-ficha">
-      ${ilustracionTechnogymSVG(e, { postura: 'A', ancho: 160 })}
+      ${ilustracion}
       <div>
         <p class="tg-linea">${esc(info.linea)}${info.personalizada ? ' · propia' : ''}</p>
         <p class="tg-maquina">${esc(info.maquina)}</p>
@@ -2988,9 +3006,7 @@ function playerVideo(e, clase = '') {
 // que abre el reproductor; si no hay vídeo, el icono de siempre.
 function iconoEjercicio(e) {
   const vid = idVideo(e);
-  if (!vid) return e?.media_url
-    ? `<span class="ic-foto" data-icono="${ICONO_PATRON[e?.patron] || '🏋️'}"><img class="ic-foto-img" src="${esc(e.media_url)}" alt="" loading="lazy" decoding="async"></span>`
-    : `<span class="ic-ej">${ICONO_PATRON[e?.patron] || '🏋️'}</span>`;
+  if (!vid) return iconoReal(e);
   const abierto = ui.videoAbierto === e.id;
   return `<button class="ic-ej ic-video ${abierto ? 'on' : ''}" data-a="videoMaquina" data-id="${e.id}"
     title="${abierto ? 'Ocultar' : 'Ver'} el vídeo de técnica" aria-label="Vídeo de técnica" aria-expanded="${abierto}">
@@ -3077,7 +3093,7 @@ function ejerciciosPropios() {
     titulo: 'Mis ejercicios', padre: 'ejercicios', sub: `${lista.length} ${lista.length === 1 ? 'ejercicio propio' : 'ejercicios propios'}`,
     extra: '<a class="icono" href="#ejercicios/nuevo" title="Nuevo ejercicio">＋</a>',
     cuerpo: lista.length ? `<div class="celdas">${lista.map(e => `<div class="celda ej-propio">
-        <span class="ic azul">${ICONO_PATRON[e.patron] || '🏋️'}</span>
+        ${iconoReal(e)}
         <span class="celda-t"><a class="enlace fuerte" href="#ejercicio/${e.id}">${esc(e.nombre)}</a><small>${(e.musculos || []).map(m => MUSCULOS[m]).join(', ') || 'Sin músculos'} · ${equipoTxt({ equipo: e.equipo || [] })}</small></span>
         <div class="acciones"><a class="icono peq" href="#ejercicio/${e.id}/editar" title="Editar">✎</a>
         <button class="icono peq" data-a="borrarEjPropio" data-id="${e.id}" title="Borrar">🗑️</button></div></div>`).join('')}</div>
@@ -5007,17 +5023,23 @@ const cerrarModal = () => $('#modal').open && $('#modal').close();
 $('#modal').addEventListener('click', e => { if (e.target === e.currentTarget && !e.currentTarget.dataset.fija) cerrarModal(); });
 $('#modal').addEventListener('cancel', e => { if (e.currentTarget.dataset.fija) e.preventDefault(); });
 
-// Si una ilustración remota no carga (sin red, archivo retirado), se elimina
-// y queda a la vista el dibujo SVG que lleva debajo. Fallback sin JavaScript
-// adicional ni dependencias.
+// Si una imagen remota no carga, probamos su respaldo (GIF o WebP) y, si
+// tampoco, dejamos el emoji. Nunca mostramos dibujos de palos.
 document.addEventListener('error', ev => {
   const img = ev.target;
   if (!(img instanceof HTMLImageElement)) return;
   if (img.classList.contains('visor-img') || img.classList.contains('visor-gif')) img.remove();
   if (img.classList.contains('ic-foto-img')) {
     const cont = img.parentElement;
+    const fb = cont?.dataset.fallback;
+    if (fb && img.src !== fb) { img.src = fb; delete cont.dataset.fallback; return; }
     cont.className = 'ic azul';
     cont.textContent = cont.dataset.icono || '🏋️';
+  }
+  if (img.classList.contains('tg-foto')) {
+    const fb = img.dataset.fallback;
+    if (fb && img.src !== fb) { img.src = fb; delete img.dataset.fallback; }
+    else img.remove();
   }
 }, true);
 
@@ -5133,12 +5155,9 @@ function mapaZonasRep(e) {
   return { colores, nombres };
 }
 
-// El SVG queda debajo de la ilustración: si la imagen no carga (sin red o
-// archivo retirado) el listener de error la elimina y el dibujo sigue visible.
-function capaVisor(svg, url, alt, clase = 'visor-img') {
-  return `<div class="visor-capas"><div class="visor-base">${svg}</div>${
-    url ? `<img class="${clase}" src="${esc(url)}" alt="${esc(alt)}" loading="lazy" decoding="async">` : ''
-  }</div>`;
+// Visor de imagen real (GIF o WebP). No lleva dibujo SVG debajo.
+function capaVisor(url, alt, clase = 'visor-img') {
+  return url ? `<div class="visor-capas"><img class="${clase}" src="${esc(url)}" alt="${esc(alt)}" loading="lazy" decoding="async"></div>` : '';
 }
 
 function tecnicaHTML(e, { compacta = false } = {}) {
@@ -5169,29 +5188,31 @@ function tecnicaHTML(e, { compacta = false } = {}) {
     : ''}${gif
     ? `<p class="atribucion-rep">${GIF_ATRIBUCION} · <a href="${GIF_URL}" target="_blank" rel="noopener">ver fuente</a></p>`
     : ''}`;
+  const posturas = (e.media_url || e.media_url_end) ? `
+        <div class="posturas">
+          ${e.media_url ? `<figure class="${conMedia ? 'con-anatomia' : ''}">
+            ${capaVisor(e.media_url, `Postura inicial de ${e.nombre}`)}
+            <figcaption><b>1</b>${esc(ini)}</figcaption>
+          </figure>` : ''}
+          ${e.media_url_end ? `<figure class="${conMedia ? 'con-anatomia' : ''}">
+            ${capaVisor(e.media_url_end, `Postura final de ${e.nombre}`)}
+            <figcaption><b>2</b>${esc(fin)}</figcaption>
+          </figure>` : ''}
+        </div>` : '';
   return `
     <div class="tarjeta tecnica">
       <h2>🎬 Cómo se hace</h2>
       <div class="dibujo-zona">
         <div class="dibujo-grande ${conMedia ? 'con-anatomia' : ''}">
-          ${capaVisor(dibujoSVG(e), gif || e.media_url, gif ? `Animación del movimiento de ${e.nombre}` : `Ilustración anatómica de ${e.nombre}`, gif ? 'visor-gif' : 'visor-img')}
+          ${capaVisor(gif || e.media_url, gif ? `Animación del movimiento de ${e.nombre}` : `Ilustración anatómica de ${e.nombre}`, gif ? 'visor-gif' : 'visor-img')}
           <span class="badge en-vivo">● ${gif ? 'En movimiento' : (e.media_url_end ? 'Inicio' : 'Movimiento')}</span>
         </div>
-        <div class="posturas">
-          <figure class="${conMedia ? 'con-anatomia' : ''}">
-            ${capaVisor(dibujoSVG(e, { postura: 'A' }), e.media_url, `Postura inicial de ${e.nombre}`)}
-            <figcaption><b>1</b>${esc(ini)}</figcaption>
-          </figure>
-          <figure class="${conMedia && e.media_url_end ? 'con-anatomia' : ''}">
-            ${capaVisor(dibujoSVG(e, { postura: 'B' }), e.media_url_end, `Postura final de ${e.nombre}`)}
-            <figcaption><b>2</b>${esc(fin)}</figcaption>
-          </figure>
-        </div>
+        ${posturas}
       </div>
       <p class="tenue centro nota-dibujo">${gif
-        ? 'Movimiento real en animación. Si no carga, verás el dibujo orientativo.'
+        ? 'Movimiento real en animación.'
         : (conMedia ? 'Ilustración anatómica de la postura y el recorrido del movimiento.'
-          : 'Dibujo orientativo. Fíjate en la postura y el recorrido.')}</p>
+          : 'Consulta el vídeo de técnica para ver el movimiento.')}</p>
       ${zonas}
       ${atribucion}
       ${esTechnogym(e) ? '' : playerVideo(e)}
