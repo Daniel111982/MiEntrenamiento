@@ -322,3 +322,61 @@ export function evolucionFuerza(puntos = [], { unidad = 'kg', nombre = '' } = {}
     <p class="tenue">${lista.length} ${lista.length === 1 ? 'sesión registrada' : 'sesiones registradas'}. ${unidad.includes('1RM') ? 'Con carga se estima el 1RM con la fórmula de Epley.' : ''}</p>
   </div>`;
 }
+
+// FASE 9 · PARTE 3 — evolución corporal. Los círculos son datos reales (o la
+// media del periodo, si se agregaron semanas/meses); la línea discontinua es
+// una tendencia calculada y se corta donde no hay registros: nunca une dos
+// puntos separados por un hueco ni inventa valores intermedios.
+export function evolucionMedidas(puntos = [], { unidad = '', nombre = '', periodo = 'todo' } = {}) {
+  const lista = puntos
+    .filter(p => p && Number.isFinite(Number(p.v)))
+    .map(p => ({ ...p, v: Number(p.v) }))
+    .sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
+  if (!lista.length) return '<p class="tenue centro">Sin registros para este dato. Añade una medición para ver su evolución.</p>';
+
+  const W = 320, H = 160, P = 30;
+  const tiempo = f => Date.parse(`${String(f ?? '').slice(0, 10)}T12:00:00`) || 0;
+  const t0 = tiempo(lista[0].fecha);
+  const t1 = tiempo(lista[lista.length - 1].fecha);
+  const x = p => lista.length === 1 ? W / 2 : P + (tiempo(p.fecha) - t0) / (t1 - t0 || 1) * (W - 2 * P);
+  const vals = lista.map(p => p.v);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const margen = (max - min) || Math.max(1, Math.abs(max) * 0.05);
+  const yMin = min - margen * 0.15, yMax = max + margen * 0.15;
+  const y = v => H - P - (v - yMin) / ((yMax - yMin) || 1) * (H - 2 * P);
+
+  const segmentos = [];
+  let actual = [];
+  const cortes = [];
+  lista.forEach((p, i) => {
+    if (i && p.hueco) {
+      segmentos.push(actual);
+      actual = [];
+      cortes.push((x(lista[i - 1]) + x(p)) / 2);
+    }
+    actual.push(p);
+  });
+  if (actual.length) segmentos.push(actual);
+  const lineas = segmentos.filter(s => s.length > 1)
+    .map(s => s.map((p, i) => `${i ? 'L' : 'M'}${x(p).toFixed(1)},${y(p.v).toFixed(1)}`).join(' '));
+  const etiquetaPunto = periodo === 'todo' ? 'Dato registrado' : 'Media del periodo';
+  const hayEstimados = lista.some(p => p.origen === 'estimado');
+
+  return `<div class="g-evo">
+    <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Evolución de ${esc(nombre || 'este dato')}">
+      <line x1="${P}" y1="${H - P}" x2="${W - P}" y2="${H - P}" class="g-evo-eje"/>
+      <text x="${P - 4}" y="${(y(max) + 4).toFixed(1)}" text-anchor="end" class="g-evo-etq">${fmt1(max)}</text>
+      <text x="${P - 4}" y="${(y(min) + 4).toFixed(1)}" text-anchor="end" class="g-evo-etq">${fmt1(min)}</text>
+      ${lineas.map(d => `<path d="${d}" class="g-evo-tendencia"/>`).join('')}
+      ${cortes.map(cx => `<text x="${cx.toFixed(1)}" y="${(H / 2).toFixed(1)}" text-anchor="middle" class="g-evo-sin">sin dato</text>`).join('')}
+      ${lista.map((p, i) => `<circle cx="${x(p).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="${i === lista.length - 1 ? 5 : 3.5}"
+        class="g-evo-punto ${p.origen === 'estimado' ? 'estimado' : ''} ${i === lista.length - 1 ? 'actual' : ''}">
+        <title>${esc(fechaCorta(p.fecha))}: ${fmt1(p.v)} ${esc(unidad)}${p.origen === 'estimado' ? ' · estimación' : ''}</title></circle>`).join('')}
+      ${lista.length === 1
+        ? `<text x="${W / 2}" y="${H - 5}" text-anchor="middle" class="g-evo-etq">${esc(fechaCorta(lista[0].fecha))}</text>`
+        : `<text x="${P}" y="${H - 5}" class="g-evo-etq">${esc(fechaCorta(lista[0].fecha))}</text>
+           <text x="${W - P}" y="${H - 5}" text-anchor="end" class="g-evo-etq">${esc(fechaCorta(lista[lista.length - 1].fecha))}</text>`}
+    </svg>
+    <div class="g-evo-leyenda"><span><i class="dato"></i>${etiquetaPunto}</span><span><i class="tend"></i>Tendencia calculada</span>${hayEstimados ? '<span><i class="est"></i>Estimación</span>' : ''}</div>
+  </div>`;
+}

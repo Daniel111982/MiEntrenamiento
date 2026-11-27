@@ -19,9 +19,19 @@ const CAMPOS = [
 const MICROS_OFF = {
   calcio: 'calcium_100g',
   hierro: 'iron_100g',
-  vitD: 'vitamin-d_100g',
-  vitC: 'vitamin-c_100g',
   potasio: 'potassium_100g',
+  magnesio: 'magnesium_100g',
+  fosforo: 'phosphorus_100g',
+  zinc: 'zinc_100g',
+  vitA: 'vitamin-a_100g',
+  vitC: 'vitamin-c_100g',
+  vitD: 'vitamin-d_100g',
+  vitE: 'vitamin-e_100g',
+  vitB1: 'vitamin-b1_100g',
+  vitB2: 'vitamin-b2_100g',
+  vitB6: 'vitamin-b6_100g',
+  vitB12: 'vitamin-b12_100g',
+  folato: 'folates_100g',
 };
 export const CLAVES_MICROS = Object.keys(MICROS_OFF);
 

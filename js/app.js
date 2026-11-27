@@ -1,6 +1,6 @@
 import { EJERCICIOS, EJERCICIOS_BASE, EQUIPOS, MUSCULOS, PATRONES, porId, sincronizarEjerciciosUsuario, sincronizarEjerciciosGlobales } from './ejercicios.js';
 import {
-  OBJETIVOS, METODOS, FRECUENCIAS, frecuenciaPosible, SEMANAS_CICLO, fase, prescribir, generarPrograma, generarAgenda, alternativas, unoRM,
+  OBJETIVOS, METODOS, FRECUENCIAS, frecuenciaPosible, SEMANAS_CICLO, fase, prescribir, generarPrograma, generarAgenda, alternativas,
   duracionEstimada, ajustarDuracion, sesionALaCarta, descansoRecomendado, hoyIso, iso, deIso, lunes, sumarDias,
 } from './generador.js';
 import { pasosDibujo, guiaEjercicio } from './tecnica.js';
@@ -9,8 +9,15 @@ import { CUERPO_REAL, ZONA_A_GRUPOS, NOMBRES_GRUPOS } from './cuerpo-real.js';
 import { aplicarAyudas, esconder as esconderAyuda } from './ayudas.js';
 import { volumenSesion, mejorSerie, recordAntes, recordsDeSesion, racha, volumenMuscular, recuperacion, volumenSemanas, recuperacionDiaria, historialCSV } from './stats.js';
 import { MARCA, logoDantal, isotipoCuadrado, cabeceraMarca } from './marca.js';
-import { COMIDAS, CATEGORIAS_ALIMENTO, ALIMENTOS, alimentoPorId, macrosDe, sumarMacros, buscarAlimentos, RECETAS, resumenReceta, sincronizarAlimentosGlobales, cargarCatalogoSupermercados } from './alimentos.js';
+import { COMIDAS, CATEGORIAS_ALIMENTO, ALIMENTOS, alimentoPorId, macrosDe, sumarMacros, buscarAlimentos, RECETAS, categoriasEnEspanol, resumenReceta, resumenRecetaPorRacion, sincronizarAlimentosGlobales, cargarCatalogoSupermercados, hayMicros, macrosEntrada, microsEntrada, detalleComercial, alergenosDe, ALERGENOS_UE } from './alimentos.js';
+import { FILTROS_DIETA, clasificarReceta, recetaCumpleDieta, etiquetaDieta } from './dieta.js';
 import { generarInsightsDantal } from './ia.js';
+import {
+  planVacio, normalizarPlan, diaDelPlan, semanaDelPlan, macrosDiaPlan, macrosComidaPlan,
+  crearEntradaAlimento, crearEntradaReceta, anadirEntradaPlan, actualizarEntradaPlan,
+  quitarEntradaPlan, copiarComidaPlan, copiarDiaPlan, pasarComidaAlDiario,
+  compararConObjetivos, proponerComidasPlan, normalizarRacionesReceta, listaCompraPlan, COMIDA_KEYS,
+} from './plan-comidas.js';
 import { EQUIPO_TECHNOGYM, urlVideoTechnogym, infoTechnogym, esTechnogym } from './technogym.js';
 import { videoEjercicio } from './videos.js';
 import {
@@ -43,28 +50,67 @@ import {
 } from './nube.js';
 import { LOGROS, RETOS, retoDelMes, calcularLogros, progresoReto } from './logros.js';
 import { informeSemanal, textoInforme } from './informe.js';
-import { informeNutricional, textoInformeNutricional } from './informe-nutricion.js';
+import { informeNutricional, textoInformeNutricional, aporteNutricional, clasificarAporte } from './informe-nutricion.js';
 import { generarMenu, listaCompra, textoListaCompra, planAlimentacion, candidatasReceta, comidaConReceta, recalcularComida, recalcularDia } from './menu.js';
-import { soportaCodigos, escanearCodigo, buscarAlimento, urlProducto, historialEscaner, limpiarHistorialEscaner, productoManual, guardarProductoLocal, CLAVES_MICROS } from './escaner.js';
-import { anilloKcal, donutMacros, miniMacros, barrasComidas, sparklineKcal, tarjetaEntrada, barraMicro, barrasSemana, barrasComparacion, barrasVolumen, lineaRecuperacion, evolucionFuerza } from './graficos.js';
+import { soportaCodigos, escanearCodigo, historialEscaner, limpiarHistorialEscaner, productoManual, guardarProductoLocal, CLAVES_MICROS } from './escaner.js';
+import { anilloKcal, donutMacros, miniMacros, barrasComidas, sparklineKcal, tarjetaEntrada, barraMicro, barrasSemana, barrasComparacion, barrasVolumen, lineaRecuperacion, evolucionFuerza, evolucionMedidas } from './graficos.js';
 import { reorganizarSemana, ajustarSesion, huecosLibres } from './planificador.js';
 import { POLITICA, politicaHTML, consentimiento, registrarConsentimiento } from './rgpd.js';
+import {
+  buscarSuplementos, calcularToma, detectarDuplicados, entradaSuplemento, esSuplemento,
+  esVarianteProducto, identificadoresProducto, recalcularToma, UNIDADES_CONVERSION,
+} from './suplementos.js';
+import {
+  abrirFichaSuplemento, abrirFormSuplemento, etiquetaComponente,
+  configurarBuscadorSuplementos, configurarSuplementosUI, vistaSuplementos,
+} from './suplementos-ui.js';
+import { identificarCodigo } from './escaner-identidad.js';
+import { contextoIntegralCoach } from './contexto-ia.js';
+import { configurarFotoComidaUI, abrirFotoComida } from './foto-comida.js';
+import {
+  numero, tmbMifflin, desgloseEnergia, repartoMacros, estimar1RM, cargasPorPorcentaje, repsEstimadas, volumenEntrenamiento,
+  CAMPOS_META, ETIQUETAS_META, propuestaNutricionInicial, aplicarObjetivosNutricion,
+} from './calculadoras.js';
+import { validarMedicion, mediasPorPeriodo, conHuecos, resumenEvolucion } from './evolucion.js';
+import {
+  analizarEvolucion, crearPropuesta, decidir, yaRegistrada, proximosRecordatorios,
+  contextoParaCoach, TIPOS_RECORDATORIO, FRECUENCIAS_RECORDATORIO, ETIQUETAS_RECORDATORIO, DECISIONES,
+} from './adaptacion.js';
 
 // =====================================================================
 // Estado
 // =====================================================================
 // Cada usuario guarda sus datos por separado: 'mientrenamiento:u:<id>'.
 // La lista de usuarios y cuál está activo van en 'mientrenamiento:usuarios'.
-const APP_VERSION = '2.17'; // versión de la app (ver VERSIONES/HISTORIAL.md)
+const APP_VERSION = '2.24'; // versión de la app (ver VERSIONES/HISTORIAL.md)
 const CLAVE = 'mientrenamiento:v2'; // formato anterior, de un solo usuario
 const CLAVE_USUARIOS = 'mientrenamiento:usuarios';
 const claveDe = id => `mientrenamiento:u:${id}`;
-const NUTRICION_DEF = { sexo: 'hombre', edad: 30, altura: 175, peso: null, actividad: 'moderado', objetivo: 'mantener', adaptativo: true, kcalManual: null };
+// FASE 9 · PARTE 4: la adaptación vive DENTRO de estado.nutricion, igual que
+// los objetivos. No hay segunda fuente de datos ni objetivos paralelos.
+const adaptacionVacia = () => ({ historial: [], ultimoAnalisis: null });
+const recordatoriosCorporalesDef = () => ({
+  peso: { activo: false, frecuencia: 'semanal' },
+  medidas: { activo: false, frecuencia: 'quincenal' },
+  objetivos: { activo: false, frecuencia: 'mensual' },
+  evolucion: { activo: false, frecuencia: 'quincenal' },
+});
+// `objetivos` vive DENTRO de estado.nutricion: no es un modelo paralelo.
+// { valores, origen, grasaPct, aceptadoEn } · origen: calculado | manual | aceptado.
+const NUTRICION_DEF = {
+  sexo: 'hombre', edad: 30, altura: 175, peso: null, actividad: 'moderado',
+  objetivo: 'mantener', adaptativo: true, kcalManual: null, objetivos: null,
+  adaptacion: adaptacionVacia(),
+};
 const VASO_ML = 250; // capacidad de un vaso de agua
 const vacio = () => ({
   perfil: null, plan: null, historial: [], enCurso: null, misSesiones: [], videos: {}, fotos: {}, medidas: [],
   actividad: [], saludUrl: '', saludSync: '',
-  nutricion: { ...NUTRICION_DEF }, ajustes: { recordatorio: false, hora: '18:00', avisado: '', ayudas: true, consejoVisto: false },
+  nutricion: { ...NUTRICION_DEF },
+  ajustes: {
+    recordatorio: false, hora: '18:00', avisado: '', ayudas: true, consejoVisto: false,
+    recordatoriosCorporales: recordatoriosCorporalesDef(), avisadoAdaptacion: {},
+  },
   comidas: {}, agua: {}, ejerciciosPropios: [], seguridad: null, avisos: [],
   carrera: null, carreraEnCurso: null,
   beta: { codigos: [] },
@@ -76,6 +122,10 @@ const vacio = () => ({
   logrosVistos: [],       // ids de logros ya celebrados
   rgpd: null,             // registro de consentimiento
   coachChat: [],          // historial persistente del coach
+  planComidas: planVacio(), // planificador: { fecha: { comidas: { desayuno|comida|snack|cena: [entradas] } } }
+  recetasPropias: [],      // recetas creadas o editadas por este usuario
+  recetasFavoritas: [],    // ids de recetas marcadas como favoritas
+  compraMarcados: {},      // lista de la compra del planificador: { idIngrediente: true }
 });
 const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const AVATARES = [
@@ -139,41 +189,97 @@ function cargarUsuarios() {
 }
 function guardarUsuarios() { localStorage.setItem(CLAVE_USUARIOS, JSON.stringify(usuarios)); }
 
+// Normalización defensiva: los perfiles antiguos no tenían estas claves.
+function normalizarAdaptacion(a) {
+  return {
+    historial: Array.isArray(a?.historial) ? a.historial.filter(p => p && p.id) : [],
+    ultimoAnalisis: a?.ultimoAnalisis && typeof a.ultimoAnalisis === 'object' ? a.ultimoAnalisis : null,
+  };
+}
+function normalizarRecordatoriosCorporales(r) {
+  const salida = recordatoriosCorporalesDef();
+  TIPOS_RECORDATORIO.forEach(tipo => {
+    const c = r?.[tipo];
+    if (!c || typeof c !== 'object') return;
+    salida[tipo] = {
+      activo: c.activo === true,
+      frecuencia: FRECUENCIAS_RECORDATORIO[c.frecuencia] ? c.frecuencia : salida[tipo].frecuencia,
+    };
+  });
+  return salida;
+}
+
 function cargar(id = usuarios.activo) {
   try {
     const d = JSON.parse(localStorage.getItem(claveDe(id)));
-    if (d) return {
-      ...vacio(), ...d,
-      medidas: Array.isArray(d.medidas) ? d.medidas : [],
-      actividad: Array.isArray(d.actividad) ? d.actividad : [],
-      nutricion: { ...NUTRICION_DEF, ...(d.nutricion || {}) },
-      ajustes: { ...vacio().ajustes, ...d.ajustes },
-      comidas: d.comidas && typeof d.comidas === 'object' ? d.comidas : {},
-      agua: d.agua && typeof d.agua === 'object' ? d.agua : {},
-      ejerciciosPropios: Array.isArray(d.ejerciciosPropios) ? d.ejerciciosPropios : [],
-      seguridad: d.seguridad && typeof d.seguridad === 'object' ? d.seguridad : null,
-      avisos: Array.isArray(d.avisos) ? d.avisos : [],
-      carrera: d.carrera && typeof d.carrera === 'object' ? d.carrera : null,
-      carreraEnCurso: d.carreraEnCurso && typeof d.carreraEnCurso === 'object' ? d.carreraEnCurso : null,
-      beta: { codigos: Array.isArray(d.beta?.codigos) ? d.beta.codigos : [] },
-      progresoFotos: d.progresoFotos && typeof d.progresoFotos === 'object' ? d.progresoFotos : {},
-      metaCorporal: d.metaCorporal && typeof d.metaCorporal === 'object' ? d.metaCorporal : null,
-      menu: d.menu && typeof d.menu === 'object' ? d.menu : null,
-      menuPreferencias: {
-        favoritas: Array.isArray(d.menuPreferencias?.favoritas) ? d.menuPreferencias.favoritas : [],
-        excluidas: Array.isArray(d.menuPreferencias?.excluidas) ? d.menuPreferencias.excluidas : [],
-      },
-      logrosVistos: Array.isArray(d.logrosVistos) ? d.logrosVistos : [],
-      rgpd: d.rgpd && typeof d.rgpd === 'object' ? d.rgpd : null,
-      coachChat: Array.isArray(d.coachChat) ? d.coachChat.slice(-60) : [],
-    };
+    if (d) {
+      const datos = {
+        ...vacio(), ...d,
+        medidas: Array.isArray(d.medidas) ? d.medidas : [],
+        actividad: Array.isArray(d.actividad) ? d.actividad : [],
+        nutricion: {
+          ...NUTRICION_DEF, ...(d.nutricion || {}),
+          adaptacion: normalizarAdaptacion(d.nutricion?.adaptacion),
+        },
+        ajustes: {
+          ...vacio().ajustes, ...d.ajustes,
+          recordatoriosCorporales: normalizarRecordatoriosCorporales(d.ajustes?.recordatoriosCorporales),
+          avisadoAdaptacion: d.ajustes?.avisadoAdaptacion && typeof d.ajustes.avisadoAdaptacion === 'object'
+            ? d.ajustes.avisadoAdaptacion : {},
+        },
+        comidas: d.comidas && typeof d.comidas === 'object' ? d.comidas : {},
+        agua: d.agua && typeof d.agua === 'object' ? d.agua : {},
+        ejerciciosPropios: Array.isArray(d.ejerciciosPropios) ? d.ejerciciosPropios : [],
+        seguridad: d.seguridad && typeof d.seguridad === 'object' ? d.seguridad : null,
+        avisos: Array.isArray(d.avisos) ? d.avisos : [],
+        carrera: d.carrera && typeof d.carrera === 'object' ? d.carrera : null,
+        carreraEnCurso: d.carreraEnCurso && typeof d.carreraEnCurso === 'object' ? d.carreraEnCurso : null,
+        beta: { codigos: Array.isArray(d.beta?.codigos) ? d.beta.codigos : [] },
+        progresoFotos: d.progresoFotos && typeof d.progresoFotos === 'object' ? d.progresoFotos : {},
+        metaCorporal: d.metaCorporal && typeof d.metaCorporal === 'object' ? d.metaCorporal : null,
+        menu: d.menu && typeof d.menu === 'object' ? d.menu : null,
+        menuPreferencias: {
+          favoritas: Array.isArray(d.menuPreferencias?.favoritas) ? d.menuPreferencias.favoritas : [],
+          excluidas: Array.isArray(d.menuPreferencias?.excluidas) ? d.menuPreferencias.excluidas : [],
+        },
+        logrosVistos: Array.isArray(d.logrosVistos) ? d.logrosVistos : [],
+        rgpd: d.rgpd && typeof d.rgpd === 'object' ? d.rgpd : null,
+        coachChat: Array.isArray(d.coachChat) ? d.coachChat.slice(-60) : [],
+        planComidas: normalizarPlan(d.planComidas),
+        recetasPropias: Array.isArray(d.recetasPropias) ? d.recetasPropias : [],
+        recetasFavoritas: Array.isArray(d.recetasFavoritas) ? d.recetasFavoritas : [],
+        compraMarcados: d.compraMarcados && typeof d.compraMarcados === 'object' ? d.compraMarcados : {},
+      };
+      const normal = normalizarRacionesReceta(datos);
+      datos.planComidas = normal.planComidas;
+      datos.comidas = normal.comidas;
+      return datos;
+    }
   } catch { /* datos corruptos */ }
   return vacio();
 }
+// Escritura local deduplicada: si el estado no ha cambiado (y nadie ha
+// sobrescrito la clave), no se vuelve a serializar ni a guardar. Así se
+// evitan escrituras innecesarias durante entrenamientos y se reduce el riesgo
+// de perder datos si el dispositivo se cierra a mitad de una operación.
+let ultimoGuardado = { clave: null, texto: null, guardado: null };
 function guardar() {
-  estado.actualizado = new Date().toISOString();
-  localStorage.setItem(claveDe(usuarios.activo), JSON.stringify(estado));
-  programarGuardadoNube();
+  try {
+    const clave = claveDe(usuarios.activo);
+    const texto = JSON.stringify({ ...estado, actualizado: null });
+    if (ultimoGuardado.clave === clave && ultimoGuardado.texto === texto
+      && localStorage.getItem(clave) === ultimoGuardado.guardado) return;
+    estado.actualizado = new Date().toISOString();
+    const guardado = JSON.stringify(estado);
+    localStorage.setItem(clave, guardado);
+    ultimoGuardado = { clave, texto, guardado };
+    programarGuardadoNube();
+  } catch (e) {
+    if (!guardar.avisado) {
+      guardar.avisado = true;
+      toast('No se ha podido guardar en este dispositivo. Revisa el espacio disponible.', { ms: 7000 });
+    }
+  }
 }
 
 const usuarioActual = () => usuarios.lista.find(u => u.id === usuarios.activo) || usuarios.lista[0];
@@ -254,15 +360,46 @@ function avisoBeta() {
   </div>`;
 }
 
+// Borrador del chat: se guarda SOLO en esta pestaña (sessionStorage), nunca
+// se sube a la nube. Así un fallo de red no pierde lo que se estaba escribiendo.
+const CLAVE_BORRADOR_COACH = 'mientrenamiento:coach-borrador';
+const claveBorradorCoach = () => `${CLAVE_BORRADOR_COACH}:${usuarios.activo || 'anon'}`;
+function leerBorradorCoach() {
+  try { return sessionStorage.getItem(claveBorradorCoach()) || ''; }
+  catch { return ''; }
+}
+function guardarBorradorCoach(texto) {
+  ui.coachBorrador = String(texto || '');
+  try { sessionStorage.setItem(claveBorradorCoach(), ui.coachBorrador); } catch { /* modo privado */ }
+}
+// El historial viaja con el usuario (estado.coachChat). Se vuelve a enganchar
+// a la interfaz en cada arranque, cambio de cuenta o sincronización: si no,
+// los mensajes siguen guardados pero la vista muestra el saludo inicial.
+function restaurarChatCoach() {
+  ui.coachChat = Array.isArray(estado.coachChat) ? estado.coachChat : [];
+  ui.coachPensando = false;
+  ui.coachBorrador = leerBorradorCoach();
+}
+
 // Estado de interfaz que se reinicia al cambiar de usuario.
 const UI_INICIAL = {
   semanaVista: null, mesVista: null, ejSel: null, fuerzaSel: null, filtro: '', q: '', listaSesion: false, cartaPrev: null,
   medidaEdit: null, pasoEdit: null, metricaMedida: 'peso', periodoMedida: 'todo', diaNutri: null,
   comidaSel: null, nutriCat: '', nutriQ: '', soloPropios: false, soloTG: false, videoAbierto: null,
-  verMaestro: false, recMetodo: null, incFiltro: 'nuevas', coachChat: [], coachPensando: false,
+  verMaestro: false, recMetodo: null, incFiltro: 'nuevas', coachChat: [], coachPensando: false, coachBorrador: '',
+  planFecha: null, planSemana: null, planBusca: '', planPregunta: '',
+  recetaBusca: '', recetaCategoria: '', recetaFiltro: '', recetaSoloFavoritas: false, recetaSoloPropias: false,
+  recetaDietas: [],
+  recetaTipo: '', recetaIng: '', recetaKcalMax: '', recetaProtMin: '', recetaTiempoMax: '',
+  recetaRaciones: {}, // raciones elegidas por receta en la ficha
+  recetaBorrador: null,
   coachIgnorados: [], coachIAOk: null,
-  informeOffset: 0, informeNutriOffset: 0, escanerResultado: null, escanerComida: 'comida', escanerNuevo: false, escanerManual: null, menuSemilla: 0,
+  informeOffset: 0, informeNutriOffset: 0, informeNutriPeriodo: 'semanal',
+  informeNutriDesde: '', informeNutriHasta: '',
+  escanerResultado: null, escanerComida: 'comida', escanerNuevo: false, escanerManual: null,
+  escanerCodigo: null, escanerIdentidad: null, escanerCandidatos: [], escanerSuplemento: null, menuSemilla: 0,
   ultimaEntrada: null, // gráfico de la comida recién añadida al diario
+  propuestaPendiente: null, // propuesta inicial de la Parte 2, pendiente de aceptar
   contenidos: [], contenidoEdit: null,
   catalogos: { ejercicio: [], alimento: [], rutina: [] },
   catalogosEstado: 'inicial', catalogosError: '', adminEdit: null,
@@ -276,13 +413,14 @@ function cambiarUsuario(id, { entrar: entrarYa = false } = {}) {
   usuarios.activo = id;
   guardarUsuarios();
   estado = cargar(id);
-  // El historial del coach viaja con el usuario, no con la pestaña.
-  ui.coachChat = estado.coachChat || [];
   desbloqueado = Boolean(entrarYa);
   usuarioLogin = id;
   recuperacionProc.ok = false; recuperacionProc.codigo = null; recuperacionProc.usuario = null;
   sincronizarPropios();
   Object.assign(ui, UI_INICIAL);
+  // El historial del coach viaja con el usuario, no con la pestaña: se restaura
+  // después de reiniciar la interfaz para que el reinicio no lo borre.
+  restaurarChatCoach();
   cerrarModal();
   ir(estado.plan ? 'hoy' : 'bienvenida');
   if (!entrarYa) toast(`Usuario activo: ${usuarioActual().nombre}`);
@@ -293,6 +431,8 @@ function entrarComo(id) {
   usuarioLogin = id;
   if (id !== usuarios.activo) { cambiarUsuario(id, { entrar: true }); return; }
   desbloqueado = true;
+  // Recarga con el mismo usuario activo: el chat guardado también se recupera.
+  restaurarChatCoach();
   recuperacionProc.ok = false; recuperacionProc.codigo = null; recuperacionProc.usuario = null; ui.recMetodo = null;
   ir(estado.plan ? 'hoy' : 'bienvenida');
 }
@@ -393,6 +533,7 @@ function seriesObjetivo(item) {
 // Navegación: cada parte es una página con su propia dirección (#seguimiento/historial…)
 // =====================================================================
 const ui = { ...UI_INICIAL };
+restaurarChatCoach();
 
 // [patrón de la dirección, página, pestaña de la barra inferior]
 const RUTAS = [
@@ -413,13 +554,16 @@ const RUTAS = [
   [/^seguimiento\/recuperacion$/, segRecuperacion, 'seguimiento'],
   [/^seguimiento\/equilibrio$/, segEquilibrio, 'seguimiento'],
   [/^seguimiento\/medidas$/, segMedidas, 'seguimiento'],
+  [/^seguimiento\/evolucion$/, segEvolucion, 'seguimiento'],
   [/^seguimiento\/pasos$/, segPasos, 'seguimiento'],
   [/^seguimiento\/nutricion$/, segNutricion, 'seguimiento'],
   [/^seguimiento\/rendimiento$/, segRendimiento, 'seguimiento'],
   [/^seguimiento\/progreso$/, segProgreso, 'seguimiento'],
   [/^seguimiento\/records$/, segRecords, 'seguimiento'],
   [/^seguimiento\/historial$/, segHistorial, 'seguimiento'],
-  [/^seguimiento\/calculadora$/, segCalculadora, 'seguimiento'],
+  [/^seguimiento\/calculadora$/, () => segCalculadora('energia'), 'seguimiento'],
+  [/^seguimiento\/calculadora\/nutricion$/, () => segCalculadora('nutricion'), 'seguimiento'],
+  [/^seguimiento\/calculadora\/fuerza$/, () => segCalculadora('fuerza'), 'seguimiento'],
   [/^seguimiento\/logros$/, segLogros, 'seguimiento'],
   [/^seguimiento\/informe$/, segInforme, 'seguimiento'],
   [/^seguimiento\/fotos$/, segFotos, 'seguimiento'],
@@ -434,13 +578,19 @@ const RUTAS = [
   [/^carrera\/calculadora$/, carreraCalculadora, 'carrera'],
   [/^nutricion$/, nutricion, 'nutricion'],
   [/^nutricion\/diario$/, nutricion, 'nutricion'],
+  [/^nutricion\/suplementos$/, nutricionSuplementos, 'nutricion'],
   [/^nutricion\/informe$/, nutricionInforme, 'nutricion'],
   [/^nutricion\/recetas$/, nutricionRecetas, 'nutricion'],
   [/^nutricion\/receta\/([\w-]+)$/, nutricionReceta, 'nutricion'],
   [/^nutricion\/hidratacion$/, nutricionAgua, 'nutricion'],
   [/^nutricion\/ia$/, nutricionIA, 'nutricion'],
   [/^nutricion\/objetivos$/, nutricionObjetivos, 'nutricion'],
+  [/^nutricion\/adaptacion$/, nutricionAdaptacion, 'nutricion'],
   [/^nutricion\/menu$/, nutricionMenu, 'nutricion'],
+  [/^nutricion\/planificador$/, nutricionPlanificador, 'nutricion'],
+  [/^nutricion\/compra$/, nutricionCompra, 'nutricion'],
+  [/^nutricion\/recetas\/nueva$/, nutricionRecetaForm, 'nutricion'],
+  [/^nutricion\/receta\/([\w-]+)\/editar$/, nutricionRecetaForm, 'nutricion'],
   [/^nutricion\/escaner$/, nutricionEscaner, 'nutricion'],
   [/^ejercicios$/, ejercicios, 'ejercicios'],
   [/^ejercicios\/nuevo$/, ejercicioNuevo, 'ejercicios'],
@@ -503,7 +653,9 @@ function render() {
     r = 'beta/fin';
   } else if (betaCaducada() && !soyDueno() && r !== 'beta/fin') {
     r = 'beta/fin';
-  } else if (!estado.plan && !/^usuario/.test(r)) {
+  } else if ((!estado.plan || !estado.perfil) && !/^usuario/.test(r)) {
+    // Un registro bajado de la nube puede tener plan pero no perfil: se
+    // ofrece el asistente en lugar de mostrar una página rota ni inventar datos.
     r = 'bienvenida';
   } else if (r === 'bienvenida') {
     r = 'hoy';
@@ -533,8 +685,12 @@ function render() {
   if ($('#grafica')) dibujarGrafica();
   if ($('#graficaFuerza')) dibujarGraficaFuerza();
   if ($('#graficaMedidas')) dibujarGraficaMedidas();
+  if ($('#graficaEvolucion')) dibujarGraficaEvolucion();
   if ($('#graficaPasos')) dibujarGraficaPasos();
   if ($('#nutriResultados')) actualizarNutricion();
+  if ($('#formObjetivos')) actualizarObjetivos();
+  if ($('#calcEnergia') || $('#calcNutricion') || $('#calcFuerza')) actualizarCalculadora();
+  if ($('#formTomaEscaneo')) actualizarVistaTomaEscaneo();
   if ($('#calcCarRes')) actualizarCalcCarrera();
   const chat = $('#coachChat');
   if (chat) chat.scrollTop = chat.scrollHeight;
@@ -545,6 +701,7 @@ function render() {
   aplicarAyudas();
   pantallaEncendida();
   consejoAyudas(tab);
+  actualizarIndicadorConexion();
 }
 
 // Insignia roja sobre «Ajustes»: junta lo que el dueño tiene pendiente de
@@ -566,6 +723,7 @@ function pagina({ titulo, padre = null, sub = '', extra = '', cuerpo }) {
   return `<header class="barra ${padre ? 'con-atras' : ''}">
       ${padre ? `<a class="atras" href="#${padre}" aria-label="Volver">‹</a>` : ''}
       <div class="barra-tit"><h1>${titulo}</h1>${sub ? `<p class="tenue">${sub}</p>` : ''}</div>
+      <span class="estado-conexion" id="estadoConexion" role="status" aria-live="polite">${textoIndicadorConexion()}</span>
       ${extra}
     </header>
     ${cuerpo}`;
@@ -603,14 +761,27 @@ const vacioMsg = (icono, titulo, texto, boton = '') => `<div class="vacio"><div 
 const subnav = (items, actual) => `<nav class="subnav">${items.map(([h, t]) => `<a href="#${h}" class="${h === actual ? 'on' : ''}">${t}</a>`).join('')}</nav>`;
 const SUBNAV_NUTRICION = [
   ['nutricion', 'Diario'], ['nutricion/informe', 'Informe'], ['nutricion/recetas', 'Recetas'], ['nutricion/menu', 'Menú semanal'],
+  ['nutricion/planificador', 'Planificador'], ['nutricion/compra', 'Lista de la compra'],
   ['nutricion/escaner', 'Escáner'], ['nutricion/hidratacion', 'Agua'],
-  ['nutricion/ia', 'Asistente'], ['nutricion/objetivos', 'Objetivos'],
+  ['nutricion/suplementos', '💊 Suplementos'],
+  ['nutricion/ia', '🤖 Coach IA'], ['nutricion/objetivos', 'Objetivos'], ['nutricion/adaptacion', 'Adaptación'],
+  ['seguimiento/calculadora/nutricion', '🧮 Calculadoras'],
 ];
 
 // =====================================================================
 // Nutrición: objetivos, consumo del día y agua
 // =====================================================================
-const ceroMacros = () => ({ kcal: 0, prot: 0, carbs: 0, grasa: 0, fibra: 0 });
+const ceroMacros = () => ({ kcal: 0, prot: 0, carbs: 0, grasa: 0, fibra: 0, azucares: 0, saturada: 0, sal: 0, sodio: 0 });
+// Copia solo los campos que la ficha declaró: los desconocidos no se inventan
+// como ceros al guardar la entrada en el diario.
+const CAMPOS_MACRO_OPCIONALES = ['fibra', 'azucares', 'saturada', 'sal', 'sodio'];
+function macros100De(origen = {}) {
+  const out = { kcal: origen.kcal, prot: origen.prot, carbs: origen.carbs, grasa: origen.grasa };
+  for (const k of CAMPOS_MACRO_OPCIONALES) {
+    if (k in origen && origen[k] != null) out[k] = origen[k];
+  }
+  return out;
+}
 
 // Referencias orientativas para adultos. Nunca son objetivos médicos y solo se
 // comparan con valores que la etiqueta declaró de verdad.
@@ -620,45 +791,27 @@ const MICROS_REF = [
   { k: 'vitD', nombre: 'Vitamina D', uni: 'µg', ref: 15, color: 'var(--amarillo)' },
   { k: 'vitC', nombre: 'Vitamina C', uni: 'mg', ref: 80, color: 'var(--acento)' },
   { k: 'potasio', nombre: 'Potasio', uni: 'mg', ref: 2000, color: 'var(--violeta)' },
+  { k: 'magnesio', nombre: 'Magnesio', uni: 'mg', ref: 375, color: 'var(--acento2)' },
+  { k: 'fosforo', nombre: 'Fósforo', uni: 'mg', ref: 700, color: 'var(--amarillo)' },
+  { k: 'zinc', nombre: 'Zinc', uni: 'mg', ref: 10, color: 'var(--naranja)' },
+  { k: 'vitA', nombre: 'Vitamina A', uni: 'µg', ref: 800, color: 'var(--acento)' },
+  { k: 'vitE', nombre: 'Vitamina E', uni: 'mg', ref: 12, color: 'var(--violeta)' },
+  { k: 'vitB1', nombre: 'Vitamina B1', uni: 'mg', ref: 1.1, color: 'var(--acento2)' },
+  { k: 'vitB2', nombre: 'Vitamina B2', uni: 'mg', ref: 1.2, color: 'var(--naranja)' },
+  { k: 'vitB6', nombre: 'Vitamina B6', uni: 'mg', ref: 1.4, color: 'var(--amarillo)' },
+  { k: 'vitB12', nombre: 'Vitamina B12', uni: 'µg', ref: 2.4, color: 'var(--acento)' },
+  { k: 'folato', nombre: 'Folato', uni: 'µg', ref: 400, color: 'var(--violeta)' },
 ];
 const ceroMicros = () => Object.fromEntries(MICROS_REF.map(m => [m.k, 0]));
-const hayMicros = m => Boolean(m && Object.keys(m).length);
+// escalarMicros, microsDeAlimento y microsEntrada viven ahora en alimentos.js
+// para que diario, informes y coach usen exactamente el mismo cálculo.
 
-function escalarMicros(micros = {}, factor = 1) {
-  const out = {};
-  for (const [k, v] of Object.entries(micros || {})) {
-    if (!CLAVES_MICROS.includes(k)) continue;
-    const x = Number(v);
-    if (Number.isFinite(x) && x >= 0) out[k] = x * factor;
-  }
-  return out;
-}
-
-function microsDeAlimento(alimento, gramos) {
-  return escalarMicros(alimento?.micros100, (Number(gramos) || 0) / 100);
-}
-
-function microsEntrada(en) {
-  if (!en) return {};
-  if (hayMicros(en.micros100)) {
-    return escalarMicros(en.micros100, (Number(en.gramos) || 0) / 100);
-  }
-  if (en.tipo === 'receta') {
-    const ings = Array.isArray(en.ingredientes) && en.ingredientes.length
-      ? en.ingredientes
-      : (RECETAS.find(x => x.id === en.id)?.ingredientes || []);
-    if (!ings.length) return {};
-    const partes = ings.map(i => microsDeAlimento(alimentoPorId(i.id), Number(i.gramos) || 0));
-    // Solo se muestra un mineral si todos los ingredientes lo declaran.
-    const completos = CLAVES_MICROS.filter(k => partes.every(p => k in p));
-    const r = Number(en.racion) || 1;
-    return Object.fromEntries(completos.map(k => [k, partes.reduce((s, p) => s + (p[k] || 0), 0) * r]));
-  }
-  return microsDeAlimento(alimentoPorId(en.id), Number(en.gramos) || 0);
-}
+const esAporteDesconocido = en => clasificarAporte(en) === 'desconocido';
+const esAporteParcial = en => clasificarAporte(en) === 'parcial';
+const conDatoNutricional = en => !esAporteDesconocido(en);
 
 function microsComida(entradas = []) {
-  const partes = entradas.map(microsEntrada);
+  const partes = (entradas || []).filter(conDatoNutricional).map(microsEntrada);
   const presentes = CLAVES_MICROS.filter(k => partes.some(p => k in p));
   return Object.fromEntries(presentes.map(k => [k, partes.reduce((s, p) => s + (p[k] || 0), 0)]));
 }
@@ -738,8 +891,10 @@ function calcularAdaptacion(n, { bmr, tdee, base, objetivo }) {
   return sinDatos('Necesito dos pesajes con 10 días de diferencia o cinco días de comidas registradas para ajustar. Mientras tanto usamos el cálculo base.');
 }
 
-// Gasto energético y reparto de macros a partir del perfil nutricional.
-function metasNutricion(n = estado.nutricion) {
+// Gasto energético y reparto AUTOMÁTICO a partir del perfil nutricional.
+// Es la base única: metasNutricion() añade encima lo que la persona haya
+// aceptado o fijado manualmente, sin duplicar el cálculo.
+function metasAutoNutricion(n = estado.nutricion) {
   const ult = ultimoPeso();
   const peso = Number(n?.peso) || Number(ult?.v) || 0;
   const cm = Number(n?.altura) || 0;
@@ -770,37 +925,225 @@ function metasNutricion(n = estado.nutricion) {
   return { peso, cm, edad, bmr, tdee, kcal, kcalBase: base, ajuste: kcal - base, modo, adaptativo, adapt, protMin, protMax, protG, grasaG, carbsG, fibraG, aguaMl, imc, act, obj };
 }
 
+// Pasa los objetivos guardados dentro de estado.nutricion al motor puro.
+// El kcalManual histórico sigue siendo válido para perfiles anteriores.
+function objetivosGuardados(n = estado.nutricion) {
+  const salida = {};
+  const o = n?.objetivos;
+  CAMPOS_META.forEach(campo => {
+    const origen = o?.origen?.[campo];
+    if ((origen === 'manual' || origen === 'aceptado') && o?.valores?.[campo] != null) {
+      salida[campo] = { valor: o.valores[campo], origen };
+    }
+  });
+  const manual = numero(n?.kcalManual, { min: 800, max: 6000 });
+  if (manual.ok && !salida.kcal) salida.kcal = { valor: manual.valor, origen: 'manual' };
+  return salida;
+}
+
+// Punto de integración: conserva la firma y el papel de metasNutricion().
+// Toda la app sigue leyendo aquí los objetivos activos.
+function metasNutricion(n = estado.nutricion) {
+  const auto = metasAutoNutricion(n);
+  if (!auto) return null;
+  const aplicadas = aplicarObjetivosNutricion({
+    auto: {
+      kcal: auto.kcal, protG: auto.protG, grasaG: auto.grasaG,
+      carbsG: auto.carbsG, fibraG: auto.fibraG, aguaMl: auto.aguaMl,
+    },
+    overrides: objetivosGuardados(n),
+    grasaPct: n?.objetivos?.grasaPct ?? 25,
+  });
+  if (!aplicadas.ok) return null;
+  return {
+    ...auto,
+    kcal: aplicadas.valores.kcal,
+    protG: aplicadas.valores.protG,
+    grasaG: aplicadas.valores.grasaG,
+    carbsG: aplicadas.valores.carbsG,
+    fibraG: aplicadas.valores.fibraG,
+    aguaMl: aplicadas.valores.aguaMl,
+    ajuste: aplicadas.valores.kcal - auto.kcalBase,
+    modo: aplicadas.origen.kcal === 'manual' ? 'manual' : auto.modo,
+    objetivos: aplicadas,
+    auto: {
+      kcal: auto.kcal, protG: auto.protG, grasaG: auto.grasaG,
+      carbsG: auto.carbsG, fibraG: auto.fibraG, aguaMl: auto.aguaMl,
+    },
+  };
+}
+
+// ---------------------------------------------------------------------
+// FASE 9 · PARTE 4 — adaptación inteligente sobre los datos que ya tiene
+// la app. Solo lee; las decisiones se escriben en estado.nutricion.adaptacion.
+// ---------------------------------------------------------------------
+function adaptacionEstado() {
+  return normalizarAdaptacion(estado.nutricion?.adaptacion);
+}
+function guardarAdaptacion(ad) {
+  estado.nutricion = estado.nutricion || { ...NUTRICION_DEF };
+  estado.nutricion.adaptacion = normalizarAdaptacion(ad);
+  guardar();
+}
+function resumenEvolucionAdaptacion() {
+  return resumenEvolucion(medidasDe(), {
+    hoy: hoy(), campos: Object.keys(MEDIDAS_CAMPOS), semanas: 4,
+  });
+}
+
+// Contexto real: días con registros, nunca días ausentes contados como cero.
+function contextoAdaptacion(resumen) {
+  const hoyIsoDia = hoy();
+  const corteComidas = sumarDias(hoyIsoDia, -14);
+  const ingestas = Object.keys(estado.comidas || {})
+    .filter(f => f >= corteComidas && f <= hoyIsoDia)
+    .map(f => ({ fecha: f, ...macrosDia(f) }))
+    .filter(d => Number(d.kcal) > 0);
+  const corteActividad = sumarDias(hoyIsoDia, -28);
+  const actividad = (estado.actividad || [])
+    .filter(a => a && a.fecha >= corteActividad && a.fecha <= hoyIsoDia && a.pasos != null);
+  const historial = (estado.historial || []).filter(h => String(h?.fecha || '').slice(0, 10) >= corteActividad);
+  const citas = (estado.plan?.agenda || []).filter(c => c?.fecha >= corteActividad && c.fecha <= hoyIsoDia);
+  const marcas = [
+    estado.plan?.creado ? String(estado.plan.creado).slice(0, 10) : null,
+    estado.nutricion?.objetivos?.aceptadoEn || null,
+  ].filter(Boolean).sort();
+  const puntos = resumen?.peso?.puntos || [];
+  const comp = resumen?.comparaciones?.peso;
+  const tend = resumen?.peso?.tendencia;
+  // Comparación de periodos en sentido opuesto a la tendencia = señal dudosa.
+  const registrosContradictorios = comp?.suficiente && comp.deltaMedia != null
+    && tend?.disponible && Math.abs(comp.deltaMedia) >= 0.2
+    && Math.sign(comp.deltaMedia) !== Math.sign(tend.porSemana || 0) ? 1 : 0;
+  return {
+    hoy: hoyIsoDia,
+    ingestas,
+    actividad,
+    sesionesReales: historial.length,
+    sesionesProgramadas: citas.length,
+    perfilCambioEn: marcas.pop() || null,
+    anomalias: (medidasDe() || []).filter(m => Array.isArray(m?.anomalias) && m.anomalias.length).length,
+    huecos: conHuecos(puntos, { periodo: 'todo', maxDias: 10 }).filter(p => p.hueco).length,
+    registrosContradictorios,
+  };
+}
+
+function generarAnalisisAdaptacion() {
+  const resumen = resumenEvolucionAdaptacion();
+  const contextoReal = contextoAdaptacion(resumen);
+  return {
+    resumen,
+    contexto: contextoReal,
+    analisis: analizarEvolucion(resumen, contextoReal),
+  };
+}
+
+function generarPropuestaAdaptacion() {
+  const n = estado.nutricion || {};
+  const m = metasNutricion(n);
+  if (!m) {
+    return { ok: false, motivo: 'Faltan peso, altura o edad en el perfil. Sin esos datos no se calcula ninguna propuesta.' };
+  }
+  const manual = CAMPOS_META.some(c => (m.objetivos?.origen?.[c] === 'manual')
+    || (c === 'kcal' && Number(n.kcalManual) > 0 && !m.objetivos?.origen?.kcal));
+  if (manual) {
+    return { ok: false, motivo: 'Tienes objetivos fijados a mano. DanTal no los sobrescribe: edítalos tú si quieres cambiarlos.' };
+  }
+  const { resumen, analisis } = generarAnalisisAdaptacion();
+  const ad = adaptacionEstado();
+  ad.ultimoAnalisis = { ...analisis, generado: hoy() };
+  if (!analisis.suficiente) {
+    guardarAdaptacion(ad);
+    return { ok: false, motivo: 'No hay datos suficientes y fiables para proponer un cambio. No se genera ninguna propuesta ficticia.', analisis };
+  }
+  const ajuste = calcularAdaptacion(n, {
+    bmr: m.bmr, tdee: m.tdee, base: m.kcalBase, objetivo: n.objetivo,
+  });
+  const grasaPct = n.objetivos?.grasaPct ?? 25;
+  const propuestaAuto = propuestaNutricionInicial({
+    sexo: n.sexo, edad: m.edad, altura: m.cm, peso: m.peso,
+    factorActividad: m.act.factor, objetivoFactor: m.obj.factor,
+    kcalManual: null, kcalObjetivo: ajuste.kcal,
+    protG: m.protG, grasaPct,
+  });
+  const actual = m.objetivos?.valores
+    ? { valores: m.objetivos.valores, origen: m.objetivos.origen || {} }
+    : {
+      valores: {
+        kcal: m.kcal, protG: m.protG, grasaG: m.grasaG,
+        carbsG: m.carbsG, fibraG: m.fibraG, aguaMl: m.aguaMl,
+      },
+      origen: {},
+    };
+  const propuesta = crearPropuesta({
+    analisis, actual, ajuste, propuestaAuto, grasaPct, hoy: hoy(),
+  });
+  if (!propuesta) {
+    guardarAdaptacion(ad);
+    return {
+      ok: false,
+      motivo: ajuste.suficiente
+        ? 'El ajuste calculado no supone un cambio real de objetivos. No se crea una propuesta vacía.'
+        : ajuste.motivo,
+      analisis,
+    };
+  }
+  const duplicada = ad.historial.find(p => p?.huella === propuesta.huella);
+  if (duplicada) {
+    guardarAdaptacion(ad);
+    return { ok: false, motivo: 'Ya existe una propuesta igual para este periodo y estos datos. No se duplica.', propuesta: duplicada, analisis };
+  }
+  ad.historial.push(propuesta);
+  guardarAdaptacion(ad);
+  return { ok: true, propuesta, analisis, resumen };
+}
+
+function decidirAdaptacion(id, decision) {
+  if (!DECISIONES.includes(decision)) return;
+  const ad = adaptacionEstado();
+  const p = ad.historial.find(x => x?.id === id);
+  if (!p) { toast('No se ha encontrado esa propuesta.'); return; }
+  if (p.decision && p.decision !== 'pospuesta') {
+    toast('Esa propuesta ya tiene una decisión definitiva.');
+    return;
+  }
+  const dia = hoy();
+  const extra = {
+    motivo: p.motivo,
+    objetivosAnteriores: p.objetivosAnteriores || {},
+    objetivosPropuestos: p.objetivosRecomendados || {},
+    periodo: p.periodo,
+    situacion: p.situacion,
+  };
+  const r = decidir(ad.historial, id, decision, dia, extra);
+  if (!r.actualizada) { toast('La decisión ya estaba registrada.'); return; }
+  ad.historial = r.historial;
+  if (decision === 'aceptada') {
+    const origen = {};
+    CAMPOS_META.forEach(c => { origen[c] = 'aceptado'; });
+    estado.nutricion = estado.nutricion || { ...NUTRICION_DEF };
+    estado.nutricion.objetivos = {
+      valores: { ...p.valores }, origen,
+      grasaPct: p.grasaPct ?? 25, aceptadoEn: dia,
+    };
+    // La decisión aceptada NO es manual: el motor de la PARTE 2 puede
+    // recalcularla cuando cambie el perfil, como cualquier otro 'aceptado'.
+    estado.nutricion.kcalManual = null;
+  }
+  guardarAdaptacion(ad);
+  render();
+  toast(decision === 'aceptada' ? 'Propuesta aceptada: objetivos actualizados.'
+    : decision === 'rechazada' ? 'Propuesta rechazada. Tus objetivos no han cambiado.'
+      : 'Propuesta pospuesta. Puedes decidirla más tarde desde el historial.');
+}
+
 const diaNutri = () => ui.diaNutri || hoy();
 const comidasDia = (fecha = diaNutri()) => (estado.comidas || {})[fecha] || {};
 const vasosDia = (fecha = diaNutri()) => Number((estado.agua || {})[fecha]) || 0;
 
-function macrosEntrada(en) {
-  if (!en) return ceroMacros();
-  // Alimentos leídos por código de barras: guardamos los macros por 100 g.
-  if (en.macros100) {
-    const k = (Number(en.gramos) || 0) / 100;
-    const m = en.macros100;
-    return {
-      kcal: (m.kcal || 0) * k, prot: (m.prot || 0) * k, carbs: (m.carbs || 0) * k,
-      grasa: (m.grasa || 0) * k, fibra: (m.fibra || 0) * k,
-    };
-  }
-  if (en.tipo === 'receta') {
-    // Receta ajustada desde el menú: se guardan sus ingredientes reales.
-    if (Array.isArray(en.ingredientes) && en.ingredientes.length) {
-      const t = sumarMacros(en.ingredientes.map(i => macrosDe(alimentoPorId(i.id), Number(i.gramos) || 0)));
-      const k = Number(en.racion) || 1;
-      return { kcal: t.kcal * k, prot: t.prot * k, carbs: t.carbs * k, grasa: t.grasa * k, fibra: (t.fibra || 0) * k };
-    }
-    const r = RECETAS.find(x => x.id === en.id);
-    if (!r) return ceroMacros();
-    const k = Number(en.racion) || 1;
-    const t = resumenReceta(r).total;
-    return { kcal: t.kcal * k, prot: t.prot * k, carbs: t.carbs * k, grasa: t.grasa * k, fibra: t.fibra * k };
-  }
-  return macrosDe(alimentoPorId(en.id), Number(en.gramos) || 0);
-}
-const macrosComida = entradas => sumarMacros((entradas || []).map(macrosEntrada));
+// macrosEntrada() se importa de alimentos.js: una sola implementación para
+// el diario, el informe semanal y el coach.
+const macrosComida = entradas => sumarMacros((entradas || []).filter(conDatoNutricional).map(macrosEntrada));
 function macrosDia(fecha = diaNutri()) {
   const dia = comidasDia(fecha);
   return sumarMacros(Object.keys(COMIDAS).map(c => macrosComida(dia[c])));
@@ -1032,6 +1375,7 @@ function barraCiclo(sem) {
 
 function programa() {
   const p = estado.perfil;
+  if (!p) return bienvenida();
   const sem = semanaDe();
   const f = fase(sem);
   const visibles = estado.plan.sesiones.filter(s => !s.oculta).length;
@@ -1267,10 +1611,36 @@ function sesionCiencia() {
 
 // Contexto del coach a partir del estado actual (y de la sesión en curso, si la hay).
 function coachContexto(extras = {}) {
-  return construirContextoCoach(estado, metasNutricion() || {}, {
+  const ctx = construirContextoCoach(estado, metasNutricion() || {}, {
     semana: extras.semana || estado.enCurso?.fase?.semana || semanaDe(),
+    // Las recetas propias también están disponibles para el coach.
+    recetas: todasRecetas(),
     ...extras,
   });
+  // El detalle nutricional viaja con el mismo contexto del motor de siempre:
+  // ni segundo chatbot ni prompt paralelo. Separa dato real de estimación.
+  ctx.nutricionDetalle = extras.nutricionDetalle || contextoNutricionalCoach();
+  // FASE 9 · PARTE 4: el resumen de adaptación entra en el MISMO contexto del
+  // coach; no es otro chatbot ni otro prompt. Solo se incluye si hay datos.
+  const ad = adaptacionEstado();
+  const resumenAdaptacion = contextoParaCoach({
+    analisis: ad.ultimoAnalisis, propuestas: ad.historial, metas: metasNutricion(),
+  });
+  if (resumenAdaptacion) ctx.adaptacion = resumenAdaptacion;
+  // FASE 7: contexto integral calculado SOLO cuando alguien lo pide (enviar
+  // una pregunta o abrir la vista del coach). panelCoach() no lo toca, para
+  // no añadir trabajo en cada repetición de una sesión en curso.
+  let integral = extras.integral || null;
+  Object.defineProperty(ctx, 'integral', {
+    configurable: true,
+    get() {
+      if (!integral) integral = contextoIntegralCoach(estado, {
+        hoy: hoy(), metas: metasNutricion(), macroDe: macrosEntrada, microDe: microsEntrada, vasoMl: VASO_ML,
+      });
+      return integral;
+    },
+  });
+  return ctx;
 }
 
 // Qué motor de conversación está disponible ahora mismo:
@@ -1396,6 +1766,19 @@ function coachAplicar(d) {
       toast('Bloque final quitado de esta sesión');
       return;
     }
+    case 'planificadorAnadir': {
+      const r = recetaPorId(accion.recetaId);
+      const e = r ? crearEntradaReceta(r, { racion: Number(accion.racion) || 1 }) : null;
+      if (e) {
+        const fecha = /^\d{4}-\d{2}-\d{2}$/.test(accion.fecha) ? accion.fecha : diaNutri();
+        const comida = COMIDAS[accion.comida] ? accion.comida : 'cena';
+        estado.planComidas = anadirEntradaPlan(estado.planComidas, fecha, comida, e);
+        ui.planFecha = fecha;
+        descartar(); guardar(); render();
+        toast(`Añadido al plan del ${fmtCorta(fecha)}`);
+      } else { descartar(); render(); }
+      return;
+    }
     case 'perfil': ir('ajustes/perfil'); return;
     case 'nutricion': ir('nutricion/objetivos'); return;
     default: descartar(); render(); return;
@@ -1431,36 +1814,96 @@ function mensajeBienvenidaCoach(ctx) {
 async function coachEnviar(texto) {
   const q = String(texto || '').trim();
   if (!q || ui.coachPensando) return;
+  // El borrador se conserva hasta que haya una respuesta real (o del motor
+  // local). Nunca se limpia al enviar: si la IA falla, el usuario no pierde
+  // lo que escribió y puede volver a intentarlo al recuperar la conexión.
+  guardarBorradorCoach(q);
   ui.coachChat.push({ rol: 'usuario', texto: q });
   const ctx = coachContexto();
   const local = () => {
     const r = responder(q, ctx);
     return { rol: 'coach', texto: `${r.titulo}. ${soloTexto(r.html)}`, html: `<b class="chat-titulo">${esc(r.titulo)}</b>${r.html}`, local: true };
   };
-  if (motorCoach().tipo === 'local') {
-    ui.coachChat.push(local());
+  const terminar = añadir => {
+    ui.coachChat.push(...añadir);
     estado.coachChat = ui.coachChat.slice(-60);
     guardar();
+    ui.coachPensando = false;
     render();
+  };
+  if (motorCoach().tipo === 'local') {
+    guardarBorradorCoach('');
+    terminar([local()]);
+    return;
+  }
+  // Sin red no se finge una respuesta del servicio: se dice claro y se
+  // entrega solo la respuesta del motor local, que sí funciona offline.
+  if (navigator.onLine === false) {
+    terminar([
+      { rol: 'coach', error: true, texto: 'Sin conexión: la IA necesita Internet para generar una respuesta nueva. Tu texto se conserva y puedes reintentarlo al recuperar la red. Te respondo con el motor local.' },
+      local(),
+    ]);
     return;
   }
   const mensajes = ui.coachChat.filter(m => m.texto).map(m => ({ rol: m.rol, texto: m.texto }));
   ui.coachPensando = true;
   render();
   const res = await chatear({ mensajes, contexto: resumenParaIA(ctx) });
-  ui.coachPensando = false;
-  if (res.ok) ui.coachChat.push({ rol: 'coach', texto: res.texto, fuente: res.fuente });
-  else { ui.coachChat.push({ rol: 'coach', error: true, texto: `${res.error} Te respondo con el motor local.` }); ui.coachChat.push(local()); }
-  estado.coachChat = ui.coachChat.slice(-60);
-  guardar();
-  render();
+  if (res.ok) {
+    guardarBorradorCoach('');
+    terminar([{ rol: 'coach', texto: res.texto, fuente: res.fuente }]);
+    return;
+  }
+  // Fallo del servicio (429 de límite, clave inválida, 502…): se muestra el
+  // error tal cual y se etiqueta la respuesta local como local.
+  terminar([
+    { rol: 'coach', error: true, texto: `${res.error} No se ha generado una respuesta IA. Tu texto se conserva; te respondo con el motor local.` },
+    local(),
+  ]);
+}
+
+// Preguntas que usan el contexto integral sin crear otra conversación.
+const PREGUNTAS_INTEGRALES = [
+  '¿Cómo va mi nutrición respecto a mis entrenamientos?',
+  '¿Estoy cumpliendo mis objetivos nutricionales?',
+  'Resúmeme el consumo de suplementos del último mes',
+  '¿Qué componentes tiene el suplemento que registré?',
+  '¿Qué relación hay entre mi frecuencia de entrenamiento y mi evolución?',
+  '¿Qué datos faltan para analizarme mejor?',
+];
+
+function chipsCoachDisponibles(preguntas) {
+  return preguntas.filter(q => !ui.coachChat.some(m => m.rol === 'usuario' && m.texto === q));
+}
+
+function periodoCoachHTML(integral) {
+  const p = integral?.periodo || {};
+  const n = integral?.nutricion || {};
+  const t = integral?.entrenamiento || {};
+  const c = integral?.carrera || {};
+  return `<div class="coach-datos-periodo" role="status">
+    <b>Periodo de datos:</b> ${esc(p.etiqueta || 'sin datos')} · ${n.diasRegistrados || 0} días con comidas · ${t.sesiones || 0} ${t.sesiones === 1 ? 'sesión' : 'sesiones'} · ${c.resumen?.veces || 0} ${c.resumen?.veces === 1 ? 'carrera' : 'carreras'}.
+    <span class="tenue">El coach recibe resúmenes agregados, no todo el historial.</span>
+  </div>`;
+}
+
+function faltantesCoachHTML(integral) {
+  const falt = Array.isArray(integral?.faltantes) ? integral.faltantes : [];
+  if (!falt.length) return '';
+  return `<p class="coach-faltantes">⚠ <b>Datos que faltan:</b> ${esc(falt.join('; '))}. Sin ellos no saco conclusiones.</p>`;
+}
+
+function avisoCoachOffline(motor) {
+  if (motor.tipo === 'local' || navigator.onLine !== false) return '';
+  return `<p class="aviso-coach-offline" role="status">⚠ Sin conexión: la IA no puede generar una respuesta nueva. Puedes consultar el historial y seguir escribiendo; tu texto se conserva al recuperar la red.</p>`;
 }
 
 function coach() {
   const ctx = coachContexto();
+  const integral = ctx.integral;
   const motor = motorCoach();
   const semana = sugerenciasSemana(ctx).filter(x => !ui.coachIgnorados.includes(x.id));
-  const chips = preguntasSugeridas(ctx).filter(q => !ui.coachChat.some(m => m.rol === 'usuario' && m.texto === q));
+  const chips = chipsCoachDisponibles([...preguntasSugeridas(ctx), ...PREGUNTAS_INTEGRALES]).slice(0, 8);
   const sub = motor.tipo === 'clave' ? `IA real conectada · ${esc(motor.nombre)}`
     : motor.tipo === 'servidor' ? 'IA de DanTal incluida · servidor seguro'
       : 'Tu entrenador, siempre disponible';
@@ -1475,12 +1918,15 @@ function coach() {
     sub,
     extra: `<button class="icono" data-a="ir" data-v="ajustes/coach" title="Configurar el coach" aria-label="Configurar el coach">⚙️</button>`,
     cuerpo: `
+      ${avisoCoachOffline(motor)}
+      ${periodoCoachHTML(integral)}
+      ${faltantesCoachHTML(integral)}
       <div class="coach-chat" id="coachChat">
         ${ui.coachChat.length ? ui.coachChat.map(burbujaChat).join('') : mensajeBienvenidaCoach(ctx)}
         ${ui.coachPensando ? '<div class="chat-b coach pensando"><span></span><span></span><span></span></div>' : ''}
       </div>
       <form id="formCoach" class="coach-entrada">
-        <input type="text" name="q" placeholder="Pregúntame el cuánto y el porqué…" autocomplete="off" enterkeyhint="send" aria-label="Escribe tu pregunta">
+        <input type="text" name="q" value="${esc(ui.coachBorrador || '')}" placeholder="Pregúntame el cuánto y el porqué…" autocomplete="off" enterkeyhint="send" aria-label="Escribe tu pregunta">
         <button class="btn" type="submit" aria-label="Enviar">➤</button>
       </form>
       ${chips.length ? `<div class="chips coach-chips">${chips.map(q => `<button class="chip" data-a="coachPreg" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>` : ''}
@@ -1786,6 +2232,7 @@ function seguimiento() {
       ${grupo('Cuerpo y nutrición',
         celda('seguimiento/pasos', '👟', 'Actividad diaria', 'Pasos, distancia y calorías del día', 'azul', (estado.actividad || []).length || '') +
         celda('seguimiento/medidas', '⚖️', 'Peso y medidas', 'Peso, grasa y perímetros en el tiempo', 'verde', (estado.medidas || []).length || '') +
+        celda('seguimiento/evolucion', '📈', 'Evolución corporal', 'Tendencias, medias y comparación de periodos', 'violeta') +
         celda('seguimiento/nutricion', '🍎', 'Calorías y proteína', 'Gasto diario, macros, fibra y agua', 'naranja'))}
       ${grupo('Motivación e informes',
         celda('seguimiento/logros', '🏅', 'Logros y retos', 'Insignias y reto mensual', 'amarillo') +
@@ -1794,7 +2241,7 @@ function seguimiento() {
         celda('seguimiento/objetivo', '🎯', 'Meta corporal', 'Peso o grasa objetivo con fecha', 'naranja'))}
       ${grupo('Registro',
         celda('seguimiento/historial', '🗂️', 'Historial de sesiones', 'Todas tus sesiones con detalle', 'azul', hist.length || '') +
-        celda('seguimiento/calculadora', '🧮', 'Calculadora de 1RM', 'Estima tu máximo y tus porcentajes', 'naranja'))}
+        celda('seguimiento/calculadora', '🧮', 'Calculadoras', 'Energía, macros y fuerza con fórmulas', 'naranja'))}
     `,
   });
 }
@@ -1909,15 +2356,28 @@ function segEquilibrio() {
 // =====================================================================
 // Páginas: Peso, medidas y nutrición
 // =====================================================================
+// FASE 9 · PARTE 3 — se amplía el catálogo existente, no se crea otro modelo.
+// Los campos siguen viviendo dentro de cada fecha de estado.medidas.
 const MEDIDAS_CAMPOS = {
   peso: { nombre: 'Peso', unidad: 'kg', paso: 0.1, min: 20, max: 400 },
   grasa: { nombre: 'Grasa corporal', unidad: '%', paso: 0.1, min: 1, max: 75 },
+  masaMuscular: { nombre: 'Masa muscular', unidad: 'kg', paso: 0.1, min: 10, max: 200 },
+  masaGrasa: { nombre: 'Masa grasa', unidad: 'kg', paso: 0.1, min: 1, max: 200 },
   cintura: { nombre: 'Cintura', unidad: 'cm', paso: 0.5, min: 30, max: 250 },
   pecho: { nombre: 'Pecho', unidad: 'cm', paso: 0.5, min: 30, max: 250 },
   cadera: { nombre: 'Cadera', unidad: 'cm', paso: 0.5, min: 30, max: 250 },
   brazo: { nombre: 'Brazo', unidad: 'cm', paso: 0.5, min: 10, max: 100 },
   muslo: { nombre: 'Muslo', unidad: 'cm', paso: 0.5, min: 20, max: 150 },
+  hombro: { nombre: 'Hombro', unidad: 'cm', paso: 0.5, min: 25, max: 160 },
+  gemelo: { nombre: 'Gemelo', unidad: 'cm', paso: 0.5, min: 15, max: 80 },
+  muñeca: { nombre: 'Muñeca', unidad: 'cm', paso: 0.5, min: 8, max: 40 },
 };
+// Estos tres campos pueden venir de una báscula o de una estimación: siempre
+// se guarda su origen dentro del registro (medido | estimado | desconocido).
+const COMPOSICION_CAMPOS = ['grasa', 'masaMuscular', 'masaGrasa'];
+const SUBNAV_CUERPO = [
+  ['seguimiento/medidas', 'Registro'], ['seguimiento/evolucion', 'Evolución'],
+];
 
 const medidasDe = () => (estado.medidas || []).slice().sort((a, b) => a.fecha.localeCompare(b.fecha));
 
@@ -1957,12 +2417,28 @@ function notaPesoHTML(n, ult) {
   return `Usando tu último registro (${fmtCorta(ult.fecha)}).`;
 }
 
+// Registro rápido: solo peso. No toca las demás medidas del mismo día.
+function formPesoRapidoHTML() {
+  return `<form id="formPeso" class="tarjeta" novalidate>
+    <div class="fila"><h2>⚖️ Peso rápido</h2><span class="tenue">Sin rellenar más campos</span></div>
+    <p class="tenue">Si ya hay un registro ese día, se conservan las medidas y la nota anteriores.</p>
+    <div class="peso-rapido">
+      <label class="campo">Peso (kg)<input type="number" name="peso" inputmode="decimal" step="0.1" min="20" max="400" placeholder="—" required></label>
+      <label class="campo">Fecha<input type="date" name="fecha" value="${hoy()}" max="${hoy()}" required></label>
+      <label class="campo">Hora (opcional)<input type="time" name="hora"></label>
+      <label class="campo">Nota (opcional)<input type="text" name="nota" maxlength="90" placeholder="En ayunas…"></label>
+      <button class="btn" type="submit">Guardar peso</button>
+    </div>
+  </form>`;
+}
+
 function segMedidas() {
-  let edit = ui.medidaEdit ? (estado.medidas || []).find(m => m.fecha === ui.medidaEdit) : null;
+  const edit = ui.medidaEdit ? (estado.medidas || []).find(m => m.fecha === ui.medidaEdit) : null;
   if (ui.medidaEdit && !edit) ui.medidaEdit = null;
   const lista = medidasDe().slice().reverse();
   const fechaForm = edit?.fecha || hoy();
   const valorForm = c => edit && edit[c] != null ? edit[c] : '';
+  const origenForm = c => edit?.origen?.[c] === 'estimado' ? 'estimado' : 'medido';
   const ultPeso = ultimoPeso();
   const ultGrasa = ultimaMedida('grasa');
   const ultCintura = ultimaMedida('cintura');
@@ -1971,6 +2447,7 @@ function segMedidas() {
   return pagina({
     titulo: 'Peso y medidas', padre: 'seguimiento', sub: 'Tu evolución corporal, sin servidores ni cuentas',
     cuerpo: `
+      ${subnav(SUBNAV_CUERPO, 'seguimiento/medidas')}
       <div class="tiles cuatro">
         ${tile('⚖️', ultPeso ? fmtDec(ultPeso.v) : '—', 'kg · peso actual', 'verde')}
         ${tile('📉', ultGrasa ? `${fmtDec(ultGrasa.v)} %` : '—', 'grasa corporal', 'violeta')}
@@ -1982,6 +2459,7 @@ function segMedidas() {
         ${cambioPeso != null && cambio30 != null ? ' · ' : ''}
         ${cambio30 != null ? `<b>${fmtDeltaMedida(cambio30, 'peso')}</b> en los últimos 30 días` : ''}
       </p>` : ''}
+      ${formPesoRapidoHTML()}
       <div class="tarjeta">
         <div class="fila chart-cab">
           <h2>📈 Evolución</h2>
@@ -2003,11 +2481,18 @@ function segMedidas() {
           <h2>${edit ? '✏️ Editar medición' : '➕ Nueva medición'}</h2>
           ${edit ? '<button type="button" class="enlace" data-a="cancelarMedida">Cancelar</button>' : ''}
         </div>
-        <p class="tenue">${edit ? `Editando el ${fmtCorta(edit.fecha)}.` : 'Rellena solo lo que hayas medido; los campos vacíos se ignoran.'}</p>
-        <label class="campo">Fecha<input type="date" name="fecha" value="${fechaForm}" max="${hoy()}" ${edit ? 'disabled' : ''} required></label>
+        <p class="tenue">${edit ? `Editando el ${fmtCorta(edit.fecha)}.` : 'Rellena solo lo que hayas medido; los campos vacíos quedan como «sin dato», nunca como cero.'}</p>
+        <div class="medida-grid">
+          <label class="campo">Fecha<input type="date" name="fecha" value="${fechaForm}" max="${hoy()}" ${edit ? 'disabled' : ''} required></label>
+          <label class="campo">Hora (opcional)<input type="time" name="hora" value="${esc(edit?.hora || '')}"></label>
+        </div>
         <div class="medida-grid">
           ${Object.entries(MEDIDAS_CAMPOS).map(([k, c]) => `<label class="campo"><span>${c.nombre} <small class="tenue">(${c.unidad})</small></span>
-            <input type="number" name="${k}" inputmode="decimal" step="${c.paso}" min="${c.min}" max="${c.max}" value="${valorForm(k)}" placeholder="—"></label>`).join('')}
+            <input type="number" name="${k}" inputmode="decimal" step="${c.paso}" min="${c.min}" max="${c.max}" value="${valorForm(k)}" placeholder="—">
+            ${COMPOSICION_CAMPOS.includes(k) ? `<select class="origen-select" name="origen_${k}" aria-label="Origen de ${c.nombre}">
+              <option value="medido" ${origenForm(k) === 'medido' ? 'selected' : ''}>Medido</option>
+              <option value="estimado" ${origenForm(k) === 'estimado' ? 'selected' : ''}>Estimado</option>
+            </select>` : ''}</label>`).join('')}
         </div>
         <label class="campo">Nota (opcional)<input type="text" name="nota" maxlength="90" value="${esc(edit?.nota || '')}" placeholder="En ayunas, después de entrenar…"></label>
         <button class="btn" type="submit">${edit ? 'Guardar cambios' : 'Guardar medición'}</button>
@@ -2015,14 +2500,18 @@ function segMedidas() {
       ${lista.length ? `<div class="tarjeta">
         <div class="fila"><h2>🗂️ Historial</h2><span class="tenue">${lista.length} ${lista.length === 1 ? 'registro' : 'registros'}</span></div>
         ${lista.map(m => `<div class="medida-item">
-          <div class="fila"><b>${fmtCorta(m.fecha)}</b><div class="acciones">
+          <div class="fila"><b>${fmtCorta(m.fecha)}${m.hora ? ` · ${esc(m.hora)}` : ''}</b><div class="acciones">
             <button class="icono peq" data-a="editarMedida" data-f="${m.fecha}" title="Editar esta medición">✎</button>
             <button class="icono peq" data-a="borrarMedida" data-f="${m.fecha}" title="Borrar esta medición">🗑️</button>
           </div></div>
-          <div class="series-chips">${Object.entries(MEDIDAS_CAMPOS).filter(([k]) => m[k] != null && m[k] !== '').map(([k, c]) => `<span><small>${c.nombre}</small>${fmtDec(m[k])} ${c.unidad}</span>`).join('')}</div>
+          <div class="series-chips">${Object.entries(MEDIDAS_CAMPOS).filter(([k]) => m[k] != null && m[k] !== '').map(([k, c]) => `<span><small>${c.nombre}</small>${fmtDec(m[k])} ${c.unidad}${m.origen?.[k] === 'estimado' ? '<i class="medida-chip estimado">estimado</i>' : ''}</span>`).join('')}</div>
+          ${Array.isArray(m.anomalias) && m.anomalias.length ? `<p class="tenue nota-medida"><span class="medida-chip alerta">⚠ Revisar</span> ${esc(m.anomalias.map(k => MEDIDAS_CAMPOS[k]?.nombre || k).join(', '))}. Puedes editar este registro para corregirlo.</p>` : ''}
           ${m.nota ? `<p class="tenue nota-medida">${esc(m.nota)}</p>` : ''}
         </div>`).join('')}
       </div>` : ''}
+      <a class="tarjeta enlace-tarjeta" href="#seguimiento/evolucion">
+        <div class="fila"><div><h2>📊 Evolución corporal</h2><p class="tenue">Tendencias, medias semanales y comparación de periodos.</p></div><span class="chev">›</span></div>
+      </a>
       <a class="tarjeta enlace-tarjeta" href="#seguimiento/nutricion">
         <div class="fila"><div><h2>🍎 Calorías y proteína</h2><p class="tenue">Calcula tu gasto diario y los macros con tu peso actual.</p></div><span class="chev">›</span></div>
       </a>
@@ -2030,6 +2519,91 @@ function segMedidas() {
         <div class="fila"><div><h2>📥 Importar datos de salud</h2><p class="tenue">Trae tu peso y medidas desde otra app (CSV o JSON).</p></div><span class="chev">›</span></div>
       </a>
       <p class="tenue">Consejo: mide siempre en las mismas condiciones (por la mañana, en ayunas y con la misma cinta) para que la tendencia sea fiable.</p>
+    `,
+  });
+}
+
+// Vista de evolución: misma persistencia y mismos cálculos que el registro,
+// presentados para consultar tendencias sin mezclarlos con datos medidos.
+function segEvolucion() {
+  const campo = MEDIDAS_CAMPOS[ui.metricaMedida] ? ui.metricaMedida : 'peso';
+  const meta = MEDIDAS_CAMPOS[campo];
+  const puntos = puntosPorPeriodo(valoresMedida(campo), ui.periodoMedida);
+  const resumen = resumenEvolucion(medidasDe(), { hoy: hoy(), campos: Object.keys(MEDIDAS_CAMPOS), semanas: 4 });
+  const semanales = resumen.peso.mediasSemanales.filter(m => m.n >= 2).slice(-6).reverse();
+  const mensuales = resumen.peso.mediasMensuales.filter(m => m.n >= 2).slice(-6).reverse();
+  const tend = resumen.peso.tendencia;
+  const compPeso = resumen.comparaciones.peso || {};
+  const filasComp = Object.entries(resumen.comparaciones)
+    .filter(([k, c]) => MEDIDAS_CAMPOS[k] && c.suficiente && c.actual.media != null && c.anterior.media != null)
+    .map(([k, c]) => ({ nombre: MEDIDAS_CAMPOS[k].nombre, actual: c.actual.media, anterior: c.anterior.media, uni: MEDIDAS_CAMPOS[k].unidad }));
+  const tendTexto = tend.disponible
+    ? `${tend.porSemana > 0 ? '+' : tend.porSemana < 0 ? '−' : ''}${fmtDec(Math.abs(tend.porSemana))} kg/semana`
+    : '—';
+  const tablaPuntos = puntos.slice().reverse().slice(0, 12).map(p => `<tr>
+      <td>${fmtCorta(p.fecha)}</td><td>${fmtDec(p.v)} ${meta.unidad}</td>
+      <td>${p.n > 1 ? `${p.n} registros` : p.origen === 'estimado' ? 'estimado' : 'medido'}</td>
+    </tr>`).join('');
+  const mediaHTML = (titulo, filas) => filas.length
+    ? `<table class="evo-tabla"><thead><tr><th>Periodo</th><th>Media (${meta.unidad})</th><th>Registros</th></tr></thead>
+        <tbody>${filas.map(m => `<tr><td>${fmtCorta(m.fecha)}</td><td>${fmtDec(m.v)}</td><td>${m.n}</td></tr>`).join('')}</tbody></table>`
+    : `<p class="tenue">Aún no hay suficientes registros para calcular la media ${titulo.toLowerCase()} (se necesitan al menos dos en el periodo).</p>`;
+
+  return pagina({
+    titulo: 'Evolución corporal', padre: 'seguimiento', sub: 'Datos medidos y tendencias calculadas, sin valores inventados',
+    cuerpo: `
+      ${subnav(SUBNAV_CUERPO, 'seguimiento/evolucion')}
+      <div class="tiles cuatro">
+        ${tile('⚖️', resumen.ultimoPeso ? fmtDec(resumen.ultimoPeso.v) : '—', 'kg · último peso', 'verde')}
+        ${tile('📅', resumen.mediaSemanal ? fmtDec(resumen.mediaSemanal.v) : '—', 'kg · media semanal', 'azul')}
+        ${tile('📈', tendTexto, tend.disponible ? tend.direccion : 'sin tendencia', tend.direccion === 'subiendo' ? 'naranja' : 'violeta')}
+        ${tile('🔁', compPeso.deltaMedia != null ? fmtDeltaMedida(compPeso.deltaMedia, 'peso') : '—', 'vs semana anterior', 'amarillo')}
+      </div>
+      <div class="tarjeta">
+        <div class="fila chart-cab">
+          <h2>📈 ${meta.nombre}</h2>
+          <div class="acciones">
+            <select class="sel-mini" data-a="periodoMedida" aria-label="Periodo de la gráfica">
+              <option value="todo" ${ui.periodoMedida === 'todo' ? 'selected' : ''}>Todo</option>
+              <option value="semanal" ${ui.periodoMedida === 'semanal' ? 'selected' : ''}>Semanal</option>
+              <option value="mensual" ${ui.periodoMedida === 'mensual' ? 'selected' : ''}>Mensual</option>
+            </select>
+            <select class="sel-mini" data-a="metrica" aria-label="Dato que quieres ver en la gráfica">
+              ${Object.entries(MEDIDAS_CAMPOS).map(([k, c]) => `<option value="${k}" ${ui.metricaMedida === k ? 'selected' : ''}>${c.nombre}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div id="graficaEvolucion"></div>
+      </div>
+      <div class="tarjeta">
+        <h2>🔁 Comparación de periodos</h2>
+        <p class="tenue">Media de esta semana natural frente a la anterior. Solo se comparan datos registrados.</p>
+        ${filasComp.length ? barrasComparacion(filasComp) + Object.entries(resumen.comparaciones)
+          .filter(([k, c]) => MEDIDAS_CAMPOS[k] && c.deltaMedia != null)
+          .map(([k, c]) => `<div class="nutri-linea"><span>${MEDIDAS_CAMPOS[k].nombre}</span><b>${fmtDeltaMedida(c.deltaMedia, k)}</b></div>`).join('')
+          : `<p class="tenue">${compPeso.motivo || 'Necesitas al menos dos registros en cada periodo para comparar.'}</p>`}
+      </div>
+      <div class="tarjeta">
+        <h2>🗓️ Medias</h2>
+        <h3>Semanales</h3>${mediaHTML('semanal', semanales)}
+        <h3>Mensuales</h3>${mediaHTML('mensual', mensuales)}
+      </div>
+      <div class="tarjeta">
+        <h2>📌 Últimas medidas</h2>
+        ${Object.entries(resumen.ultimasMedidas).map(([k, u]) => `<div class="nutri-linea">
+          <span>${MEDIDAS_CAMPOS[k]?.nombre || k} · ${fmtCorta(u.fecha)}${u.origen === 'estimado' ? ' · estimado' : ''}</span>
+          <b>${fmtDec(u.v)} ${MEDIDAS_CAMPOS[k]?.unidad || ''}${u.cambio != null ? ` (${fmtDeltaMedida(u.cambio, k)})` : ''}</b>
+        </div>`).join('') || '<p class="tenue">Aún no hay medidas registradas.</p>'}
+      </div>
+      <div class="tarjeta">
+        <h2>📋 ${meta.nombre} por fechas</h2>
+        ${tablaPuntos
+          ? `<table class="evo-tabla"><thead><tr><th>Fecha</th><th>Valor</th><th>Origen</th></tr></thead><tbody>${tablaPuntos}</tbody></table>`
+          : '<p class="tenue">Aún no hay registros de este dato.</p>'}
+      </div>
+      <a class="tarjeta enlace-tarjeta" href="#seguimiento/medidas">
+        <div class="fila"><div><h2>➕ Registrar una medición</h2><p class="tenue">Añade o corrige un registro sin borrar el historial.</p></div><span class="chev">›</span></div>
+      </a>
     `,
   });
 }
@@ -2205,61 +2779,40 @@ async function sincronizarSalud({ silencioso = false } = {}) {
   } finally { syncEnCurso = false; }
 }
 
-// Agrupa las mediciones por semana o mes (media del periodo) para poder comparar.
+// Agrupa las mediciones por semana o mes (media del periodo). El cálculo vive
+// en el módulo puro para que la interfaz y la PARTE 4 usen el mismo criterio.
 function puntosPorPeriodo(puntos, periodo) {
-  if (periodo !== 'semanal' && periodo !== 'mensual') return puntos;
-  const grupos = new Map();
-  for (const p of puntos) {
-    const d = deIso(p.fecha);
-    const fecha = periodo === 'semanal' ? lunes(p.fecha) : iso(new Date(d.getFullYear(), d.getMonth(), 1));
-    if (!grupos.has(fecha)) grupos.set(fecha, []);
-    grupos.get(fecha).push(p.v);
+  return mediasPorPeriodo(puntos, periodo);
+}
+
+function graficaMedidasHTML() {
+  const campo = MEDIDAS_CAMPOS[ui.metricaMedida] ? ui.metricaMedida : 'peso';
+  const meta = MEDIDAS_CAMPOS[campo];
+  const puntos = conHuecos(puntosPorPeriodo(valoresMedida(campo), ui.periodoMedida), { periodo: ui.periodoMedida });
+  if (!puntos.length) {
+    return `<p class="tenue centro">Aún no hay datos de ${meta.nombre.toLowerCase()}. Anota una medición para ver la evolución.</p>`;
   }
-  return [...grupos].map(([fecha, vals]) => ({ fecha, v: Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * 100) / 100 }));
+  const ult = puntos[puntos.length - 1];
+  const cambio = ult.v - puntos[0].v;
+  const vals = puntos.map(p => p.v);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  return `${evolucionMedidas(puntos, { unidad: meta.unidad, nombre: meta.nombre, periodo: ui.periodoMedida })}
+    <div class="stats mini">
+      <div><b>${fmtDec(ult.v)}</b><span>${ui.periodoMedida === 'todo' ? 'último' : 'media'} · ${meta.unidad}</span></div>
+      <div><b>${fmtDeltaMedida(cambio, campo)}</b><span>desde el inicio</span></div>
+      <div><b>${fmtDec(min)}–${fmtDec(max)}</b><span>rango · ${meta.unidad}</span></div>
+    </div>
+    <p class="tenue">${puntos.length} ${puntos.length === 1 ? 'punto' : 'puntos'} de ${meta.nombre.toLowerCase()}. Los círculos son datos; la línea discontinua es la tendencia calculada y se corta donde no hay registros.</p>`;
 }
 
 function dibujarGraficaMedidas() {
   const cont = $('#graficaMedidas');
-  if (!cont) return;
-  const campo = MEDIDAS_CAMPOS[ui.metricaMedida] ? ui.metricaMedida : 'peso';
-  const puntos = puntosPorPeriodo(valoresMedida(campo), ui.periodoMedida);
-  const meta = MEDIDAS_CAMPOS[campo];
-  if (!puntos.length) {
-    cont.innerHTML = `<p class="tenue centro">Aún no hay datos de ${meta.nombre.toLowerCase()}. Anota una medición para ver la evolución.</p>`;
-    return;
-  }
-  const W = 320, H = 150, P = 30;
-  const t0 = deIso(puntos[0].fecha).getTime();
-  const t1 = deIso(puntos[puntos.length - 1].fecha).getTime();
-  const x = p => puntos.length === 1 ? W / 2 : P + (deIso(p.fecha).getTime() - t0) / (t1 - t0 || 1) * (W - 2 * P);
-  const vals = puntos.map(p => p.v);
-  const min = Math.min(...vals), max = Math.max(...vals);
-  const margen = (max - min) || Math.max(1, Math.abs(max) * 0.05);
-  const yMin = min - margen * 0.15, yMax = max + margen * 0.15;
-  const y = v => H - P - (v - yMin) / ((yMax - yMin) || 1) * (H - 2 * P);
-  const linea = puntos.map((p, i) => `${i ? 'L' : 'M'}${x(p).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
-  const area = `${linea} L${x(puntos[puntos.length - 1]).toFixed(1)},${H - P} L${x(puntos[0]).toFixed(1)},${H - P} Z`;
-  const ult = puntos[puntos.length - 1];
-  const cambio = ult.v - puntos[0].v;
-  cont.innerHTML = `
-    <svg viewBox="0 0 ${W} ${H}" class="svg-graf" role="img" aria-label="Evolución de ${meta.nombre}">
-      <defs><linearGradient id="grM" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--acento)" stop-opacity=".35"/><stop offset="1" stop-color="var(--acento)" stop-opacity="0"/></linearGradient></defs>
-      <line x1="${P}" y1="${H - P}" x2="${W - P}" y2="${H - P}" class="eje"/>
-      <text x="${P - 4}" y="${y(max) + 4}" text-anchor="end" class="etq">${fmtDec(max)}</text>
-      <text x="${P - 4}" y="${y(min) + 4}" text-anchor="end" class="etq">${fmtDec(min)}</text>
-      <path d="${area}" fill="url(#grM)"/>
-      <path d="${linea}" class="trazo"/>
-      ${puntos.map((p, i) => `<circle cx="${x(p).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="${i === puntos.length - 1 ? 5 : 3.5}" class="punto ${i === puntos.length - 1 ? 'rec' : ''}"><title>${fmtCorta(p.fecha)}: ${fmtDec(p.v)} ${meta.unidad}</title></circle>`).join('')}
-      ${puntos.length === 1
-        ? `<text x="${W / 2}" y="${H - 6}" text-anchor="middle" class="etq">${fmtDia(puntos[0].fecha)}</text>`
-        : `<text x="${P}" y="${H - 6}" class="etq">${fmtDia(puntos[0].fecha)}</text><text x="${W - P}" y="${H - 6}" text-anchor="end" class="etq">${fmtDia(ult.fecha)}</text>`}
-    </svg>
-    <div class="stats mini">
-      <div><b>${fmtDec(ult.v)}</b><span>actual · ${meta.unidad}</span></div>
-      <div><b>${fmtDeltaMedida(cambio, campo)}</b><span>desde el inicio</span></div>
-      <div><b>${fmtDec(min)}–${fmtDec(max)}</b><span>rango · ${meta.unidad}</span></div>
-    </div>
-    <p class="tenue">${puntos.length} ${puntos.length === 1 ? 'medición' : 'mediciones'} de ${meta.nombre.toLowerCase()}.</p>`;
+  if (cont) cont.innerHTML = graficaMedidasHTML();
+}
+
+function dibujarGraficaEvolucion() {
+  const cont = $('#graficaEvolucion');
+  if (cont) cont.innerHTML = graficaMedidasHTML();
 }
 
 // Nutrición: gasto energético y reparto de macronutrientes.
@@ -2300,7 +2853,9 @@ function nutricionDeForm(f) {
 function leerNutricion() {
   const form = $('#formNutricion');
   if (!form) return null;
-  return nutricionDeForm(new FormData(form));
+  // El formulario solo toca datos del perfil: conserva los objetivos
+  // aceptados/manuales que ya vivían dentro de estado.nutricion.
+  return { ...(estado.nutricion || {}), ...nutricionDeForm(new FormData(form)) };
 }
 
 function guardarNutricion() {
@@ -2310,31 +2865,76 @@ function guardarNutricion() {
   guardar();
 }
 
-function guardarMedida(f) {
+// Guarda en el array de medidas de siempre. La validación y las medias viven
+// en js/evolucion.js; aquí solo se pide confirmación y se fusiona por fecha
+// conservando los campos que el formulario no ha tocado.
+async function guardarMedida(f, { soloPeso = false } = {}) {
   const editando = ui.medidaEdit;
   const fecha = editando || String(f.get('fecha') || hoy());
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha) || fecha > hoy()) { toast('Elige una fecha válida que no sea futura.'); return; }
-  const datos = { fecha, nota: String(f.get('nota') || '').trim().slice(0, 90) };
-  let alguno = false;
-  for (const [k, c] of Object.entries(MEDIDAS_CAMPOS)) {
-    const raw = String(f.get(k) ?? '').trim();
-    if (raw === '') { datos[k] = null; continue; }
-    const v = Number(raw);
-    if (!Number.isFinite(v)) { toast(`Revisa el campo ${c.nombre.toLowerCase()}.`); return; }
-    if (v < c.min || v > c.max) { toast(`${c.nombre}: usa un valor entre ${c.min} y ${c.max} ${c.unidad}.`); return; }
-    datos[k] = Math.round(v * 10) / 10;
-    alguno = true;
+  const campos = soloPeso ? { peso: MEDIDAS_CAMPOS.peso } : MEDIDAS_CAMPOS;
+  const origen = {};
+  if (!soloPeso) {
+    for (const k of COMPOSICION_CAMPOS) {
+      const v = String(f.get(`origen_${k}`) || 'medido');
+      origen[k] = ['medido', 'estimado'].includes(v) ? v : 'medido';
+    }
   }
-  if (!alguno) { toast('Anota al menos un dato para guardar la medición.'); return; }
+  const entrada = { fecha, hora: f.get('hora'), nota: f.get('nota'), origen };
+  for (const k of Object.keys(campos)) entrada[k] = f.get(k);
+  const r = validarMedicion(entrada, { campos, hoy: hoy(), registros: estado.medidas || [] });
+  if (!r.valido) { toast(r.errores[0].mensaje); return; }
+
   const lista = estado.medidas || (estado.medidas = []);
-  const idx = lista.findIndex(m => m.fecha === fecha);
-  const actualizada = idx !== -1;
-  if (actualizada) lista[idx] = { ...lista[idx], ...datos };
-  else lista.push(datos);
+  const idx = lista.findIndex(m => m.fecha === r.datos.fecha);
+  const anterior = idx >= 0 ? lista[idx] : null;
+  if (!editando && r.advertencias.some(a => a.duplicado)) {
+    const mismosValores = Object.keys(campos).every(k => {
+      const a = r.datos[k], b = anterior?.[k] ?? null;
+      return (a == null && b == null) || a === b;
+    });
+    if (mismosValores && (anterior?.hora || null) === r.datos.hora && (anterior?.nota || '') === (r.datos.nota || '')) {
+      toast('Ese dato ya está registrado en esta fecha.');
+      return;
+    }
+    const aceptar = await confirmar(`Ya hay un registro del ${fmtCorta(r.datos.fecha)}. Se conservarán las medidas y la nota anteriores; solo se actualizarán los campos rellenados.`,
+      { titulo: 'Registro duplicado', ok: 'Actualizar' });
+    if (!aceptar) return;
+  }
+
+  const anomaliasNuevas = r.advertencias.filter(a => !a.duplicado && a.campo in campos).map(a => a.campo);
+  if (anomaliasNuevas.length) {
+    const detalle = r.advertencias.find(a => a.campo === anomaliasNuevas[0])?.mensaje || '';
+    const aceptar = await confirmar(`${detalle} ¿Guardarlo de todos modos y marcarlo para corregirlo después?`,
+      { titulo: 'Revisa la medición', ok: 'Guardar y marcar' });
+    if (!aceptar) { toast('Revisa el valor y vuelve a guardar.'); return; }
+  }
+
+  const aplicar = { fecha: r.datos.fecha };
+  if (soloPeso) {
+    // El registro rápido nunca pone a null las medidas que no ha enviado.
+    aplicar.peso = r.datos.peso;
+    if (r.datos.hora) aplicar.hora = r.datos.hora;
+    else if (anterior?.hora) aplicar.hora = anterior.hora;
+    if (r.datos.nota) aplicar.nota = r.datos.nota;
+    else if (anterior?.nota) aplicar.nota = anterior.nota;
+  } else {
+    Object.assign(aplicar, r.datos);
+    const origenes = {};
+    for (const k of COMPOSICION_CAMPOS) origenes[k] = r.datos[k] == null ? 'desconocido' : r.origen[k];
+    aplicar.origen = { ...(anterior?.origen || {}), ...origenes };
+  }
+  const corregidas = Object.keys(campos).filter(k => r.datos[k] != null && !anomaliasNuevas.includes(k));
+  const anomalias = [...new Set([...(anterior?.anomalias || []), ...anomaliasNuevas])].filter(k => !corregidas.includes(k));
+  if (anomalias.length) aplicar.anomalias = anomalias;
+  else delete aplicar.anomalias;
+
+  if (anterior) lista[idx] = { ...anterior, ...aplicar };
+  else lista.push(aplicar);
   lista.sort((a, b) => a.fecha.localeCompare(b.fecha));
   ui.medidaEdit = null;
   guardar(); render();
-  toast(actualizada ? 'Medición actualizada' : 'Medición guardada');
+  toast(anomaliasNuevas.length ? 'Guardado con aviso: revisa el dato marcado'
+    : anterior ? 'Medición actualizada' : 'Medición guardada');
 }
 
 function formNutricionHTML() {
@@ -2364,7 +2964,7 @@ function formNutricionHTML() {
       <label class="campo">Objetivo fijo (kcal, opcional)<input type="number" name="kcalManual" inputmode="numeric" min="1200" max="5000" step="50" value="${n.kcalManual || ''}" placeholder="—" data-a="nutricion"></label>
     </div>
     <p class="tenue" id="nutriPesoNota">${notaPesoHTML(n, ult)}</p>
-    <p class="tenue">Los resultados se actualizan al escribir. Fórmula de Mifflin-St Jeor.</p>
+    <p class="tenue">Los resultados se actualizan al escribir. Mifflin-St Jeor usa el <b>sexo fisiológico</b> solo como constante de la fórmula (+5 hombre, −161 mujer); no es una etiqueta de identidad. Un campo vacío es «desconocido», nunca cero.</p>
   </form>`;
 }
 
@@ -2438,6 +3038,8 @@ function actualizarNutricion() {
       <div class="nutri-linea"><span>Agua orientativa</span><b>${aguaL} L</b></div>
       <div class="nutri-linea"><span>Proteína por comida (4 comidas)</span><b>${Math.round(protG / 4)} g</b></div>
       ${exceso ? '<p class="tenue">Con este objetivo, la proteína y la grasa ocupan casi todas las calorías: reduce un poco la grasa o elige un objetivo con más margen.</p>' : ''}
+      <p class="tenue">${CAMPOS_META.map(c => `${ETIQUETAS_META[c]} ${ORIGEN_TXT[m.objetivos?.origen?.[c]] || 'Automático'}`).join(' · ')}</p>
+      ${explicacionCambiosHTML(m.objetivos?.cambios)}
     </div>
     <div class="tarjeta">
       <h2>⚖️ IMC</h2>
@@ -2445,6 +3047,251 @@ function actualizarNutricion() {
       <p class="tenue">El IMC es solo una referencia: no distingue masa muscular de grasa. Para valorar tu composición, usa también el peso, la cintura y las fotos.</p>
     </div>
   `;
+}
+
+// ---------------------------------------------------------------------
+// FASE 9 · PARTE 2 — propuesta inicial, objetivos editables y su explicación.
+// Todo se guarda DENTRO de estado.nutricion.objetivos; no hay otro modelo.
+// ---------------------------------------------------------------------
+const ORIGEN_TXT = { calculado: 'Automático', manual: 'Manual', aceptado: 'Aceptado' };
+const META_ICONOS = { kcal: '🔥', protG: '🥩', grasaG: '🥑', carbsG: '🍚', fibraG: '🌾', aguaMl: '💧' };
+const META_CONFIG = {
+  kcal: { unidad: 'kcal', min: 800, max: 6000, step: 50 },
+  protG: { unidad: 'g', min: 0, max: 500, step: 1 },
+  grasaG: { unidad: 'g', min: 0, max: 1000, step: 1 },
+  carbsG: { unidad: 'g', min: 0, max: 1000, step: 1 },
+  fibraG: { unidad: 'g', min: 0, max: 200, step: 1 },
+  aguaMl: { unidad: 'ml', min: 0, max: 10000, step: 50 },
+};
+
+function origenChipHTML(origen) {
+  const k = ORIGEN_TXT[origen] ? origen : 'calculado';
+  return `<small class="chip-origen ${k}">${ORIGEN_TXT[k]}</small>`;
+}
+
+function explicacionCambiosHTML(cambios = []) {
+  if (!cambios.length) return '<p class="tenue">Ningún valor difiere del cálculo automático actual.</p>';
+  return `<p class="tenue"><b>Qué ha cambiado y por qué:</b> ${cambios.map(c =>
+    `${esc(ETIQUETAS_META[c.campo] || c.campo)} ${fmtNum(c.antes)} → ${fmtNum(c.despues)} (${esc(c.motivo)})`).join('; ')}.</p>`;
+}
+
+function datosNutricionFaltantes(n = estado.nutricion) {
+  const ult = ultimoPeso();
+  const peso = n?.peso != null && String(n.peso).trim() !== '' ? n.peso : ult?.v;
+  const faltan = [];
+  if (!numero(n?.edad, { min: 14, max: 100 }).ok) faltan.push('edad');
+  if (!numero(n?.altura, { min: 120, max: 230 }).ok) faltan.push('altura');
+  if (!numero(peso, { min: 30, max: 400 }).ok) faltan.push('peso');
+  return faltan;
+}
+
+// Calcula la propuesta con el motor de la Parte 1 y le aplica encima los
+// objetivos ya elegidos para no sobrescribirlos sin permiso.
+function propuestaDesdeEstado(n = estado.nutricion) {
+  const auto = metasAutoNutricion(n);
+  if (!auto) {
+    const faltan = datosNutricionFaltantes(n);
+    return {
+      ok: false, faltan: faltan.length ? faltan : ['datos del perfil'],
+      avisos: ['Faltan datos para calcular la propuesta inicial. No se inventan valores.'],
+      propuesta: null,
+    };
+  }
+  const r = propuestaNutricionInicial({
+    sexo: n?.sexo, edad: auto.edad, altura: auto.cm, peso: auto.peso,
+    factorActividad: auto.act.factor, objetivoFactor: auto.obj.factor,
+    kcalManual: n?.kcalManual, kcalObjetivo: auto.kcal,
+    protG: auto.protG, grasaPct: n?.objetivos?.grasaPct ?? 25,
+  });
+  if (!r.ok) return r;
+  const aplicadas = aplicarObjetivosNutricion({
+    auto: {
+      kcal: r.propuesta.kcal, protG: r.propuesta.protG, grasaG: r.propuesta.grasaG,
+      carbsG: r.propuesta.carbsG, fibraG: r.propuesta.fibraG, aguaMl: r.propuesta.aguaMl,
+    },
+    overrides: objetivosGuardados(n),
+    grasaPct: n?.objetivos?.grasaPct ?? 25,
+  });
+  return { ...r, aplicadas };
+}
+
+function metaTilesHTML(valores, origen = {}) {
+  return `<div class="tiles cuatro">${CAMPOS_META.map((campo, i) => {
+    const color = ['naranja', 'verde', 'amarillo', 'azul', 'violeta', 'azul'][i % 6];
+    return tile(META_ICONOS[campo], `${fmtNum(valores[campo])} ${META_CONFIG[campo].unidad}`,
+      `${ETIQUETAS_META[campo]} · ${ORIGEN_TXT[origen[campo]] || 'Automático'}`, color);
+  }).join('')}</div>`;
+}
+
+function propuestaPendienteHTML() {
+  const p = ui.propuestaPendiente;
+  if (!p) return '';
+  if (!p.ok) {
+    return `<div class="tarjeta" id="propuestaInicial">
+      <h2>🧾 Propuesta inicial pendiente</h2>
+      <p class="tenue">No se han podido calcular todos los valores: falta <b>${esc(p.faltan.join(', '))}</b>.</p>
+      ${avisosHTML(p.avisos)}
+      <p class="tenue">Puedes completar los datos arriba y recalcular cuando quieras. Mientras tanto, la app sigue usando tus objetivos anteriores.</p>
+      <div class="botones"><button class="btn sec" data-a="propuestaRecalcular">Recalcular propuesta</button>
+        <button class="btn sec" data-a="propuestaDescartar">Descartar aviso</button></div>
+    </div>`;
+  }
+  const v = p.aplicadas.valores;
+  return `<div class="tarjeta" id="propuestaInicial">
+    <h2>🧾 Propuesta inicial para revisar</h2>
+    <p class="tenue">TMB <b>${fmtNum(p.propuesta.tmb)}</b> kcal · gasto total (TDEE) <b>${fmtNum(p.propuesta.tdee)}</b> kcal · mantenimiento <b>${fmtNum(p.propuesta.mantenimiento)}</b> kcal. El objetivo se ajusta según ${esc(OBJETIVOS_NUTRI[estado.nutricion?.objetivo]?.nombre.toLowerCase() || 'tu objetivo')}.</p>
+    ${metaTilesHTML(v, p.aplicadas.origen)}
+    ${explicacionCambiosHTML(p.aplicadas.cambios)}
+    ${formulaHTML(p.formulas, {
+      tmb: 'TMB', tdee: 'TDEE', tef: 'TEF', neat: 'NEAT', ejercicio: 'Ejercicio',
+      grasa: 'Grasa', carbs: 'Hidratos', fibra: 'Fibra', agua: 'Agua',
+    })}
+    ${avisosHTML([...p.avisos, ...p.aplicadas.avisos])}
+    <div class="botones"><button class="btn" data-a="propuestaAceptar">Aceptar estos objetivos</button>
+      <button class="btn sec" data-a="propuestaDescartar">Revisar y editar abajo</button></div>
+  </div>`;
+}
+
+function formObjetivosHTML() {
+  const m = metasNutricion();
+  const valores = m?.objetivos?.valores || {};
+  const origen = m?.objetivos?.origen || {};
+  return `<form id="formObjetivos" class="tarjeta" novalidate>
+    <h2>🎯 Mis objetivos diarios</h2>
+    <p class="tenue">Escribe solo lo que quieres fijar a mano. Deja un campo vacío para usar el cálculo automático del perfil. Cada valor muestra si es <b>automático</b>, <b>manual</b> o <b>aceptado</b>.</p>
+    <div class="nutri-grid">
+      ${CAMPOS_META.map(campo => {
+    const c = META_CONFIG[campo];
+    return `<label class="campo">${ETIQUETAS_META[campo]} ${origenChipHTML(origen[campo])}
+        <input type="number" data-a="objetivo" data-c="${campo}" inputmode="${campo === 'kcal' ? 'numeric' : 'decimal'}"
+          min="${c.min}" max="${c.max}" step="${c.step}" value="${valores[campo] ?? ''}" placeholder="automático">
+        <small class="tenue">${c.unidad}</small></label>`;
+  }).join('')}
+    </div>
+    <p class="tenue">Si fijas calorías, proteína o grasa, los valores dependientes se recalculan; los demás campos manuales se conservan. Agua y fibra se pueden fijar por separado.</p>
+    <div id="objetivosRes"></div>
+    <div class="botones"><button type="button" class="btn" data-a="objetivosGuardar">Guardar objetivos</button>
+      <button type="button" class="btn sec" data-a="objetivosCancelar">Cancelar</button>
+      <button type="button" class="btn sec" data-a="objetivosAuto">Volver a automático</button></div>
+  </form>`;
+}
+
+function objetivosDelFormulario() {
+  const overrides = {};
+  const avisos = [];
+  const auto = metasAutoNutricion() || {};
+  const guardados = objetivosGuardados();
+  document.querySelectorAll('#formObjetivos [data-a="objetivo"]').forEach(inp => {
+    const campo = inp.dataset.c;
+    const raw = String(inp.value ?? '').trim();
+    if (raw === '' || !META_CONFIG[campo]) return;
+    const v = numero(raw, { min: META_CONFIG[campo].min, max: META_CONFIG[campo].max });
+    if (!v.ok) {
+      avisos.push(`${ETIQUETAS_META[campo]}: usa un valor entre ${META_CONFIG[campo].min} y ${META_CONFIG[campo].max} ${META_CONFIG[campo].unidad}.`);
+      return;
+    }
+    // El formulario viene precargado: un valor igual al automático NO es un
+    // cambio manual, salvo que ya estuviera fijado a mano y se conserve.
+    const igualAuto = Math.abs(v.valor - Number(auto[campo] ?? 0)) < 0.5;
+    const manualGuardado = guardados[campo]?.origen === 'manual'
+      && Math.abs(v.valor - guardados[campo].valor) < 0.5;
+    if (igualAuto && !manualGuardado) return;
+    overrides[campo] = { valor: v.valor, origen: 'manual' };
+  });
+  return { overrides, avisos };
+}
+
+function grasaPctDe(overrides, auto) {
+  const grasa = overrides.grasaG?.valor;
+  const kcal = overrides.kcal?.valor ?? auto.kcal;
+  if (grasa == null || !kcal) return estado.nutricion?.objetivos?.grasaPct ?? 25;
+  return Math.max(5, Math.min(70, Math.round(grasa * 9 / kcal * 1000) / 10));
+}
+
+function actualizarObjetivos() {
+  const cont = $('#objetivosRes');
+  if (!cont) return;
+  const auto = metasAutoNutricion();
+  if (!auto) {
+    cont.innerHTML = `<p class="tenue">Falta <b>${esc(datosNutricionFaltantes().join(', ') || 'datos del perfil')}</b> para recalcular los objetivos.</p>`;
+    return;
+  }
+  const { overrides, avisos } = objetivosDelFormulario();
+  const r = aplicarObjetivosNutricion({
+    auto: {
+      kcal: auto.kcal, protG: auto.protG, grasaG: auto.grasaG,
+      carbsG: auto.carbsG, fibraG: auto.fibraG, aguaMl: auto.aguaMl,
+    },
+    overrides, grasaPct: grasaPctDe(overrides, auto),
+  });
+  if (!r.ok) { cont.innerHTML = `<p class="tenue">Revisa: ${esc(r.faltan.join(', '))}.</p>`; return; }
+  cont.innerHTML = `
+    <div class="nutri-linea"><span>Reparto</span><b>${r.coherente ? 'Cuadra con las calorías' : 'No cuadra: revisa los manuales'}</b></div>
+    ${CAMPOS_META.map(campo => `<div class="nutri-linea"><span>${ETIQUETAS_META[campo]} ${origenChipHTML(r.origen[campo])}</span><b>${fmtNum(r.valores[campo])} ${META_CONFIG[campo].unidad}</b></div>`).join('')}
+    ${explicacionCambiosHTML(r.cambios)}
+    ${avisosHTML([...avisos, ...r.avisos])}`;
+}
+
+function guardarObjetivos() {
+  const auto = metasAutoNutricion();
+  if (!auto) { toast('Completa peso, altura y edad antes de guardar objetivos.'); return; }
+  const { overrides, avisos } = objetivosDelFormulario();
+  if (avisos.length) { toast(avisos[0]); return; }
+  const pct = grasaPctDe(overrides, auto);
+  const r = aplicarObjetivosNutricion({
+    auto: {
+      kcal: auto.kcal, protG: auto.protG, grasaG: auto.grasaG,
+      carbsG: auto.carbsG, fibraG: auto.fibraG, aguaMl: auto.aguaMl,
+    },
+    overrides, grasaPct: pct,
+  });
+  if (!r.ok) { toast('Revisa los valores de los objetivos.'); return; }
+  const origen = {};
+  CAMPOS_META.forEach(campo => { origen[campo] = overrides[campo] ? 'manual' : 'aceptado'; });
+  estado.nutricion = estado.nutricion || { ...NUTRICION_DEF };
+  estado.nutricion.objetivos = { valores: { ...r.valores }, origen, grasaPct: pct, aceptadoEn: hoy() };
+  estado.nutricion.kcalManual = origen.kcal === 'manual' ? r.valores.kcal : null;
+  ui.propuestaPendiente = null;
+  guardar(); render();
+  toast('Objetivos guardados');
+}
+
+function aceptarPropuestaInicial() {
+  const p = ui.propuestaPendiente;
+  if (!p?.ok) return;
+  estado.nutricion = estado.nutricion || { ...NUTRICION_DEF };
+  const origen = {};
+  CAMPOS_META.forEach(campo => { origen[campo] = p.aplicadas.origen[campo] === 'manual' ? 'manual' : 'aceptado'; });
+  estado.nutricion.objetivos = {
+    valores: { ...p.aplicadas.valores }, origen,
+    grasaPct: p.aplicadas.grasaPct ?? 25, aceptadoEn: hoy(),
+  };
+  estado.nutricion.kcalManual = origen.kcal === 'manual' ? p.aplicadas.valores.kcal : null;
+  ui.propuestaPendiente = null;
+  cerrarModal(); guardar(); render();
+  toast('Objetivos aceptados y guardados');
+}
+
+function mostrarPropuestaInicial() {
+  const p = propuestaDesdeEstado();
+  ui.propuestaPendiente = p;
+  if (!p.ok) {
+    toast(`No he podido calcular los objetivos: falta ${p.faltan.join(', ')}. Puedes completarlos en Nutrición/Objetivos.`);
+    return p;
+  }
+  modal(`<h2>¿Aceptas estos objetivos?</h2>
+    <p class="tenue">Son una estimación con tus datos actuales. Puedes revisarlos y cambiarlos antes de guardarlos.</p>
+    <p class="tenue">TMB <b>${fmtNum(p.propuesta.tmb)}</b> kcal · gasto total (TDEE) <b>${fmtNum(p.propuesta.tdee)}</b> kcal · mantenimiento <b>${fmtNum(p.propuesta.mantenimiento)}</b> kcal. El objetivo se ajusta según ${esc(OBJETIVOS_NUTRI[estado.nutricion?.objetivo]?.nombre.toLowerCase() || 'tu objetivo')}.</p>
+    ${metaTilesHTML(p.aplicadas.valores, p.aplicadas.origen)}
+    ${explicacionCambiosHTML(p.aplicadas.cambios)}
+    ${formulaHTML(p.formulas, {
+      tmb: 'TMB', tdee: 'TDEE', tef: 'TEF', neat: 'NEAT', ejercicio: 'Ejercicio',
+      grasa: 'Grasa', carbs: 'Hidratos', fibra: 'Fibra', agua: 'Agua',
+    })}
+    ${avisosHTML([...p.avisos, ...p.aplicadas.avisos])}
+    <div class="botones"><button class="btn" data-a="propuestaAceptar">Aceptar objetivos</button>
+      <button class="btn sec" data-a="propuestaDescartar">Revisar antes de aceptar</button></div>`);
+  return p;
 }
 
 // =====================================================================
@@ -2455,8 +3302,220 @@ const fechaLargaNutri = f => deIso(f).toLocaleDateString('es-ES', { weekday: 'lo
 function resumenDia(fecha = diaNutri()) {
   const metas = metasNutricion();
   const consumo = macrosDia(fecha);
+  const entradas = entradasDelDia(fecha);
   const vasos = vasosDia(fecha);
-  return { metas, consumo, vasos, aguaMl: vasos * VASO_ML, aguaMeta: metas ? metas.aguaMl : 0 };
+  return {
+    metas, consumo, vasos, aguaMl: vasos * VASO_ML, aguaMeta: metas ? metas.aguaMl : 0,
+    sinDato: entradas.filter(esAporteDesconocido).length,
+    parciales: entradas.filter(esAporteParcial).length,
+    conDato: entradas.some(conDatoNutricional),
+  };
+}
+
+// Detalle nutricional compacto que acompaña al contexto del coach (mismo flujo
+// coachEnviar → chatear → coach-ia / responder). Solo hay dos bloques:
+//   real       = lo que el usuario ha anotado de verdad (nunca se rellena con 0
+//                un día sin registros);
+//   estimacion = metas calculadas, preferencias y sugerencias derivadas.
+function contextoNutricionalCoach() {
+  const fecha = hoy();
+  const metas = metasNutricion();
+  const dia = comidasDia(fecha);
+  const registradoHoy = Object.values(dia).some(v => Array.isArray(v) && v.length);
+  const consumo = macrosDia(fecha);
+  const red = v => Math.round(Number(v) || 0);
+  const conRegistro = f => Object.values((estado.comidas || {})[f] || {}).some(v => Array.isArray(v) && v.length);
+
+  // Un periodo guarda sus medias SOLO sobre días con registros. Los días sin
+  // anotaciones se cuentan aparte: no son ingestas de 0 kcal.
+  function periodo(dias, desplazamiento = 0) {
+    const desde = sumarDias(fecha, -(desplazamiento + dias - 1));
+    const hasta = sumarDias(fecha, -desplazamiento);
+    const fechas = Object.keys(estado.comidas || {})
+      .filter(f => f >= desde && f <= hasta && conRegistro(f)).sort();
+    const total = { kcal: 0, prot: 0, carbs: 0, grasa: 0, fibra: 0 };
+    let vasos = 0;
+    const porDia = [];
+    for (let i = dias - 1; i >= 0; i--) {
+      const f = sumarDias(fecha, -(desplazamiento + i));
+      const m = fechas.includes(f) ? macrosDia(f) : null;
+      porDia.push({ fecha: f, kcal: m ? red(m.kcal) : null, prot: m ? red(m.prot) : null });
+      if (m) {
+        for (const k of Object.keys(total)) total[k] += Number(m[k]) || 0;
+        vasos += vasosDia(f);
+      }
+    }
+    const n = fechas.length;
+    return {
+      desde, hasta, dias, registrados: n,
+      medias: n ? Object.fromEntries(Object.keys(total).map(k => [k, red(total[k] / n)])) : null,
+      vasosMedios: n ? Math.round(vasos / n) : null,
+      porDia: dias <= 7 ? porDia : undefined,
+    };
+  }
+  const periodos = { '7d': periodo(7), '30d': periodo(30), '90d': periodo(90) };
+  periodos['7d'].previo = periodo(7, 7).medias;
+  periodos['30d'].previo = periodo(30, 30).medias;
+
+  // Medidas reales (peso y cintura sobre todo) con su fecha, no solo el último número.
+  const medidas = {};
+  for (const [campo, cfg] of Object.entries(MEDIDAS_CAMPOS)) {
+    const puntos = valoresMedida(campo);
+    const ult = puntos[puntos.length - 1];
+    if (ult) medidas[campo] = { v: ult.v, fecha: ult.fecha, unidad: cfg.unidad };
+  }
+  const pesos = valoresMedida('peso');
+  const pesoRef = pesos.filter(p => p.fecha <= sumarDias(fecha, -30)).pop() || null;
+  const pesoActual = medidas.peso || null;
+  const cambioPeso30 = pesoActual && pesoRef
+    ? Math.round((pesoActual.v - pesoRef.v) * 10) / 10 : null;
+
+  // Alimentos/recetas que aparecen de verdad en los registros de los últimos 90 días.
+  const conteo = new Map();
+  const desde90 = sumarDias(fecha, -89);
+  for (const [f, comidas] of Object.entries(estado.comidas || {})) {
+    if (f < desde90 || f > fecha) continue;
+    for (const entradas of Object.values(comidas || {})) {
+      for (const en of Array.isArray(entradas) ? entradas : []) {
+        if (esAporteDesconocido(en)) continue;
+        const receta = en.tipo === 'receta' ? RECETAS.find(r => r.id === en.id) : null;
+        const al = receta ? null : alimentoPorId(en.id);
+        const nombre = receta?.nombre || al?.nombre || en.nombre || en.id;
+        if (!nombre) continue;
+        const m = macrosEntrada(en);
+        const x = conteo.get(nombre) || { nombre, id: receta?.id || al?.id || null, veces: 0, gramos: 0, kcal: 0, prot: 0, carbs: 0, grasa: 0, fibra: 0 };
+        x.veces++;
+        x.gramos += Number(en.gramos) || 0;
+        for (const k of ['kcal', 'prot', 'carbs', 'grasa', 'fibra']) x[k] += Number(m[k]) || 0;
+        conteo.set(nombre, x);
+      }
+    }
+  }
+  const frecuentes = [...conteo.values()]
+    .sort((a, b) => b.veces - a.veces).slice(0, 8)
+    .map(x => ({
+      nombre: x.nombre, id: x.id, veces: x.veces,
+      gramos: x.gramos ? red(x.gramos / x.veces) : null,
+      kcal: red(x.kcal / x.veces), prot: red(x.prot / x.veces),
+      carbs: red(x.carbs / x.veces), grasa: red(x.grasa / x.veces),
+      fibra: red(x.fibra / x.veces),
+    }));
+
+  const pref = estado.menuPreferencias || {};
+  const nombreReceta = id => recetaPorId(id)?.nombre || RECETAS.find(r => r.id === id)?.nombre || String(id);
+  // Los favoritos marcados en la biblioteca también son preferencias del coach.
+  const favoritas = [...new Set([...(pref.favoritas || []), ...(estado.recetasFavoritas || [])])].map(String);
+  const excluidas = (pref.excluidas || []).map(String);
+  const preferencias = {
+    favoritasIds: favoritas.slice(0, 8),
+    excluidasIds: excluidas.slice(0, 8),
+    favoritas: favoritas.slice(0, 5).map(nombreReceta),
+    excluidas: excluidas.slice(0, 5).map(nombreReceta),
+  };
+
+  // Planificador: lo ya previsto para la fecha elegida, con los mismos cálculos
+  // de alimentos.js. El plan nunca se confunde con consumo real del diario.
+  const fechaPlan = /^\d{4}-\d{2}-\d{2}$/.test(ui.planFecha || '') ? ui.planFecha : fecha;
+  const diaPlan = diaDelPlan(estado.planComidas, fechaPlan);
+  const comidasPlanificadas = {};
+  for (const c of COMIDA_KEYS) {
+    const entradas = diaPlan.comidas[c] || [];
+    if (!entradas.length) continue;
+    const m = macrosComidaPlan(entradas);
+    comidasPlanificadas[c] = {
+      entradas: entradas.map(e => e.nombre).slice(0, 6),
+      kcal: red(m.kcal), prot: red(m.prot), carbs: red(m.carbs), grasa: red(m.grasa), fibra: red(m.fibra),
+      pendientes: entradas.filter(e => !e.pasadoAlDiario).length,
+    };
+  }
+  const totPlan = macrosDiaPlan(diaPlan);
+  const planificador = {
+    fecha: fechaPlan,
+    comidas: comidasPlanificadas,
+    total: {
+      kcal: red(totPlan.kcal), prot: red(totPlan.prot), carbs: red(totPlan.carbs),
+      grasa: red(totPlan.grasa), fibra: red(totPlan.fibra),
+    },
+  };
+
+  // Catálogo real que el coach puede usar en sus propuestas: recetas con macros
+  // calculados desde ingredientes y alimentos verificados (valores por 100 g).
+  const favoritasSet = new Set(favoritas);
+  const excluidasSet = new Set(excluidas);
+  const usadas = new Set([...conteo.values()].map(x => x.id).filter(Boolean));
+  const recetasDisponibles = todasRecetas().filter(r => !excluidasSet.has(String(r.id)))
+    .sort((a, b) => Number(favoritasSet.has(String(b.id))) - Number(favoritasSet.has(String(a.id))))
+    .slice(0, 8)
+    .map(r => {
+      const t = resumenReceta(r).total;
+      return {
+        nombre: r.nombre, kcal: red(t.kcal), prot: red(t.prot), fibra: red(t.fibra),
+        comidas: (r.comidas || []).slice(0, 3),
+      };
+    });
+  const alimentosDisponibles = ALIMENTOS.filter(a => Number(a.kcal) > 0)
+    .sort((a, b) => Number(usadas.has(b.id)) - Number(usadas.has(a.id)))
+    .slice(0, 10)
+    .map(a => ({
+      nombre: a.nombre, kcal: red(a.kcal), prot: red(a.prot),
+      carbs: red(a.carbs), grasa: red(a.grasa), fibra: red(a.fibra),
+    }));
+
+  // Sugerencias calculadas de los datos anteriores. Sin registros no se afirma
+  // que falte nada: solo se pide el dato.
+  const sugerencias = [];
+  if (!metas) {
+    sugerencias.push({ icono: '🎯', titulo: 'Faltan datos para comparar', texto: 'Añade peso, altura y edad en Objetivos para calcular metas estimadas.', motivo: 'Sin esos datos no hay una referencia fiable.' });
+  } else if (!registradoHoy) {
+    sugerencias.push({ icono: '📝', titulo: 'Hoy aún sin registros', texto: 'No puedo decir qué te falta hoy: un día sin anotaciones no es consumo cero.', motivo: 'Las comparaciones se hacen solo con entradas reales del diario.' });
+  } else {
+    const huecos = [
+      ['prot', 'protG', 'proteína', 'g', 5, '🥩'],
+      ['carbs', 'carbsG', 'hidratos', 'g', 15, '🍚'],
+      ['grasa', 'grasaG', 'grasa', 'g', 3, '🥑'],
+      ['fibra', 'fibraG', 'fibra', 'g', 2, '🌾'],
+    ];
+    for (const [k, mk, nombre, uni, umbral, icono] of huecos) {
+      const falta = red(Number(metas[mk]) - Number(consumo[k] || 0));
+      if (falta >= umbral) sugerencias.push({
+        icono, titulo: `Te faltan ${falta} ${uni} de ${nombre}`,
+        texto: `Con lo anotado hoy (${red(consumo[k])} ${uni}) y la meta estimada (${red(metas[mk])} ${uni}).`,
+        motivo: 'Es una resta de datos reales frente a una estimación, no un diagnóstico.',
+      });
+    }
+    if (!sugerencias.length) sugerencias.push({
+      icono: '✅', titulo: 'Sin déficit claro hoy', texto: 'Con lo registrado no aparece un hueco destacable respecto a las metas estimadas.', motivo: 'No invento carencias cuando la diferencia no es clara.',
+    });
+  }
+
+  return {
+    fecha,
+    planificador,
+    disponibles: { recetas: recetasDisponibles, alimentos: alimentosDisponibles },
+    real: {
+      hoy: registradoHoy
+        ? {
+          fecha, registrado: true, comidas: Object.values(dia).filter(v => Array.isArray(v) && v.length).length,
+          kcal: red(consumo.kcal), prot: red(consumo.prot), carbs: red(consumo.carbs),
+          grasa: red(consumo.grasa), fibra: red(consumo.fibra), vasos: vasosDia(fecha),
+        }
+        : { fecha, registrado: false, sinRegistros: true, comidas: 0, vasos: vasosDia(fecha) },
+      periodos,
+      peso: pesoActual,
+      cambioPeso30,
+      medidas,
+      frecuentes,
+    },
+    estimacion: {
+      metas: metas ? {
+        kcal: red(metas.kcal), protG: red(metas.protG), carbsG: red(metas.carbsG),
+        grasaG: red(metas.grasaG), fibraG: red(metas.fibraG), aguaMl: red(metas.aguaMl),
+        modo: metas.modo, objetivo: OBJETIVOS_NUTRI[estado.nutricion?.objetivo]?.nombre || '—',
+      } : null,
+      preferencias,
+      sugerencias: sugerencias.slice(0, 4),
+    },
+  };
 }
 
 function navegadorDiasNutri() {
@@ -2465,35 +3524,68 @@ function navegadorDiasNutri() {
     <button class="icono" data-a="nutriDia" data-d="-1" aria-label="Día anterior">‹</button>
     <div class="centro"><b>${f === hoy() ? 'Hoy' : fmtCorta(f)}</b><br><span class="tenue">${fechaLargaNutri(f)}</span></div>
     <button class="icono" data-a="nutriDia" data-d="1" ${f >= hoy() ? 'disabled' : ''} aria-label="Día siguiente">›</button>
+  </div>
+  <div class="fila fecha-diario-fila">
+    <label class="campo fecha-diario"><span class="tenue">Ir a otra fecha</span>
+      <input type="date" data-a="nutriFecha" value="${f}" max="${hoy()}" aria-label="Elegir fecha del diario">
+    </label>
+  </div>`;
+}
+
+// Resumen que se muestra justo debajo del selector de día, sin necesidad de
+// recorrer el diario. Todos los valores salen del motor común de alimentos.js.
+function resumenDiarioHTML(consumo, metas, fecha, aguaMl = 0, aguaMeta = 0, conDato = true) {
+  const pctKcal = metas?.kcal ? Math.min(100, Math.round(consumo.kcal / metas.kcal * 100)) : 0;
+  const valor = v => conDato ? v : '—';
+  return `<div class="tarjeta resumen-diario">
+    <div class="fila"><h2>🧾 Resumen del día</h2><span class="badge">${fmtCorta(fecha)}</span></div>
+    <div class="tiles cinco">
+      ${tile('🔥', valor(fmtNum(consumo.kcal)), metas ? `de ${fmtNum(metas.kcal)} kcal` : 'kcal registradas', 'naranja')}
+      ${tile('🥩', valor(`${fmtDec(consumo.prot)} g`), metas ? `de ${metas.protG} g proteína` : 'proteína', 'verde')}
+      ${tile('🌾', valor(`${fmtDec(consumo.carbs)} g`), metas ? `de ${metas.carbsG} g hidratos` : 'hidratos', 'verde')}
+      ${tile('🧈', valor(`${fmtDec(consumo.grasa)} g`), metas ? `de ${metas.grasaG} g grasas` : 'grasas', 'amarillo')}
+      ${tile('🌱', valor(`${fmtDec(consumo.fibra)} g`), metas ? `de ${metas.fibraG} g fibra` : 'fibra', 'violeta')}
+    </div>
+    ${metas && conDato
+      ? `<div class="macro-barras">
+          <div class="macro-barra p-kcal"><span>Calorías</span><div class="macro-pista"><i style="width:${pctKcal}%"></i></div><b>${fmtNum(consumo.kcal)}/${fmtNum(metas.kcal)}</b></div>
+          ${barrasMacros(consumo, metas)}
+        </div>`
+      : metas && !conDato
+        ? '<p class="tenue">Los registros de este día no declaran aporte nutricional; las cifras se muestran como «—» hasta que haya datos conocidos.</p>'
+        : '<p class="tenue">Añade tus datos en <a class="enlace" href="#nutricion/objetivos">Objetivos</a> para comparar el consumo con tus metas diarias.</p>'}
+    <p class="tenue resumen-agua">💧 ${(aguaMl / 1000).toFixed(2)} L ${aguaMeta ? `de ${(aguaMeta / 1000).toFixed(1)} L` : 'registrados'} · <a class="enlace" href="#nutricion/hidratacion">Registrar agua</a></p>
   </div>`;
 }
 
 function nutricion() {
   const f = diaNutri();
-  const { metas, consumo, vasos, aguaMl, aguaMeta } = resumenDia(f);
-  const kcalMeta = metas ? metas.kcal : 0;
-  const restante = Math.max(0, kcalMeta - consumo.kcal);
+  const { metas, consumo, vasos, aguaMl, aguaMeta, sinDato, parciales, conDato } = resumenDia(f);
   const comidas = comidasDia(f);
+  const entradasHoy = entradasDelDia(f);
+  const duplicidad = detectarDuplicados(entradasHoy);
+  const avisoDato = sinDato + parciales
+    ? `${sinDato + parciales} registro(s) sin aporte nutricional completo (${sinDato} sin dato, ${parciales} parciales). No se han contado como cero: el resumen solo suma datos declarados.`
+    : '';
   return pagina({
     titulo: 'Nutrición', sub: MARCA.eslogan,
     cuerpo: `
       ${subnav(SUBNAV_NUTRICION, 'nutricion')}
       ${navegadorDiasNutri()}
+      ${resumenDiarioHTML(consumo, metas, f, aguaMl, aguaMeta, conDato)}
+      ${duplicidad.avisos.map(a => `<p class="aviso">⚠️ ${esc(a.texto)}</p>`).join('')}
+      ${avisoDato ? `<p class="aviso">⚠️ ${avisoDato}</p>` : entradasHoy.some(esSuplemento) ? '<p class="tenue">Las tomas de suplementos se identifican con 💊. Las que no declaran composición no añaden cifras al resumen: se mantienen como dato desconocido.</p>' : ''}
       ${ui.ultimaEntrada?.fecha === f ? `<div class="ultima-entrada entrance">
         <button class="icono peq cerrar-ultima" data-a="cerrarUltimaEntrada" title="Cerrar">✕</button>
         ${tarjetaEntrada(ui.ultimaEntrada.macros, ui.ultimaEntrada.nombre, ui.ultimaEntrada.micros)}
       </div>` : ''}
-      <div class="tiles cinco">
-        ${tile('🔥', fmtNum(consumo.kcal), kcalMeta ? `de ${fmtNum(kcalMeta)} kcal` : 'kcal registradas', 'naranja')}
-        ${tile('🥩', `${Math.round(consumo.prot)} g`, metas ? `de ${metas.protG} g de proteína` : 'proteína', 'verde')}
-        ${tile('🌾', `${Math.round(consumo.fibra)} g`, metas ? `de ${metas.fibraG} g de fibra` : 'fibra', 'verde')}
-        ${tile('💧', `${(aguaMl / 1000).toFixed(2)} L`, aguaMeta ? `de ${(aguaMeta / 1000).toFixed(1)} L` : 'agua', 'azul')}
-        ${tile('🍽️', kcalMeta ? fmtNum(restante) : '—', kcalMeta ? (restante ? 'kcal disponibles' : 'objetivo cubierto') : 'sin objetivo', 'violeta')}
-      </div>
       ${graficoDiaHTML(consumo, metas, comidas, f)}
       ${tarjetaMicros(microsDia(f))}
-      ${!metas ? `<div class="tarjeta"><h2>Configura tus objetivos</h2><p class="tenue">Añade sexo, edad, altura y peso en <a class="enlace" href="#nutricion/objetivos">Objetivos</a> para ver tus metas diarias de calorías y macros.</p></div>` : ''}
-      <div class="fila"><h2>Comidas</h2><span><a class="enlace" href="#nutricion/informe">📊 Informe semanal</a> · <a class="enlace" href="#nutricion/ia">🤖 Asistente</a></span></div>
+      <div class="fila"><h2>Comidas</h2><span><a class="enlace" href="#nutricion/informe">📊 Informe semanal</a> · <a class="enlace" href="#nutricion/ia">🤖 Coach IA</a></span></div>
+      <div class="botones fc-entrada">
+        <button class="btn sec" data-a="fotoComidaAbrir">📸 Analizar comida por foto</button>
+        <span class="tenue">Identifica los alimentos y calcula con el mismo motor del Diario.</span>
+      </div>
       ${Object.entries(COMIDAS).map(([k, c]) => bloqueComida(k, c, comidas[k] || [])).join('')}
       <a class="tarjeta enlace-tarjeta" href="#nutricion/recetas"><div class="fila"><div><h2>🍳 Recetas equilibradas</h2><p class="tenue">Añádelas a tu diario con un toque.</p></div><span class="chev">›</span></div></a>
       <p class="tenue">${vasos} ${vasos === 1 ? 'vaso' : 'vasos'} de agua (${VASO_ML} ml cada uno). <a class="enlace" href="#nutricion/hidratacion">Registrar agua</a></p>
@@ -2501,17 +3593,129 @@ function nutricion() {
   });
 }
 
-function fechaInformeNutri() {
+// Entradas del día en todas las comidas (alimentos, recetas y suplementos).
+// Se usa para detectar duplicidades sin alterar ningún registro histórico.
+function entradasDelDia(fecha = diaNutri()) {
+  return Object.values(comidasDia(fecha) || {})
+    .filter(Array.isArray).reduce((t, lista) => t.concat(lista), []);
+}
+
+// Añade una toma de suplemento al Diario con tipoEntrada propio y snapshot.
+// Reutiliza anadirEntrada(): el resumen se recalcula con macrosEntrada().
+function anadirSuplementoAlDiario(comida, entrada) {
+  if (!COMIDAS[comida] || !entrada?.suplementoId) return;
+  const fecha = entrada.fecha || diaNutri();
+  ui.diaNutri = fecha;
+  anadirEntrada(comida, entrada, fecha);
+}
+
+// ---------- Escáner: identificar antes de registrar (Fase 4) ----------
+// Un mismo código puede estar en suplementos y en alimentos. La decisión
+// la toma siempre el usuario: aquí solo se preparan los candidatos.
+async function buscarCodigoEscaneado(codigo, opciones = {}) {
+  ui.escanerCodigo = String(codigo || '').trim();
+  ui.escanerNuevo = false;
+  ui.escanerManual = null;
+  ui.escanerResultado = null;
+  ui.escanerSuplemento = null;
+  ui.escanerCandidatos = [];
+  ui.escanerIdentidad = null;
+  const id = await identificarCodigo(ui.escanerCodigo, opciones);
+  ui.escanerIdentidad = id;
+  if (!id) return null;
+  if (id.estado === 'ambiguo') { ui.escanerCandidatos = id.candidatos; return id; }
+  const unico = id.candidatos[0];
+  if (unico) seleccionarCandidatoEscaneo(unico);
+  return id;
+}
+
+function avisarEscaneo(id) {
+  if (!id) { toast('No he podido leer ese código.', { ms: 6000 }); return; }
+  if (id.estado === 'ambiguo') toast('Varios productos comparten ese código. Elige uno antes de registrar.', { ms: 7000 });
+  else if (id.estado === 'no_encontrado') toast('Producto no registrado. Puedes darlo de alta sin inventar datos.', { ms: 7000 });
+  else if (id.conSuplemento) toast('Suplemento identificado. Confirma la variante y la cantidad.');
+  else toast('Alimento identificado. Confirma antes de añadirlo.');
+}
+
+function seleccionarCandidatoEscaneo(candidato) {
+  ui.escanerCandidatos = [];
+  if (candidato?.tipo === 'suplemento') {
+    ui.escanerSuplemento = candidato.suplemento;
+    ui.escanerResultado = null;
+  } else {
+    // Las fichas del catálogo local tienen `ean`, no siempre `codigo`.
+    // Conservamos el código normalizado para el snapshot del Diario.
+    ui.escanerResultado = candidato?.producto
+      ? { ...candidato.producto, codigo: candidato.producto.codigo || candidato.codigo }
+      : null;
+    ui.escanerSuplemento = null;
+  }
+}
+
+function actualizarVistaTomaEscaneo() {
+  const form = document.querySelector('#formTomaEscaneo');
+  const vista = document.querySelector('#vistaTomaEscaneo');
+  const s = ui.escanerSuplemento;
+  if (!form || !vista || !s) return;
+  const f = new FormData(form);
+  const c = calcularToma(s, f.get('cantidad'), f.get('unidad'));
+  const composicion = Object.keys(s.macros100 || {}).length || Object.keys(s.micros100 || {}).length;
+  const componentes = Object.entries(c.componentes || {});
+  vista.innerHTML = `
+    <p><b>${c.gramos != null ? `${fmtNum(c.gramos)} g` : 'Cantidad no convertible'}</b>
+      · ${composicion ? 'Composición declarada' : 'Composición desconocida'}</p>
+    ${c.macros ? `<p>${fmtNum(c.macros.kcal)} kcal · ${fmtDec(c.macros.prot)} g proteína · ${fmtDec(c.macros.carbs)} g hidratos · ${fmtDec(c.macros.grasa)} g grasa</p>` : ''}
+    ${componentes.length ? `<p class="tenue">${componentes.map(([k, v]) => `${esc(k)}: ${fmtDec(v.valor)} ${esc(v.unidad || '')}`).join(' · ')}</p>` : ''}
+    ${c.advertencias.map(a => `<p class="aviso">⚠️ ${esc(a)}</p>`).join('')}`;
+}
+
+function nutricionSuplementos() {
+  return pagina({
+    titulo: 'Suplementos', padre: 'nutricion',
+    sub: 'Catálogo propio · datos declarados o pendientes',
+    cuerpo: `
+      ${subnav(SUBNAV_NUTRICION, 'nutricion/suplementos')}
+      ${vistaSuplementos()}
+      <p class="tenue centro">Las fichas viven en IndexedDB, sin sincronización con la nube. Los ejemplos con datos reales se distinguen de los pendientes y de tus propios registros.</p>
+    `,
+  });
+}
+
+const PERIODOS_INFORME_NUTRI = [
+  ['diario', 'Diario'], ['semanal', 'Semanal'], ['mensual', 'Mensual'], ['personalizado', 'Personalizado'],
+];
+
+// El desplazamiento significa un día, una semana o un mes según el periodo.
+// En un rango personalizado se usan las fechas escritas por la persona.
+function informeNutriRango() {
+  const tipo = PERIODOS_INFORME_NUTRI.some(([k]) => k === ui.informeNutriPeriodo)
+    ? ui.informeNutriPeriodo : 'semanal';
+  const offset = Number(ui.informeNutriOffset) || 0;
   const d = new Date();
-  d.setDate(d.getDate() + (ui.informeNutriOffset || 0) * 7);
-  return d;
+  if (tipo === 'mensual') d.setMonth(d.getMonth() + offset);
+  else if (tipo === 'diario') d.setDate(d.getDate() + offset);
+  else d.setDate(d.getDate() + offset * 7);
+  return {
+    tipo,
+    fecha: iso(d),
+    desde: tipo === 'personalizado' ? (ui.informeNutriDesde || hoy()) : '',
+    hasta: tipo === 'personalizado' ? (ui.informeNutriHasta || hoy()) : '',
+  };
+}
+
+function fechaInformeNutri() {
+  return deIso(informeNutriRango().fecha);
 }
 
 function informeNutriActual() {
-  const metas = metasNutricion();
+  const metas = metasNutricion() || {};
+  const rango = informeNutriRango();
   return informeNutricional(estado.comidas, {
-    fecha: fechaInformeNutri(),
-    metas: metas || {},
+    periodo: rango.tipo,
+    fecha: rango.fecha,
+    desde: rango.desde,
+    hasta: rango.hasta,
+    metas: { ...metas, objetivoNombre: OBJETIVOS_NUTRI[estado.nutricion?.objetivo]?.nombre || null },
     agua: estado.agua,
     vasoMl: VASO_ML,
     macroDe: macrosEntrada,
@@ -2519,41 +3723,156 @@ function informeNutriActual() {
   });
 }
 
+function tablaProductosInforme(productos = []) {
+  if (!productos.length) return '<p class="tenue">No hay tomas de suplementos en este periodo. Las fichas del catálogo no cuentan como consumo.</p>';
+  const comidasDe = pr => Object.entries(pr.comidas || {})
+    .filter(([, n]) => n > 0)
+    .map(([k, n]) => `${COMIDAS[k]?.nombre || k}: ${n}`).join(' · ') || 'sin comida asignada';
+  const componentesDe = pr => (pr.componentes?.filas || []).slice(0, 3)
+    .map(f => `${etiquetaComponente(f.clave)} ${fmtDec(f.media)} ${f.unidad || ''}`.trim()).join(' · ')
+    || 'sin componentes cuantificados';
+  return `<div class="tabla-scroll"><table class="tabla-sup">
+    <thead><tr><th>Producto</th><th>Cantidad</th><th>Frecuencia</th><th>Comidas</th><th>Componentes / día con dato</th><th>Estado</th></tr></thead>
+    <tbody>${productos.map(pr => `<tr>
+      <td><b>${esc(pr.nombre)}</b><br><small>${pr.marca ? esc(pr.marca) : 'marca desconocida'} · ${pr.esVariante ? 'variante' : 'producto base'}${pr.nombreBase && pr.esVariante ? ` de ${esc(pr.nombreBase)}` : ''}</small>
+        ${pr.ean ? `<br><small>EAN ${esc(pr.ean)}</small>` : ''}${pr.sku ? ` · <small>SKU ${esc(pr.sku)}</small>` : ''}
+        <details><summary>${pr.tomas} toma(s): evolución</summary><ul>
+          ${pr.cantidades.map(c => `<li>${esc(c.fecha)} · ${esc(COMIDAS[c.comida]?.nombre || c.comida || 'sin comida')} · ${c.cantidad != null ? `${fmtDec(c.cantidad)} ${esc(c.unidad)}` : 'cantidad no usable'}${c.gramos != null ? ` (${fmtDec(c.gramos)} g)` : ''}</li>`).join('')}
+        </ul>${pr.motivos.length ? `<p class="tenue">${esc(pr.motivos.join('. '))}.</p>` : ''}</details>
+      </td>
+      <td>${pr.unidad ? `${fmtDec(pr.mediaCantidad)} ${esc(pr.unidad)}/toma<br><small>${fmtDec(pr.totalCantidad)} ${esc(pr.unidad)} en total</small>` : 'unidades distintas: sin media'}${pr.totalGramos != null ? `<br><small>${fmtDec(pr.totalGramos)} g · ${fmtDec(pr.mediaGramos)} g/toma</small>` : ''}</td>
+      <td>${esc(pr.frecuencia)}</td>
+      <td>${esc(comidasDe(pr))}</td>
+      <td>${esc(componentesDe(pr))}</td>
+      <td><span class="badge sup-estado ${pr.estado}">${pr.estado === 'completo' ? 'Completo' : pr.estado === 'parcial' ? 'Parcial' : 'Incompleto'}</span>${pr.sinDato ? `<br><small>${pr.sinDato} sin composición</small>` : ''}</td>
+    </tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+function tablaComponentesInforme(filas = [], declaraciones = false) {
+  if (!filas.length) {
+    return `<p class="tenue">${declaraciones
+      ? 'Ningún suplemento consumido declara componentes cuantificados en el registro.'
+      : 'No hay componentes consumidos calculables en este periodo.'}</p>`;
+  }
+  if (declaraciones) {
+    return `<div class="tabla-scroll"><table class="tabla-sup">
+      <thead><tr><th>Componente</th><th>Declaración</th><th>Base</th><th>Procedencia de alias</th><th>Tomas</th></tr></thead>
+      <tbody>${filas.map(f => `<tr>
+        <td title="${esc(f.alias.join(', '))}">${esc(etiquetaComponente(f.clave))}</td>
+        <td>${f.valores.map(v => fmtDec(v)).join(' / ')} ${esc(f.unidad || '')}</td>
+        <td>${f.base === 'racion' ? 'por ración' : 'por 100 g'}</td>
+        <td>${f.alias.length ? esc(f.alias.join(', ')) : 'clave directa'}</td>
+        <td>${f.tomas}</td>
+      </tr>`).join('')}</tbody></table></div>`;
+  }
+  return `<div class="tabla-scroll"><table class="tabla-sup">
+    <thead><tr><th>Componente</th><th>Media / día con dato</th><th>Total</th><th>Días</th><th>Tomas</th><th>Nota</th></tr></thead>
+    <tbody>${filas.map(f => `<tr>
+      <td title="${esc(f.alias.join(', '))}">${esc(etiquetaComponente(f.clave))}${f.alias.length ? ` <small>(${esc(f.alias.join(', '))})</small>` : ''}</td>
+      <td>${fmtDec(f.media)} ${esc(f.unidad || '')}</td>
+      <td>${fmtDec(f.total)} ${esc(f.unidad || '')}</td>
+      <td>${f.diasConDato}</td>
+      <td>${f.tomas}</td>
+      <td>${f.base === 'racion' ? 'declarado por ración' : 'declarado por 100 g'}${f.conflictos ? ' · alias con otro valor no sumado' : ''}${f.sinDato ? ` · ${f.sinDato} sin dato` : ''}</td>
+    </tr>`).join('')}</tbody></table></div>`;
+}
+
 function nutricionInforme() {
-  const metas = metasNutricion();
+  const metas = metasNutricion() || null;
   const inf = informeNutriActual();
-  const { desde, hasta } = inf.periodo;
-  const conPrevio = inf.diasPreviosRegistrados > 0;
+  const per = inf.periodo || {};
+  const { desde, hasta } = per;
+  const rango = informeNutriRango();
+  const comparacion = inf.comparacion || {};
+  const supInf = inf.suplementos || {};
+  const combInf = inf.combinado || {};
+  const compInf = inf.componentes || {};
+  const pasoEtiqueta = Math.max(1, Math.ceil((inf.dias.length || 1) / 7));
+  const etiquetas = inf.dias.map((d, i) => (i % pasoEtiqueta === 0 || d.hoy ? d.etiqueta : ''));
   const filas = [
-    { nombre: 'Calorías', actual: inf.medias.kcal, anterior: inf.previas.kcal, uni: 'kcal' },
-    { nombre: 'Proteína', actual: inf.medias.prot, anterior: inf.previas.prot, uni: 'g' },
-    { nombre: 'Hidratos', actual: inf.medias.carbs, anterior: inf.previas.carbs, uni: 'g' },
-    { nombre: 'Grasa', actual: inf.medias.grasa, anterior: inf.previas.grasa, uni: 'g' },
-    { nombre: 'Fibra', actual: inf.medias.fibra, anterior: inf.previas.fibra, uni: 'g' },
+    { nombre: 'Calorías', actual: inf.medias.kcal, anterior: comparacion.previas?.kcal || 0, uni: 'kcal' },
+    { nombre: 'Proteína', actual: inf.medias.prot, anterior: comparacion.previas?.prot || 0, uni: 'g' },
+    { nombre: 'Hidratos', actual: inf.medias.carbs, anterior: comparacion.previas?.carbs || 0, uni: 'g' },
+    { nombre: 'Grasa', actual: inf.medias.grasa, anterior: comparacion.previas?.grasa || 0, uni: 'g' },
+    { nombre: 'Fibra', actual: inf.medias.fibra, anterior: comparacion.previas?.fibra || 0, uni: 'g' },
+    {
+      nombre: 'Tomas de suplementos', actual: comparacion.suplementos?.tomas || 0,
+      anterior: comparacion.suplementos?.tomasPrevios || 0, uni: '',
+    },
+    ...(comparacion.suplementos?.componentes || []).slice(0, 5).map(f => ({
+      nombre: `${etiquetaComponente(f.clave)} (${f.unidad || ''})`.trim(),
+      actual: f.actual, anterior: f.anterior, uni: '',
+    })),
   ];
   const microDatos = MICROS_REF.filter(m => inf.micros[m.k]?.dias > 0);
+  const microSup = MICROS_REF.filter(m => supInf.micros?.[m.k]?.dias > 0);
+  const objetivoNombre = OBJETIVOS_NUTRI[estado.nutricion?.objetivo]?.nombre || '—';
 
   return pagina({
     titulo: 'Informe nutricional', padre: 'nutricion',
     sub: `${fmtCorta(desde)} – ${fmtCorta(hasta)}`,
     cuerpo: `
       ${subnav(SUBNAV_NUTRICION, 'nutricion/informe')}
-      <div class="fila nav-semana">
-        <button class="icono" data-a="informeNutriSemana" data-d="-1" aria-label="Semana anterior">‹</button>
-        <b>${ui.informeNutriOffset ? `Semana del ${fmtCorta(desde)}` : 'Esta semana'}</b>
-        <button class="icono" data-a="informeNutriSemana" data-d="1" aria-label="Semana siguiente">›</button>
+      <div class="tarjeta">
+        <div class="fila"><h2>🗓️ Periodo</h2><span class="badge">${esc(per.etiqueta || 'Semanal')}</span></div>
+        <div class="chips">
+          ${PERIODOS_INFORME_NUTRI.map(([k, n]) => `<button class="chip ${rango.tipo === k ? 'on' : ''}" data-a="informeNutriPeriodo" data-m="${k}">${n}</button>`).join('')}
+        </div>
+        ${rango.tipo === 'personalizado' ? `<div class="fila">
+          <label class="campo">Desde<input type="date" value="${esc(rango.desde)}" data-a="informeNutriDesde"></label>
+          <label class="campo">Hasta<input type="date" value="${esc(rango.hasta)}" data-a="informeNutriHasta"></label>
+        </div>` : `<div class="fila nav-semana">
+          <button class="icono" data-a="informeNutriMover" data-d="-1" aria-label="Periodo anterior">‹</button>
+          <b>${ui.informeNutriOffset ? `${esc(per.etiqueta)} del ${fmtCorta(desde)}` : `Este ${esc((per.etiqueta || 'semanal').toLowerCase())}`}</b>
+          <button class="icono" data-a="informeNutriMover" data-d="1" aria-label="Periodo siguiente">›</button>
+        </div>`}
+        <p class="tenue">${esc(per.etiqueta || 'Semanal')}: ${fmtCorta(desde)} – ${fmtCorta(hasta)} · ${per.dias || 0} día(s). ${comparacion.disponible
+    ? comparacion.suficiente ? 'Hay registros suficientes para comparar con el periodo anterior.'
+      : `Comparativa orientativa: ${esc((comparacion.motivos || []).join('. '))}.`
+    : 'Todavía no hay registros en el periodo anterior para comparar.'}</p>
       </div>
-      ${!inf.diasRegistrados ? vacioMsg('🍎', 'Aún sin comidas', 'Registra comidas en el diario para ver tu informe semanal.') : ''}
+      ${!inf.diasRegistrados && !inf.alimentos.diasConRegistros && !supInf.diasConRegistros
+    ? vacioMsg('🍎', 'Aún sin registros', 'Anota comidas o tomas de suplementos en el Diario para ver este informe.')
+    : ''}
+      ${!inf.diasRegistrados && (inf.alimentos.diasConRegistros || supInf.diasConRegistros)
+    ? '<p class="aviso">Hay registros, pero su contenido nutricional es desconocido: cuentan como consumo, no como cero ni como dato válido.</p>' : ''}
       <div class="tiles">
-        ${tile('🗓️', `${inf.diasRegistrados}/7`, 'días registrados', 'azul')}
+        ${tile('🗓️', `${inf.diasRegistrados}/${per.dias || 0}`, 'días con datos', 'azul')}
+        ${tile('❓', `${inf.diasConRegistros || 0}`, 'días con registros', 'violeta')}
         ${tile('🔥', fmtNum(inf.medias.kcal), metas ? `media de ${fmtNum(metas.kcal)} kcal` : 'kcal de media', 'naranja')}
         ${tile('🥩', `${fmtDec(inf.medias.prot)} g`, metas ? `de ${metas.protG} g de proteína` : 'proteína media', 'verde')}
         ${tile('🌾', `${fmtDec(inf.medias.fibra)} g`, metas ? `de ${metas.fibraG} g de fibra` : 'fibra media', 'verde')}
         ${tile('💧', fmtDec(inf.medias.vasos), metas ? `vasos/día de ${fmtDec(metas.aguaMl / VASO_ML)}` : 'vasos/día', 'azul')}
       </div>
       <div class="tarjeta">
-        <div class="fila"><h2>🔥 Calorías de la semana</h2><span class="badge">Datos reales</span></div>
-        ${barrasSemana(inf.dias, metas?.kcal)}
+        <div class="fila"><h2>🎯 Objetivo</h2><span class="badge">${esc(metas?.modo || 'sin calcular')}</span></div>
+        ${metas ? `<div class="tiles">
+          ${tile('🔥', `${fmtNum(metas.kcal)} kcal`, 'energía diaria', 'naranja')}
+          ${tile('🥩', `${metas.protG} g`, 'proteína', 'verde')}
+          ${tile('🌾', `${metas.carbsG} g`, 'hidratos', 'amarillo')}
+          ${tile('🧈', `${metas.grasaG} g`, 'grasa', 'naranja')}
+          ${tile('🌾', `${metas.fibraG} g`, 'fibra', 'verde')}
+          ${tile('💧', `${fmtDec(metas.aguaMl / 1000)} L`, 'agua', 'azul')}
+        </div>
+        <p class="tenue">Objetivo nutricional: <b>${esc(objetivoNombre)}</b> · modo ${esc(metas.modo)}. Las metas son orientativas y se calculan con tus datos del perfil.</p>`
+    : '<p class="tenue">Aún no hay objetivos calculados. Añade peso, altura y edad para verlos.</p>'}
+        <p><a class="btn sec" href="#nutricion/objetivos">Editar objetivos</a></p>
+      </div>
+      <div class="tarjeta">
+        <div class="fila"><h2>🔥 Evolución de calorías</h2><span class="badge">Datos reales</span></div>
+        ${per.tipo === 'semanal' && inf.dias.length === 7
+    ? barrasSemana(inf.dias, metas?.kcal)
+    : sparklineKcal(inf.evolucion.map(d => d.kcal), metas?.kcal, etiquetas)}
+        <details><summary>Ver evolución de macros, suplementos y componentes</summary>
+          <div class="tabla-scroll"><table class="tabla-sup">
+            <thead><tr><th>Fecha</th><th>kcal</th><th>Prot.</th><th>Hidratos</th><th>Grasa</th><th>kcal sup.</th><th>Tomas</th><th>Componentes</th></tr></thead>
+            <tbody>${(inf.evolucion || []).map(d => `<tr>
+              <td>${esc(d.fecha)}</td><td>${fmtNum(d.kcal)}</td><td>${fmtDec(d.prot)}</td>
+              <td>${fmtDec(d.carbs)}</td><td>${fmtDec(d.grasa)}</td><td>${fmtNum(d.supKcal)}</td>
+              <td>${d.tomasSup}</td><td>${esc(Object.entries(d.componentes || {}).map(([k, v]) => `${etiquetaComponente(k.split('|')[0])} ${fmtDec(v)}`).join(' · ') || '—')}</td>
+            </tr>`).join('')}</tbody></table></div>
+        </details>
       </div>
       <div class="tarjeta">
         <h2>🥗 Reparto medio de macros</h2>
@@ -2561,23 +3880,59 @@ function nutricionInforme() {
         ${metas ? barrasMacros(inf.medias, metas) : '<p class="tenue">Configura tus objetivos para comparar con tus metas.</p>'}
       </div>
       <div class="tarjeta">
-        <h2>📊 Esta semana vs la anterior</h2>
-        ${conPrevio
-          ? barrasComparacion(filas)
-          : '<p class="tenue">Aún no hay comidas registradas en la semana anterior. Cuando las anotes, podrás comparar.</p>'}
+        <h2>📊 Comparativa con el ${esc((per.etiqueta || 'periodo').toLowerCase())} anterior</h2>
+        ${comparacion.suficiente && comparacion.deltas?.kcal != null
+    ? barrasComparacion(filas)
+    : `<p class="tenue">${comparacion.disponible
+      ? `No hay registros suficientes para una comparativa fiable: ${esc((comparacion.motivos || []).join('. '))}.`
+      : 'Todavía no hay registros en el periodo anterior. Cuando los anotes, podrás comparar.'}</p>`}
       </div>
       <div class="tarjeta tarjeta-micros">
         <h2>🧪 Micronutrientes declarados</h2>
+        <h3>De alimentos</h3>
         ${microDatos.length
-          ? microDatos.map(m => {
-            const x = inf.micros[m.k];
-            return `<div class="micro-fila">
-              <div class="fila"><span>${m.nombre}</span><b>${fmtDec(x.media)} ${m.uni} <small>de media · ${fmtDec(x.total)} ${m.uni} en ${x.dias} ${x.dias === 1 ? 'día' : 'días'}</small></b></div>
-              ${barraMicro(x.media, m.ref, m.color)}
-            </div>`;
-          }).join('')
-          : '<p class="tenue">No hay micronutrientes declarados en esta semana. DanTal no los inventa ni los estima.</p>'}
-        <p class="tenue">Medias calculadas solo sobre los días que declararon el dato. Referencias orientativas para adultos, no objetivos médicos.</p>
+    ? microDatos.map(m => {
+      const x = inf.micros[m.k];
+      return `<div class="micro-fila">
+        <div class="fila"><span>${m.nombre}</span><b>${fmtDec(x.media)} ${m.uni} <small>de media · ${fmtDec(x.total)} ${m.uni} en ${x.dias} ${x.dias === 1 ? 'día' : 'días'}</small></b></div>
+        ${barraMicro(x.media, m.ref, m.color)}
+      </div>`;
+    }).join('')
+    : '<p class="tenue">No hay micronutrientes declarados en los alimentos de este periodo. DanTal no los inventa ni los estima.</p>'}
+        <h3>De suplementos (aparte)</h3>
+        ${microSup.length
+    ? microSup.map(m => {
+      const x = supInf.micros[m.k];
+      return `<div class="micro-fila"><div class="fila"><span>${m.nombre}</span><b>${fmtDec(x.media)} ${m.uni} <small>de media · ${x.dias} ${x.dias === 1 ? 'día' : 'días'}</small></b></div></div>`;
+    }).join('')
+    : '<p class="tenue">Ningún suplemento consumido declara estos micronutrientes.</p>'}
+        <p class="tenue">Medias calculadas solo sobre los días que declararon el dato, incluido un 0 declarado. Los bloques no se suman entre sí porque la etiqueta puede expresar unidades distintas.</p>
+      </div>
+      <div class="tarjeta sup-informe">
+        <div class="fila"><h2>💊 Suplementos (aparte)</h2><span class="badge">${supInf.diasRegistrados || 0}/${per.dias || 0} días</span></div>
+        <p class="tenue">Sus nutrientes NO se han mezclado con los de los alimentos ni con tus objetivos. Una toma sin composición sigue siendo una toma registrada: no se cuenta como cero.</p>
+        <div class="tiles">
+          ${tile('🔥', fmtNum(supInf.medias?.kcal || 0), 'kcal/día de suplementos', 'naranja')}
+          ${tile('🥩', `${fmtDec(supInf.medias?.prot || 0)} g`, 'proteína/día', 'verde')}
+          ${tile('💊', `${supInf.registros || 0}`, 'tomas registradas', 'azul')}
+          ${tile('?', `${supInf.sinDato || 0}`, 'sin composición declarada', 'violeta')}
+        </div>
+        <h3>Productos consumidos</h3>
+        ${tablaProductosInforme(inf.productos || [])}
+      </div>
+      <div class="tarjeta">
+        <h2>🧬 Componentes declarados de suplementos</h2>
+        <h3>Consumidos en el periodo</h3>
+        ${tablaComponentesInforme(compInf.filas || [])}
+        <h3>Declaración original de las fichas</h3>
+        ${tablaComponentesInforme(compInf.declaraciones || [], true)}
+        <p class="tenue">Los aminoácidos se muestran una sola vez con su clave canónica. Las claves originales (componentesAlias) aparecen como procedencia; un alias con valor distinto no se suma dos veces.</p>
+      </div>
+      <div class="tarjeta">
+        <h2>🧾 Total combinado</h2>
+        <p class="tenue">${esc(combInf.nota || 'Solo datos declarados y comparables.')}</p>
+        <p><b>${fmtNum(combInf.medias?.kcal || 0)} kcal/día</b> · ${fmtDec(combInf.medias?.prot || 0)} g proteína · ${fmtDec(combInf.medias?.carbs || 0)} g hidratos · ${fmtDec(combInf.medias?.grasa || 0)} g grasa · ${fmtDec(combInf.medias?.fibra || 0)} g fibra</p>
+        <p class="tenue">Calculado sobre ${combInf.diasConDatos || 0} día(s) con datos; ${combInf.diasConAmbos || 0} con alimentos y suplementos a la vez. Cafeína, creatina, aminoácidos y otros componentes no entran en esta suma.</p>
       </div>
       <div class="tarjeta"><h2>📝 Lo que dice tu registro</h2>
         ${inf.observaciones.map(o => `<div class="fila informe-linea"><span>${o.icono || '•'} ${esc(o.texto)}</span></div>`).join('')}
@@ -2600,21 +3955,39 @@ function bloqueComida(clave, c, entradas) {
     <div class="botones">
       <button class="btn sec" data-a="addAlimento" data-comida="${clave}">＋ Alimento</button>
       <button class="btn sec" data-a="addReceta" data-comida="${clave}">🍳 Receta</button>
+      <button class="btn sec" data-a="fotoComidaAbrir" data-comida="${clave}">📸 Foto</button>
+      <a class="btn sec" href="#nutricion/suplementos">💊 Suplemento</a>
     </div>
   </div>`;
 }
 
 function itemComida(en, clave, idx) {
   const esReceta = en.tipo === 'receta';
+  const esSup = esSuplemento(en);
   const receta = esReceta ? RECETAS.find(r => r.id === en.id) : null;
-  const al = esReceta ? null : alimentoPorId(en.id);
+  const al = esReceta || esSup ? null : alimentoPorId(en.id);
   const macros = macrosEntrada(en);
-  const nombre = esReceta ? (receta?.nombre || en.id) : (al?.nombre || en.nombre || en.id);
-  const sub = esReceta ? `${fmtDec(en.racion || 1)} ${Number(en.racion || 1) === 1 ? 'ración' : 'raciones'}` : `${en.gramos} g`;
-  return `<div class="alimento-item">
-    <div class="ai-t"><b>${esc(nombre)}</b><small>${sub}</small>${miniMacros(macros)}</div>
-    <div class="ai-m"><b>${fmtNum(macros.kcal)}</b><small>kcal</small></div>
+  const aporte = aporteNutricional(en);
+  const sinDatoItem = aporte.estado === 'desconocido';
+  const parcialItem = aporte.estado === 'parcial';
+  const etiquetaDato = sinDatoItem ? 'Composición desconocida' : parcialItem ? 'Dato parcial' : '';
+  const nombre = esSup ? (en.nombre || en.suplementoId || en.id)
+    : esReceta ? (receta?.nombre || en.id) : (al?.nombre || en.nombre || en.id);
+  const sub = esSup
+    ? `${en.cantidadConsumida ?? '—'} ${en.unidad || ''}${en.gramos != null ? ` · ${fmtDec(en.gramos)} g` : ' · sin conversión declarada'}`
+    : esReceta ? `${fmtDec(en.racion || 1)} ${Number(en.racion || 1) === 1 ? 'ración' : 'raciones'}` : `${en.gramos} g`;
+  const etiquetas = esSup
+    ? `<span class="badge sup-estado ${en.estadoComposicion || 'desconocido'}">💊 Suplemento</span>
+       ${etiquetaDato ? `<span class="badge sup-estado desconocido">${etiquetaDato}</span>` : ''}
+       ${en.procedencia?.esEjemplo ? '<span class="badge">Ejemplo</span>' : ''}`
+    : etiquetaDato ? `<span class="badge sup-estado desconocido">${etiquetaDato}</span>` : '';
+  const sinKcal = sinDatoItem || (parcialItem && !aporte.macros.includes('kcal'));
+  const kcal = sinKcal ? '—' : fmtNum(macros.kcal);
+  return `<div class="alimento-item${esSup ? ' item-suplemento' : ''}">
+    <div class="ai-t"><b>${esc(nombre)}</b> ${etiquetas}<small>${esc(sub)}</small>${aporte.estado === 'conocido' ? miniMacros(macros) : ''}</div>
+    <div class="ai-m"><b>${kcal}</b><small>kcal</small></div>
     <div class="acciones">
+      <button class="icono peq" data-a="moverComida" data-comida="${clave}" data-i="${idx}" title="Mover a otra comida">⇄</button>
       <button class="icono peq" data-a="editCantidad" data-comida="${clave}" data-i="${idx}" title="Cambiar cantidad">✎</button>
       <button class="icono peq" data-a="quitarComida" data-comida="${clave}" data-i="${idx}" title="Quitar">🗑️</button>
     </div>
@@ -2627,7 +4000,7 @@ function listaAlimentosHTML() {
   return lista.map(a => `<button class="celda" data-a="ponerAlimento" data-id="${a.id}">
     <span class="ic ${a.supermercado ? 'azul' : 'verde'}">${a.supermercado ? '🛒' : '🍽️'}</span>
     <span class="celda-t"><b>${esc(a.nombre)}</b>${a.marca ? ` <small class="tenue">(${esc(a.marca)})</small>` : ''}
-      <small>${a.porcion} g · ${fmtNum(a.kcal * a.porcion / 100)} kcal · ${fmtNum(a.prot * a.porcion / 100)} g proteína</small></span>
+      <small>${a.cantidad ? `${esc(a.cantidad)} · ` : ''}${a.porcion} g · ${fmtNum(a.kcal * a.porcion / 100)} kcal · ${fmtNum(a.prot * a.porcion / 100)} g proteína</small></span>
     <span class="chev">＋</span></button>`).join('');
 }
 
@@ -2663,11 +4036,156 @@ function elegirAlimento(comida) {
   });
 }
 
+// ---------------------------------------------------------------------
+// Ficha del producto comercial: nutrición declarada, alérgenos e ingredientes
+// ---------------------------------------------------------------------
+const NUTRI_FICHA = [
+  ['Energía', 'kcal', 'kcal', ''],
+  ['Energía', 'kJ', 'kJ', ''],
+  ['Proteínas', 'prot', 'g', ''],
+  ['Hidratos de carbono', 'carbs', 'g', ''],
+  ['de los cuales, azúcares', 'azucares', 'g', 'sub'],
+  ['Grasas', 'grasa', 'g', ''],
+  ['de las cuales, saturadas', 'saturada', 'g', 'sub'],
+  ['monoinsaturadas', 'monoinsaturada', 'g', 'sub'],
+  ['poliinsaturadas', 'poliinsaturada', 'g', 'sub'],
+  ['Fibra alimentaria', 'fibra', 'g', ''],
+  ['Sal', 'sal', 'g', ''],
+  ['Sodio', 'sodio', 'mg', ''],
+  ['Alcohol', 'alcohol', 'g', ''],
+];
+
+const dashFicha = '—';
+const valorFicha = (v, unidad) => (Number.isFinite(Number(v)) && v !== null && v !== '')
+  ? `${fmtDec(v)} ${unidad}` : dashFicha;
+
+function tablaNutricionFicha(a, det) {
+  const rac = det?.nutricionRacion || null;
+  const noDisp = new Set(Array.isArray(a.noDisponible) ? a.noDisponible : []);
+  const filas = NUTRI_FICHA.map(([nombre, clave, unidad, tipo]) => {
+    const existe = (clave in a) || (rac && clave in rac);
+    if (!existe) return '';
+    const v100 = (!noDisp.has(clave) && (clave in a)) ? a[clave] : null;
+    const vRac = (rac && clave in rac) ? rac[clave] : null;
+    return `<tr${tipo ? ` class="${tipo}"` : ''}><th>${nombre}</th>
+      <td>${valorFicha(v100, unidad)}</td>${rac ? `<td>${valorFicha(vRac, unidad)}</td>` : ''}</tr>`;
+  }).join('');
+  if (!filas) return '';
+  return `<div class="ficha-bloque">
+    <h3>📊 Información nutricional</h3>
+    <table class="tabla-nutri">
+      <thead><tr><th>Nutriente</th><th>por 100 g o 100 ml</th>
+      ${rac ? `<th>por ración<br><small>${esc(rac.base)}</small></th>` : ''}</tr></thead>
+      <tbody>${filas}</tbody>
+    </table>
+    <p class="tenue">${dashFicha} = la etiqueta no declara ese valor; no se ha supuesto cero.
+    La columna por ración solo aparece cuando la fuente la declara.</p>
+  </div>`;
+}
+
+function bloqueAlergenos(a) {
+  if (!a.alergenos14) return '';
+  const orden = { presente: 0, trazas: 1, ausencia_declarada: 2, desconocido: 3 };
+  const lista = alergenosDe(a).sort((x, y) => orden[x.estado.clave] - orden[y.estado.clave]);
+  const clases = {
+    presente: 'presente', trazas: 'trazas',
+    ausencia_declarada: 'ausencia', desconocido: 'desconocido',
+  };
+  const iconos = { presente: '⚠️', trazas: '🔶', ausencia_declarada: '✅', desconocido: '❔' };
+  const presentes = lista.filter(x => x.estado.clave === 'presente').length;
+  const trazas = lista.filter(x => x.estado.clave === 'trazas').length;
+  return `<div class="ficha-bloque">
+    <h3>🚨 Alérgenos (14 de declaración obligatoria UE)</h3>
+    <div class="alergenos-grid">
+      ${lista.map(x => `<span class="alergeno ${clases[x.estado.clave]}">
+        <b>${iconos[x.estado.clave]} ${esc(x.nombre)}</b>
+        <small>${x.estado.texto}</small></span>`).join('')}
+    </div>
+    <p class="tenue">${presentes || trazas
+      ? `Declarados: ${presentes} como ingrediente y ${trazas} como posibles trazas.`
+      : 'La fuente no declara alérgenos presentes.'}
+    Un alérgeno «sin datos» no significa que no esté: comprueba siempre el envase.</p>
+  </div>`;
+}
+
+function fichaComercialHTML(a, det) {
+  const datos = [
+    a.marca ? `Marca: <b>${esc(a.marca)}</b>` : '',
+    a.cantidad ? `Formato: <b>${esc(a.cantidad)}</b>` : '',
+    det?.denominacion ? `Denominación: <b>${esc(det.denominacion)}</b>` : '',
+    det?.pais ? `País o mercado: <b>${esc(det.pais)}</b>` : '',
+    det?.fabricante ? `Fabricante: <b>${esc(det.fabricante)}</b>` : '',
+    det?.lugarFabricacion ? `Lugar de fabricación: <b>${esc(det.lugarFabricacion)}</b>` : '',
+    det?.envase ? `Envase: <b>${esc(det.envase)}</b>` : '',
+  ].filter(Boolean);
+  const aditivos = det?.aditivos?.length
+    ? `<p class="ficha-aditivos"><b>Aditivos:</b> ${det.aditivos.map(x => `<span class="aditivo">${esc(x)}</span>`).join(' ')}</p>`
+    : '';
+  const ingredientes = det?.ingredientes
+    ? `<div class="ficha-bloque"><h3>🥣 Ingredientes</h3>
+        <p class="ficha-ingredientes">${esc(det.ingredientes)}</p>${aditivos}</div>`
+    : (det?.aditivos?.length
+      ? `<div class="ficha-bloque"><h3>🥣 Aditivos</h3>${aditivos}</div>`
+      : `<div class="ficha-bloque"><h3>🥣 Ingredientes</h3>
+          <p class="tenue">La fuente no publica la lista de ingredientes de este producto.
+          Eso no significa que no los tenga.</p></div>`);
+  const fuente = det
+    ? `<p class="tenue ficha-fuente">Datos: <a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open Food Facts</a> (<a href="https://opendatacommons.org/licenses/odbl/1.0/" target="_blank" rel="noopener">ODbL 1.0</a>) · consulta ${esc(det.fechaConsulta || '')}
+       ${det.actualizadoOFF ? `· última edición en la fuente ${esc(det.actualizadoOFF)}` : ''}
+       · <a href="${esc(det.url)}" target="_blank" rel="noopener">ver ficha original</a>.
+       Comprueba siempre la etiqueta del envase.</p>`
+    : `<p class="tenue ficha-fuente">Sin ficha detallada en Open Food Facts. Comprueba siempre la etiqueta.</p>`;
+  const avisoRevision = Array.isArray(a.revisar) && a.revisar.length
+    ? `<div class="ficha-revision"><b>Revisar en la etiqueta:</b> ${a.revisar.map(x => `<span>${esc(x)}</span>`).join(' ')}
+        La fuente declara valores contradictorios o fuera de rango. Se han conservado o
+        reconciliado solo con otros datos de la propia ficha.</div>`
+    : '';
+  return `${datos.length ? `<p class="ficha-datos">${datos.join(' · ')}</p>` : ''}
+    ${avisoRevision}
+    ${tablaNutricionFicha(a, det)}
+    ${bloqueAlergenos(a)}
+    ${ingredientes}
+    ${fuente}`;
+}
+
+// Paso intermedio del diario: elegir gramos y ver sus nutrientes antes de guardar.
+function cantidadAlimento(id) {
+  const a = alimentoPorId(id);
+  if (!a) return;
+  const porcion = Number(a.porcion) || 100;
+  const macros = macrosDe(a, porcion);
+  const comercial = !!a.supermercado;
+  const etiquetaCantidad = comercial ? 'Cantidad inicial' : 'Ración habitual';
+  modal(`<h2>${comercial ? '🛒' : '🍽️'} ${esc(a.nombre)}</h2>
+    <p class="tenue">${a.marca ? `${esc(a.marca)} · ` : ''}${etiquetaCantidad}: ${porcion} g. ${comercial ? 'Cámbiala si vas a tomar otra cantidad.' : 'Cambia la cantidad si vas a tomar otra.'}</p>
+    <form id="formAlimento" data-id="${esc(a.id)}">
+      <label class="campo">Comida
+        <select name="comida" aria-label="Comida del alimento">
+          ${Object.entries(COMIDAS).map(([k, c]) => `<option value="${k}" ${k === ui.comidaSel ? 'selected' : ''}>${c.icono} ${c.nombre}</option>`).join('')}
+        </select>
+      </label>
+      <label class="campo">Gramos<input type="number" name="gramos" data-a="cantidadAlimento" inputmode="numeric" step="1" min="1" value="${porcion}" required></label>
+      <div id="vistaCantidadAlimento" class="alimento-item"><div class="ai-t"><b>${fmtNum(macros.kcal)} kcal</b><small>para ${porcion} g</small>${miniMacros(macros)}</div></div>
+      <div class="botones">
+        <button class="btn sec" type="button" data-a="cerrar">Cancelar</button>
+        <button class="btn" type="submit">＋ Añadir al diario</button>
+      </div>
+    </form>
+    ${comercial ? '<div id="fichaComercial" class="ficha-comercial"><p class="tenue centro">Cargando ingredientes, alérgenos y ración declarada…</p></div>' : ''}`);
+  setTimeout(() => $('#formAlimento input')?.focus(), 50);
+  if (comercial) {
+    detalleComercial(a).then(det => {
+      const cont = $('#fichaComercial');
+      if (cont) cont.innerHTML = fichaComercialHTML(a, det);
+    });
+  }
+}
+
 function elegirReceta(comida) {
   ui.comidaSel = comida;
   modal(`<h2>${COMIDAS[comida].icono} Recetas para ${COMIDAS[comida].nombre}</h2>
     <div class="celdas">${RECETAS.map(r => {
-      const t = resumenReceta(r).total;
+      const t = resumenRecetaPorRacion(r).total;
       return `<button class="celda" data-a="ponerReceta" data-id="${r.id}">
         <span class="ic naranja">${r.icono}</span>
         <span class="celda-t"><b>${esc(r.nombre)}</b><small>${fmtNum(t.kcal)} kcal · ${Math.round(t.prot)} g proteína</small></span>
@@ -2675,38 +4193,514 @@ function elegirReceta(comida) {
     }).join('')}</div>`);
 }
 
-function nutricionRecetas() {
+
+// ---------------------------------------------------------------------
+// Planificador de alimentación y biblioteca de recetas
+// ---------------------------------------------------------------------
+// Las recetas propias se derivan en lectura: así responden a los mismos filtros
+// por comida y categoría que la biblioteca, sin modificar lo guardado.
+const todasRecetas = () => [
+  ...(Array.isArray(estado.recetasPropias) ? estado.recetasPropias : [])
+    .map(r => ({ ...r, categorias: categoriasEnEspanol(r), dieta: clasificarReceta(r, alimentoPorId) })),
+  ...RECETAS,
+];
+const recetaPorId = id => todasRecetas().find(r => r.id === id) || null;
+const recetaEsPropia = id => (estado.recetasPropias || []).some(r => r.id === id);
+const recetaEsFavorita = id => (estado.recetasFavoritas || []).includes(id);
+const recetaEstado = r => {
+  if (r?.estado === 'incompleto') return 'incompleto';
+  // Si falta algún alimento de referencia no podemos afirmar que esté calculado.
+  const alimentos = (r?.ingredientes || []).map(i => alimentoPorId(i.id));
+  if (alimentos.some(a => !a)) return 'incompleto';
+  if (r?.estado === 'estimado') return 'estimado';
+  // Un alimento con macros completados (energía Atwater u otra referencia)
+  // convierte la receta en estimada: nunca la mostramos como dato exacto.
+  if (alimentos.some(a => a?.estimado)) return 'estimado';
+  return 'calculado';
+};
+function recetaMacros(r) {
+  try { return resumenRecetaPorRacion(r).total; } catch { return ceroMacros(); }
+}
+const estadoRecetaTexto = estado => ({
+  calculado: {
+    titulo: 'Calculado con los ingredientes y alimentos verificados de la app',
+    aviso: '✅ Valores calculados a partir de los gramos de cada ingrediente y de la tabla de alimentos verificados (USDA / Open Food Facts).',
+  },
+  estimado: {
+    titulo: 'Estimado: puede diferir del producto real',
+    aviso: '⚠️ Valores estimados: la fuente no declara suficientes cantidades o alimentos. Tómalos como orientación, nunca como un dato exacto.',
+  },
+  incompleto: {
+    titulo: 'Información incompleta',
+    aviso: '⛔ Información incompleta: falta algún alimento de referencia. Los valores pueden quedar por debajo de los reales.',
+  },
+}[estado] || { titulo: '', aviso: '' });
+const CATS_FICHA = ['desayunos', 'comidas', 'cenas', 'meriendas', 'ensaladas', 'platos de cuchara', 'carnes', 'pescados', 'vegetarianas'];
+function categoriasFicha(r) {
+  const todas = (r?.categorias || []).filter(c => !/^[A-Z]{2}$/.test(String(c)));
+  const destacadas = todas.filter(c => CATS_FICHA.includes(String(c).toLowerCase()));
+  return [...destacadas, ...todas.filter(c => !destacadas.includes(c))].slice(0, 12);
+}
+const racionesFicha = r => Math.max(1, Number(r?.raciones) || 1);
+function racionesElegidas(r) {
+  const n = Number(ui.recetaRaciones?.[r?.id]);
+  // La ficha muestra una ración real por defecto, aunque la receta rinda más.
+  return Number.isFinite(n) && n >= 0.25 ? Math.min(24, n) : 1;
+}
+const pctObjetivo = (valor, objetivo) => objetivo > 0 ? Math.round(valor / objetivo * 100) : null;
+
+function nutricionPlanificador() {
+  const metas = metasNutricion() || {};
+  // metasNutricion usa sufijos G; los macros de alimentos.js no. Normalizo
+  // aquí para comparar siempre contra los objetivos reales del usuario.
+  const objetivos = {
+    kcal: metas.kcal || 0, prot: metas.protG || 0, carbs: metas.carbsG || 0,
+    grasa: metas.grasaG || 0, fibra: metas.fibraG || 0,
+  };
+  const fSel = ui.planFecha && /^\d{4}-\d{2}-\d{2}$/.test(ui.planFecha) ? ui.planFecha : diaNutri();
+  const plan = estado.planComidas || {};
+  const semana = semanaDelPlan(plan, fSel, estado.comidas);
+  const dia = diaDelPlan(plan, fSel);
+  const tot = macrosDiaPlan(dia);
+  const rel = compararConObjetivos(tot, objetivos);
+  const consumo = estado.comidas?.[fSel]
+    ? macrosComidaPlan(Object.values(estado.comidas[fSel]).flat()) : null;
+  const pKcal = pctObjetivo(tot.kcal, objetivos.kcal);
   return pagina({
-    titulo: 'Recetas', sub: 'Ideas equilibradas con sus macros',
+    titulo: 'Planificador', padre: 'nutricion',
+    sub: 'Organiza tu semana. El diario solo cambia cuando tú lo confirmes.',
+    cuerpo: `
+      ${subnav(SUBNAV_NUTRICION, 'nutricion/planificador')}
+      <div class="tarjeta">
+        <div class="fila plan-cab"><h2>🗓️ Tu semana</h2><span class="chips">
+          <button class="chip" data-a="planSemana" data-d="-7">‹ Semana</button>
+          <button class="chip" data-a="planHoy">Hoy</button>
+          <button class="chip" data-a="planSemana" data-d="7">Semana ›</button>
+          <a class="chip" href="#nutricion/compra">🛒 Lista de la compra</a>
+        </span></div>
+        <div class="plan-semana">${semana.map(s => `
+          <button class="plan-dia ${s.fecha === fSel ? 'on' : ''} ${s.fecha === hoy() ? 'hoy' : ''} ${!Object.values(s.comidas).some(l => l.length) ? 'vacio' : ''}"
+            data-a="planDia" data-f="${s.fecha}" aria-label="${DIAS[s.indice]} ${fmtCorta(s.fecha)}">
+            <b>${DIAS[s.indice]}</b>
+            <small>${deIso(s.fecha).getDate()}/${deIso(s.fecha).getMonth() + 1}</small>
+            <small>${fmtNum(s.macros.kcal)} kcal</small>
+            <div class="plan-mini"><i style="width:${Math.min(100, pctObjetivo(s.macros.kcal, objetivos.kcal) || 0)}%"></i></div>
+          </button>`).join('')}</div>
+        <p class="tenue">${consumo
+          ? `Ya registrado en el diario este día: ${fmtNum(consumo.kcal)} kcal. `
+          : 'Sin registros en el diario este día. '}Lo planificado no se añade automáticamente.</p>
+      </div>
+      <div class="tarjeta">
+        <div class="fila plan-cab"><h2 style="text-transform:capitalize">${esc(fmtFecha(fSel))}</h2>
+          <span class="chips">
+            <button class="chip" data-a="planCopiarDia" data-f="${fSel}">⧉ Copiar día</button>
+            <button class="chip" data-a="planCoach">🤖 Pedir propuestas</button>
+          </span></div>
+        <div class="plan-totales">
+          <span class="${pKcal != null && pKcal > 105 ? 'over' : ''}"><b>${fmtNum(tot.kcal)}</b> / ${fmtNum(objetivos.kcal)} kcal · ${pKcal == null ? '—' : pKcal + ' %'}</span>
+          <span><b>${Math.round(tot.prot)}</b> / ${Math.round(objetivos.prot)} g proteína · ${rel.prot == null ? '—' : rel.prot + ' %'}</span>
+          <span><b>${Math.round(tot.carbs)}</b> / ${Math.round(objetivos.carbs)} g hidratos · ${rel.carbs == null ? '—' : rel.carbs + ' %'}</span>
+          <span><b>${Math.round(tot.grasa)}</b> / ${Math.round(objetivos.grasa)} g grasa · ${rel.grasa == null ? '—' : rel.grasa + ' %'}</span>
+          <span><b>${Math.round(tot.fibra)}</b> / ${Math.round(objetivos.fibra)} g fibra · ${rel.fibra == null ? '—' : rel.fibra + ' %'}</span>
+        </div>
+        <p class="tenue">Comparado con tus objetivos personales (${esc(OBJETIVOS_NUTRI[estado.nutricion?.objetivo || 'mantener']?.nombre || 'mantener')}). Un día sin registros en el diario no es consumo cero.</p>
+      </div>
+      ${COMIDA_KEYS.map(c => planComidaHTML(c, dia, fSel)).join('')}
+      <p class="tenue centro">Los valores salen de los alimentos verificados de la app (USDA FoodData Central, CC0, y Open Food Facts, ODbL). No es consejo médico.</p>
+    `,
+  });
+}
+
+function nutricionCompra() {
+  const fecha = ui.planFecha && /^\d{4}-\d{2}-\d{2}$/.test(ui.planFecha) ? ui.planFecha : diaNutri();
+  const inicio = lunes(fecha);
+  const fin = sumarDias(inicio, 6);
+  const lista = listaCompraPlan(estado.planComidas, fecha, 7);
+  const marcados = estado.compraMarcados || {};
+  const comprados = lista.filter(i => marcados[i.id]).length;
+  const texto = lista.map(i => `- [${marcados[i.id] ? 'x' : ' '}] ${i.gramos} g ${i.nombre}`).join('\n');
+  ui.compraTexto = texto;
+  return pagina({
+    titulo: 'Lista de la compra', padre: 'nutricion',
+    sub: `Semana del ${fmtCorta(inicio)} al ${fmtCorta(fin)} · ${comprados}/${lista.length} comprados`,
+    cuerpo: `
+      ${subnav(SUBNAV_NUTRICION, 'nutricion/compra')}
+      <div class="tarjeta">
+        <div class="fila"><div><h2>🛒 De tu planificador</h2>
+          <p class="tenue">Ingredientes de las recetas y alimentos planificados del ${esc(fmtCorta(inicio))} al ${esc(fmtCorta(fin))}. Los ingredientes repetidos se suman en gramos. Marcar un producto se guarda en este dispositivo.</p></div>
+          <a class="btn sec" href="#nutricion/planificador">🗓️ Ir al planificador</a></div>
+        <div class="fila"><span class="chips">
+          <button class="chip" data-a="planSemana" data-d="-7">‹ Semana</button>
+          <button class="chip" data-a="planHoy">Hoy</button>
+          <button class="chip" data-a="planSemana" data-d="7">Semana ›</button>
+        </span><span class="tenue" id="compraContador">${comprados} de ${lista.length} marcados</span></div>
+      </div>
+      <div class="tarjeta">
+        ${lista.length ? `<ul class="lista-compra-plan">${lista.map(i => `
+          <li class="${marcados[i.id] ? 'comprado' : ''}">
+            <label><input type="checkbox" data-a="compraMarcar" data-id="${esc(i.id)}" ${marcados[i.id] ? 'checked' : ''}>
+              <span><b>${i.gramos} g</b> ${esc(i.nombre)} <small class="tenue">${esc(i.categoria)}</small></span></label>
+          </li>`).join('')}</ul>` : vacioMsg('🛒', 'Sin compra todavía', 'Añade recetas o alimentos al planificador para generar la lista.')}
+        <div class="botones">
+          <button class="btn sec" data-a="copiarCompraPlan" ${lista.length ? '' : 'disabled'}>📋 Copiar lista</button>
+          <button class="btn sec" data-a="descargarCompraPlan" ${lista.length ? '' : 'disabled'}>⬇️ Descargar</button>
+          <button class="btn sec" data-a="compraReiniciar" ${comprados ? '' : 'disabled'}>↺ Quitar marcas</button>
+        </div>
+      </div>
+      <p class="tenue centro">Las cantidades salen de los ingredientes guardados en tu plan. Comprueba siempre el envase real: los valores son orientativos.</p>
+    `,
+  });
+}
+
+function planComidaHTML(clave, dia, fecha) {
+  const info = COMIDAS[clave];
+  const entradas = dia.comidas[clave] || [];
+  const m = macrosComidaPlan(entradas);
+  const pendientes = entradas.filter(e => !e.pasadoAlDiario);
+  return `<section class="tarjeta plan-comida">
+    <div class="fila"><h3>${info.icono} ${info.nombre}</h3>
+      <span class="plan-kcal">${fmtNum(m.kcal)} kcal · ${Math.round(m.prot)} g P · ${Math.round(m.carbs)} g C · ${Math.round(m.grasa)} g G · ${Math.round(m.fibra)} g fibra</span></div>
+    ${entradas.length ? entradas.map(e => {
+      const em = macrosEntrada(e);
+      return `<div class="plan-entrada">
+        <div class="pe-t"><b>${esc(e.nombre)}</b><small>${e.tipo === 'alimento'
+          ? `${e.gramos} g` : `${fmtDec(e.racion || 1)} ración(es)`}${e.pasadoAlDiario ? ' · ✅ ya en el diario' : ''}${e.estado === 'estimado' ? ' · estimado' : ''}</small></div>
+        <div class="pe-m">${fmtNum(em.kcal)} kcal<br>${Math.round(em.prot)} g P</div>
+        <div class="acciones">
+          <button class="icono peq" data-a="planEditar" data-f="${fecha}" data-c="${clave}" data-e="${e.entradaId}" title="Modificar cantidad">⚖️</button>
+          <button class="icono peq" data-a="planCopiarComida" data-f="${fecha}" data-c="${clave}" title="Copiar comida">⧉</button>
+          <button class="icono peq" data-a="planQuitar" data-f="${fecha}" data-c="${clave}" data-e="${e.entradaId}" title="Eliminar">🗑</button>
+        </div>
+      </div>`;
+    }).join('') : '<p class="plan-vacio">Sin alimentos planificados en esta comida.</p>'}
+    <div class="botones">
+      <button class="btn sec peq" data-a="planAddAlimento" data-f="${fecha}" data-c="${clave}">＋ Alimento</button>
+      <button class="btn sec peq" data-a="planAddReceta" data-f="${fecha}" data-c="${clave}">＋ Receta</button>
+      <button class="btn sec peq" data-a="planCopiarComida" data-f="${fecha}" data-c="${clave}">⧉ Copiar</button>
+      <button class="btn peq" data-a="planPasarDiario" data-f="${fecha}" data-c="${clave}" ${pendientes.length ? '' : 'disabled'}>Pasar al diario${pendientes.length ? ` (${pendientes.length})` : ''}</button>
+    </div>
+  </section>`;
+}
+
+function planAddAlimento(fecha, comida) {
+  const q = (ui.planBusca || '').trim().toLowerCase();
+  const lista = (q ? buscarAlimentos(q) : ALIMENTOS).slice(0, 60);
+  modal(`<h2>${COMIDAS[comida].icono} Añadir alimento</h2>
+    <form id="formPlanBuscar" data-f="${fecha}" data-c="${comida}" class="plan-select">
+      <label class="campo">Buscar<input name="q" value="${esc(ui.planBusca || '')}" placeholder="Nombre del alimento"></label>
+      <button class="btn sec" type="submit">Buscar</button>
+    </form>
+    <div class="celdas">${lista.map(a => `<button class="celda" data-a="planPonerAlimento" data-f="${fecha}" data-c="${comida}" data-id="${a.id}">
+      <span class="ic verde">🥗</span>
+      <span class="celda-t"><b>${esc(a.nombre)}</b><small>${fmtNum(a.kcal)} kcal/100 g · ración ${a.porcion || 100} g${a.fuente ? ' · ' + esc(a.fuente) : ''}</small></span>
+      <span class="chev">＋</span></button>`).join('') || '<p class="tenue">Sin resultados.</p>'}</div>`);
+}
+
+function planAddReceta(fecha, comida) {
+  const q = (ui.planBusca || '').trim().toLowerCase();
+  const lista = todasRecetas().filter(r => !q
+    || String(r.nombre).toLowerCase().includes(q)
+    || (r.ingredientes || []).some(i => String(i.nombre || '').toLowerCase().includes(q)))
+    .filter(r => !(r.comidas || []).length || r.comidas.includes(comida)).slice(0, 80);
+  modal(`<h2>${COMIDAS[comida].icono} Añadir receta</h2>
+    <form id="formPlanBuscar" data-f="${fecha}" data-c="${comida}" class="plan-select">
+      <label class="campo">Buscar<input name="q" value="${esc(ui.planBusca || '')}" placeholder="Nombre o ingrediente"></label>
+      <button class="btn sec" type="submit">Buscar</button>
+    </form>
+    <div class="celdas">${lista.map(r => {
+      const t = recetaMacros(r);
+      return `<button class="celda" data-a="planPonerReceta" data-f="${fecha}" data-c="${comida}" data-id="${esc(r.id)}">
+        ${r.imagen ? `<img class="mini-producto" src="${esc(r.imagen)}" alt="" loading="lazy">` : `<span class="ic naranja">${r.icono || '🍽️'}</span>`}
+        <span class="celda-t"><b>${esc(r.nombre)}</b><small>${fmtNum(t.kcal)} kcal · ${Math.round(t.prot)} g proteína · ${recetaEstado(r)}</small></span>
+        <span class="chev">＋</span></button>`;
+    }).join('') || '<p class="tenue">No hay recetas para esta comida con ese filtro.</p>'}</div>`);
+}
+
+function planEditar(fecha, comida, entradaId) {
+  const entrada = diaDelPlan(estado.planComidas, fecha).comidas[comida]
+    .find(e => e.entradaId === entradaId);
+  if (!entrada) return;
+  const esAli = entrada.tipo === 'alimento';
+  modal(`<h2>⚖️ ${esc(entrada.nombre)}</h2>
+    <form id="formPlanEditar" data-f="${fecha}" data-c="${comida}" data-e="${entradaId}" data-tipo="${entrada.tipo}">
+      ${esAli
+        ? `<label class="campo">Gramos<input type="number" name="gramos" min="1" max="5000" step="1" value="${Number(entrada.gramos) || 100}" required></label>`
+        : `<label class="campo">Raciones<input type="number" name="racion" min="0.25" max="24" step="0.25" value="${Number(entrada.racion) || 1}" required></label>
+           <p class="tenue">1 ración es una ración real de la receta (${Math.max(1, Number(entrada.racionesReceta) || 1)} en total). Los gramos siguientes son los de la receta completa; ajusta las raciones para cambiar el consumo.</p>
+           <h3>Ingredientes de la receta completa (gramos)</h3>
+           ${(entrada.ingredientes || []).map((i, idx) => `<label class="campo">${esc(i.nombre || i.id)}
+             <input type="number" name="g${idx}" min="1" max="5000" step="1" value="${Number(i.gramos) || 1}" required></label>`).join('')}`}
+      <div class="botones">
+        <button class="btn sec" type="button" data-a="planEscalar" data-factor="0.75">−25 %</button>
+        <button class="btn sec" type="button" data-a="planEscalar" data-factor="1.25">+25 %</button>
+      </div>
+      <div class="botones"><button class="btn sec" type="button" data-a="cerrar">Cancelar</button>
+        <button class="btn" type="submit">Guardar cantidades</button></div>
+    </form>`);
+}
+
+function planElegirDestino(id, tipo) {
+  const receta = recetaPorId(id);
+  const raciones = receta ? racionesElegidas(receta) : 1;
+  modal(`<h2>🗓️ Añadir al planificador</h2>
+    <form id="formPlanDestino" data-id="${esc(id)}" data-tipo="${tipo}" class="plan-select">
+      <label class="campo">Fecha<input type="date" name="fecha" value="${ui.planFecha || diaNutri()}" required></label>
+      <label class="campo">Comida<select name="comida">${COMIDA_KEYS.map(c =>
+        `<option value="${c}" ${c === 'cena' ? 'selected' : ''}>${COMIDAS[c].icono} ${COMIDAS[c].nombre}</option>`).join('')}</select></label>
+      ${tipo === 'receta' ? `<label class="campo">Raciones<input type="number" name="raciones" min="0.25" max="24" step="0.25" inputmode="decimal" value="${fmtDec(raciones)}" required></label>` : ''}
+      <div class="botones" style="width:100%"><button class="btn sec" type="button" data-a="cerrar">Cancelar</button>
+        <button class="btn" type="submit">Añadir al plan</button></div>
+    </form>`);
+}
+
+function planCopiarModal(fecha, comida, tipo) {
+  modal(`<h2>⧉ Copiar ${tipo === 'dia' ? 'día' : COMIDAS[comida].nombre.toLowerCase()}</h2>
+    <p class="tenue">Se copiarán las entradas a otra fecha sin borrar el original.</p>
+    <form id="formPlanCopiar" data-f="${fecha}" data-c="${comida || ''}" data-tipo="${tipo}" class="plan-select">
+      <label class="campo">Fecha destino<input type="date" name="fecha" value="${fecha}" required></label>
+      ${tipo === 'comida' ? `<label class="campo">Comida destino<select name="comida">${COMIDA_KEYS.map(c =>
+        `<option value="${c}" ${c === comida ? 'selected' : ''}>${COMIDAS[c].icono} ${COMIDAS[c].nombre}</option>`).join('')}</select></label>` : ''}
+      <div class="botones" style="width:100%"><button class="btn sec" type="button" data-a="cerrar">Cancelar</button>
+        <button class="btn" type="submit">Copiar</button></div>
+    </form>`);
+}
+
+function planConfirmarDiario(fecha, comida) {
+  const dia = diaDelPlan(estado.planComidas, fecha);
+  const pendientes = (dia.comidas[comida] || []).filter(e => !e.pasadoAlDiario);
+  if (!pendientes.length) { toast('No hay nada pendiente en esta comida.'); return; }
+  modal(`<h2>✅ Pasar al diario</h2>
+    <p class="tenue">Se añadirán ${pendientes.length} entradas al ${esc(fmtFecha(fecha))} en ${COMIDAS[comida].nombre.toLowerCase()}. Si ya están en el diario no se duplicarán.</p>
+    ${pendientes.map(e => `<div class="plan-entrada"><div class="pe-t"><b>${esc(e.nombre)}</b>
+      <small>${e.tipo === 'alimento' ? `${e.gramos} g` : `${fmtDec(e.racion || 1)} ración(es)`}</small></div>
+      <div class="pe-m">${fmtNum(macrosEntrada(e).kcal)} kcal</div></div>`).join('')}
+    <div class="botones"><button class="btn sec" data-a="cerrar">Cancelar</button>
+      <button class="btn" data-a="planPasarConfirm" data-f="${fecha}" data-c="${comida}">Confirmar</button></div>`);
+}
+
+function planPedirCoach() {
+  const fecha = ui.planFecha || diaNutri();
+  const metas = metasNutricion() || {};
+  const m = macrosDiaPlan(diaDelPlan(estado.planComidas, fecha));
+  const q = `Propón opciones reales para completar mi plan del ${fecha}. Objetivo: ${fmtNum(metas.kcal || 0)} kcal y ${Math.round(metas.protG || 0)} g de proteína. Ya tengo planificadas ${fmtNum(m.kcal)} kcal y ${Math.round(m.prot)} g de proteína. Usa solo mis recetas y alimentos disponibles y mis preferencias. Quiero revisar las propuestas antes de añadirlas al plan.`;
+  ui.planPregunta = q;
+  ir('nutricion/ia');
+  coachEnviar(q);
+}
+
+function nutricionRecetas() {
+  const dietasActivas = FILTROS_DIETA.filter(f => (ui.recetaDietas || []).includes(f.clave));
+  const q = (ui.recetaBusca || '').trim().toLowerCase();
+  const ing = (ui.recetaIng || '').trim().toLowerCase();
+  const kcalMax = Number(ui.recetaKcalMax);
+  const protMin = Number(ui.recetaProtMin);
+  const tiempoMax = Number(ui.recetaTiempoMax);
+  let lista = todasRecetas();
+  if (ui.recetaSoloFavoritas) lista = lista.filter(r => recetaEsFavorita(r.id));
+  if (ui.recetaSoloPropias) lista = lista.filter(r => recetaEsPropia(r.id));
+  if (ui.recetaTipo) lista = lista.filter(r => (r.comidas || []).includes(ui.recetaTipo));
+  if (ui.recetaCategoria) {
+    const cat = String(ui.recetaCategoria).toLowerCase();
+    lista = lista.filter(r => (r.categorias || []).some(c => String(c).toLowerCase().includes(cat))
+      || (r.comidas || []).some(c => String(COMIDAS[c]?.nombre || '').toLowerCase().includes(cat)));
+  }
+  if (q) lista = lista.filter(r => String(r.nombre).toLowerCase().includes(q)
+    || (r.ingredientes || []).some(i => String(i.nombre || '').toLowerCase().includes(q)));
+  if (ing) lista = lista.filter(r => (r.ingredientes || []).some(i =>
+    String(i.nombre || '').toLowerCase().includes(ing)
+    || String(i.id || '').toLowerCase().includes(ing)
+    || String(alimentoPorId(i.id)?.nombre || '').toLowerCase().includes(ing)));
+  if (Number.isFinite(kcalMax) && kcalMax > 0) lista = lista.filter(r => recetaMacros(r).kcal <= kcalMax);
+  if (Number.isFinite(protMin) && protMin > 0) lista = lista.filter(r => recetaMacros(r).prot >= protMin);
+  if (Number.isFinite(tiempoMax) && tiempoMax > 0) lista = lista.filter(r => {
+    const t = (Number(r.tiempoPrep) || 0) + (Number(r.tiempoCoccion) || 0);
+    return t > 0 && t <= tiempoMax;
+  });
+  if (ui.recetaFiltro === 'calculadas') lista = lista.filter(r => recetaEstado(r) === 'calculado');
+  if (ui.recetaFiltro === 'proteicas') lista = lista.filter(r => recetaMacros(r).prot >= 25);
+  if (ui.recetaFiltro === 'rapidas') lista = lista.filter(r => {
+    const t = (Number(r.tiempoPrep) || 0) + (Number(r.tiempoCoccion) || 0);
+    return t > 0 && t <= 20;
+  });
+  if (ui.recetaFiltro === 'adelantadas') lista = lista.filter(r => (r.categorias || []).some(c => /prep|anticip|make/i.test(String(c))));
+  // Los filtros dietéticos se aplican con AND: solo pasan las recetas cuyas
+  // tres clasificaciones implicadas están verificadas.
+  for (const { clave } of dietasActivas) lista = lista.filter(r => recetaCumpleDieta(r, clave));
+  // Los códigos de país de UniTools no son categorías útiles para filtrar.
+  const cats = [...new Set(todasRecetas().flatMap(r => r.categorias || []))]
+    .filter(c => !/^[A-Z]{2}$/.test(String(c)))
+    .sort((a, b) => String(a).localeCompare(String(b), 'es')).slice(0, 60);
+  return pagina({
+    titulo: 'Recetas', sub: 'Biblioteca con macros calculados desde los ingredientes',
     cuerpo: `
       ${subnav(SUBNAV_NUTRICION, 'nutricion/recetas')}
-      ${RECETAS.map(r => {
-        const t = resumenReceta(r).total;
-        return `<a class="tarjeta enlace-tarjeta receta-card" href="#nutricion/receta/${r.id}">
-          <div class="fila"><h2>${r.icono} ${esc(r.nombre)}</h2><span class="chev">›</span></div>
-          <div class="receta-macros"><span>${fmtNum(t.kcal)} kcal</span><span>${Math.round(t.prot)} g P</span><span>${Math.round(t.carbs)} g C</span><span>${Math.round(t.grasa)} g G</span></div>
-          <p class="tenue">${r.comidas.map(c => COMIDAS[c].nombre).join(' · ')}</p></a>`;
-      }).join('')}
+      <div class="tarjeta">
+        <div class="fila"><h2>📚 Biblioteca</h2><span class="tenue">${lista.length} recetas</span></div>
+        <form id="formRecetaBuscar" class="receta-buscar">
+          <label class="campo">Buscar por nombre<input name="q" value="${esc(ui.recetaBusca || '')}" placeholder="pollo, arroz…"></label>
+          <label class="campo">Tipo de comida<select name="tipo"><option value="">Todas</option>${COMIDA_KEYS.map(c =>
+            `<option value="${c}" ${ui.recetaTipo === c ? 'selected' : ''}>${COMIDAS[c].icono} ${COMIDAS[c].nombre}</option>`).join('')}</select></label>
+          <label class="campo">Ingrediente<input name="ing" value="${esc(ui.recetaIng || '')}" placeholder="tomate, pollo…"></label>
+          <label class="campo">Categoría<select name="cat"><option value="">Todas</option>${cats.map(c =>
+            `<option value="${esc(c)}" ${ui.recetaCategoria === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></label>
+          <label class="campo">Calorías máx.<input name="kcal" type="number" min="0" max="5000" step="10" inputmode="numeric" value="${esc(ui.recetaKcalMax || '')}" placeholder="500"></label>
+          <label class="campo">Proteínas mín. (g)<input name="prot" type="number" min="0" max="200" step="1" inputmode="numeric" value="${esc(ui.recetaProtMin || '')}" placeholder="25"></label>
+          <label class="campo">Tiempo máx. (min)<input name="tiempo" type="number" min="0" max="600" step="5" inputmode="numeric" value="${esc(ui.recetaTiempoMax || '')}" placeholder="30"></label>
+          <button class="btn sec" type="submit">Filtrar</button>
+          <button class="btn sec" type="button" data-a="recetaLimpiarFiltros">Limpiar</button>
+        </form>
+        <div class="receta-filtros dieta" id="recetaFiltrosDieta" role="group" aria-label="Filtros dietéticos">
+          ${FILTROS_DIETA.map(f => {
+            const on = dietasActivas.some(a => a.clave === f.clave);
+            return `<button type="button" class="chip ${on ? 'on' : ''}" data-a="recetaDieta" data-v="${f.clave}" aria-pressed="${on}" title="Mostrar solo recetas verificadas como ${esc(f.nombre.toLowerCase())}">${f.icono} ${f.nombre}</button>`;
+          }).join('')}
+        </div>
+        <p class="receta-filtros-activos" id="recetaResumenFiltros" aria-live="polite">
+          <b>${dietasActivas.length ? dietasActivas.map(f => `${f.icono} ${f.nombre}`).join(' · ') : 'Sin filtros dietéticos activos'}</b>
+          <span>${lista.length} receta${lista.length === 1 ? '' : 's'} cumplen la selección</span>
+        </p>
+        <div class="receta-filtros">
+          ${[['', 'Todas'], ['calculadas', 'Calculadas'], ['proteicas', 'Altas en proteína'], ['rapidas', 'Rápidas ≤ 20 min'], ['adelantadas', 'Preparables antes']]
+            .map(([v, t]) => `<button class="chip ${ui.recetaFiltro === v ? 'on' : ''}" data-a="recetaFiltro" data-v="${v}">${t}</button>`).join('')}
+          <button class="chip ${ui.recetaSoloFavoritas ? 'on' : ''}" data-a="recetaFavFiltro">⭐ Favoritas</button>
+          <button class="chip ${ui.recetaSoloPropias ? 'on' : ''}" data-a="recetaPropiasFiltro">✍️ Mis recetas</button>
+          <a class="btn peq" href="#nutricion/recetas/nueva">＋ Nueva receta</a>
+        </div>
+        <p class="tenue">Macros <b>por ración</b>. Las etiquetas distinguen lo <b>calculado</b> de los ingredientes, lo <b>estimado</b> y la <b>información incompleta</b>: las estimaciones nunca se presentan como valores exactos. Los filtros dietéticos solo incluyen recetas <b>verificadas</b> a partir de ingredientes y declaraciones; una clasificación <b>desconocida</b> nunca se muestra como apta y no sustituye la lectura de la etiqueta en el caso de celiaquía. Recetas importadas de UniTools (CC BY-SA 4.0), adaptadas con alimentos verificados de USDA FoodData Central (CC0) y Open Food Facts (ODbL).</p>
+      </div>
+      <div class="receta-grid">${lista.slice(0, 400).map(r => {
+        const t = recetaMacros(r);
+        return `<div class="tarjeta receta-card">
+          <a class="receta-titulo" href="#nutricion/receta/${encodeURIComponent(r.id)}">
+            ${r.imagen ? `<img class="receta-foto" src="${esc(r.imagen)}" alt="" loading="lazy" decoding="async">` : ''}
+            <div class="fila"><h2>${r.icono || '🍽️'} ${esc(r.nombre)}</h2><span class="receta-estado ${recetaEstado(r)}" title="${estadoRecetaTexto(recetaEstado(r)).titulo}">${recetaEstado(r)}</span></div>
+            <div class="receta-macros"><span>${fmtNum(t.kcal)} kcal</span><span>${Math.round(t.prot)} g P</span><span>${Math.round(t.carbs)} g C</span><span>${Math.round(t.grasa)} g G</span></div>
+            <div class="receta-dietas">${FILTROS_DIETA.filter(f => recetaCumpleDieta(r, f.clave))
+              .map(f => `<span class="dieta-badge verificada" title="Verificada: ${esc(f.nombre.toLowerCase())}">${f.icono} ${f.nombre}</span>`).join('')}</div>
+            <small class="tenue">Por ración · ${racionesFicha(r)} en la receta</small>
+            <p class="tenue">${(r.comidas || []).map(c => COMIDAS[c]?.nombre).filter(Boolean).join(' · ')}</p>
+          </a>
+          <div class="fila"><button class="icono peq" data-a="recetaFav" data-id="${esc(r.id)}" title="Favorita">${recetaEsFavorita(r.id) ? '⭐' : '☆'}</button>
+            ${recetaEsPropia(r.id) ? `<a class="enlace" href="#nutricion/receta/${encodeURIComponent(r.id)}/editar">Editar</a>` : ''}</div>
+        </div>`;
+      }).join('') || vacioMsg('🔎', 'Sin recetas', 'Prueba con otro filtro o crea una receta propia.')}</div>
+      ${lista.length > 300 ? `<p class="tenue centro">Mostrando 300 de ${lista.length}. Afina la búsqueda para ver más.</p>` : ''}
     `,
   });
 }
 
 function nutricionReceta(id) {
-  const r = RECETAS.find(x => x.id === id);
+  const r = recetaPorId(id);
   if (!r) return null;
-  const res = resumenReceta(r);
+  const estado = recetaEstado(r);
+  const aviso = estadoRecetaTexto(estado);
+  const elegidas = racionesElegidas(r);
+  const res = resumenRecetaPorRacion(r, elegidas);
+  const propia = recetaEsPropia(r.id);
+  const minutos = (Number(r.tiempoPrep) || 0) + (Number(r.tiempoCoccion) || 0);
+  const fuente = r.fuente?.nombre || (propia ? 'Creada por ti' : 'Biblioteca DanTal');
   return pagina({
-    titulo: esc(r.nombre), padre: 'nutricion/recetas', sub: r.comidas.map(c => COMIDAS[c].nombre).join(' · '),
+    titulo: esc(r.nombre), padre: 'nutricion/recetas',
+    sub: (r.comidas || []).map(c => COMIDAS[c]?.nombre).filter(Boolean).join(' · '),
+    extra: `<button class="icono" data-a="recetaFav" data-id="${esc(r.id)}" title="Favorita">${recetaEsFavorita(r.id) ? '⭐' : '☆'}</button>`,
     cuerpo: `
+      ${subnav(SUBNAV_NUTRICION, 'nutricion/recetas')}
       <div class="tarjeta receta-card">
+        ${r.imagen ? `<img class="receta-foto" src="${esc(r.imagen)}" alt="" loading="lazy" decoding="async">` : ''}
+        <div class="fila"><h2>${r.icono || '🍽️'} ${esc(r.nombre)}</h2><span class="receta-estado ${estado}" title="${esc(aviso.titulo)}">${estado}</span></div>
+        ${r.descripcion ? `<p>${esc(r.descripcion)}</p>` : ''}
+        <div class="chips receta-cats">${categoriasFicha(r).map(c => `<span class="chip on">${esc(c)}</span>`).join('')}</div>
+        <div class="receta-dietas ficha" id="recetaDietasFicha" aria-label="Clasificación dietética">
+          ${FILTROS_DIETA.map(f => {
+            const estadoDieta = r.dieta?.[f.clave]?.estado || 'desconocida';
+            const motivo = r.dieta?.[f.clave]?.motivo || 'Sin datos suficientes';
+            return `<span class="dieta-badge ${estadoDieta}" title="${esc(f.nombre + ': ' + etiquetaDieta(estadoDieta) + ' — ' + motivo)}">${f.icono} ${f.nombre}: <b>${etiquetaDieta(estadoDieta)}</b></span>`;
+          }).join('')}
+        </div>
+        <p class="tenue">Clasificación conservadora: «verificada» exige datos compatibles en todos los ingredientes; «desconocida» no se muestra como apta.</p>
+        <p class="receta-aviso ${estado}">${aviso.aviso}</p>
+        <div class="receta-raciones">
+          <span><b>Raciones</b> <small class="tenue">(la receta original da ${racionesFicha(r)})</small></span>
+          <span class="contador-raciones">
+            <button class="icono peq" type="button" data-a="recetaRacion" data-id="${esc(r.id)}" data-d="-1" aria-label="Quitar una ración">−</button>
+            <form id="formRecetaRaciones" data-id="${esc(r.id)}">
+              <input id="recetaRacionesInput" name="raciones" type="number" min="0.25" max="24" step="0.25" inputmode="decimal" value="${fmtDec(elegidas)}" aria-label="Número de raciones">
+            </form>
+            <button class="icono peq" type="button" data-a="recetaRacion" data-id="${esc(r.id)}" data-d="1" aria-label="Añadir una ración">＋</button>
+          </span>
+        </div>
         <div class="receta-macros"><span>${fmtNum(res.total.kcal)} kcal</span><span>${Math.round(res.total.prot)} g proteína</span><span>${Math.round(res.total.carbs)} g hidratos</span><span>${Math.round(res.total.grasa)} g grasas</span><span>${Math.round(res.total.fibra)} g fibra</span></div>
-        <h2>🧾 Ingredientes</h2>
-        ${res.items.map(i => `<div class="alimento-item"><div class="ai-t"><b>${esc(i.alimento.nombre)}</b><small>${i.gramos} g</small></div><div class="ai-m"><b>${fmtNum(i.macros.kcal)}</b><small>kcal</small></div></div>`).join('')}
-        <h2>👩‍🍳 Preparación</h2><ol class="pasos">${r.pasos.map(p => `<li>${esc(p)}</li>`).join('')}</ol>
+        <p class="tenue" id="recetaRacionesTotal">Cantidades para ${fmtDec(elegidas)} ración(es). ${minutos ? `⏱️ ${minutos} min (${Number(r.tiempoPrep) || 0} de preparación + ${Number(r.tiempoCoccion) || 0} de cocción).` : ''} Fuente: ${esc(fuente)}.</p>
+        <p class="receta-fuente">Datos nutricionales: ${estado === 'calculado' ? 'calculados' : 'estimados o incompletos'} a partir de los ingredientes y de los alimentos verificados de la app (USDA FoodData Central, CC0 / Open Food Facts, ODbL).${estado === 'calculado' ? '' : ' No los trates como valores exactos.'}${r.fuente?.licencia ? ` Receta adaptada de ${esc(r.fuente.nombre)} (${esc(r.fuente.licencia)}).` : ''}${r.creditosImagen?.autor ? ` Foto: ${esc(r.creditosImagen.autor)} (${esc(r.creditosImagen.licencia || '')}).` : ''}</p>
+        <p class="tenue">${(r.alergenos || []).length ? `Alérgenos declarados: ${esc(r.alergenos.join(', '))}` : 'Alérgenos: no declarados por la fuente.'}</p>
+        <h2>🧾 Ingredientes <small class="tenue">para ${fmtDec(elegidas)} ración(es)</small></h2>
+        <div class="receta-ing" id="recetaIngredientes">${res.items.map((i, idx) => {
+          const orig = (r.ingredientes || [])[idx] || {};
+          const factor = elegidas / Math.max(1, Number(r.raciones) || 1);
+          const cantOrig = Number(orig.cantidadOriginal);
+          const unidad = String(orig.unidadOriginal || '').trim();
+          const textoOrig = unidad && Number.isFinite(cantOrig) && cantOrig > 0
+            ? `${fmtDec(cantOrig * factor)} ${esc(unidad)} ≈ ` : '';
+          const conv = orig.conversion === 'estimada' ? ' · conversión estimada' : '';
+          return `<span>${esc(i.alimento?.nombre || orig.nombre || 'Ingrediente')}</span><small>${textoOrig}${fmtDec(i.gramos)} g · ${fmtNum(i.macros?.kcal || 0)} kcal${conv}</small>`;
+        }).join('') || '<span class="tenue">Sin ingredientes declarados.</span>'}</div>
+        <h2>👩‍🍳 Preparación</h2>
+        <ol class="pasos">${(r.pasos || []).map(p => `<li>${esc(p)}</li>`).join('') || '<li>Sin pasos declarados por la fuente.</li>'}</ol>
       </div>
-      <div class="tarjeta"><h2>Añadir a mi diario de hoy</h2>
-        <div class="botones">${r.comidas.map(c => `<button class="btn sec" data-a="recetaA" data-receta="${r.id}" data-comida="${c}">＋ ${COMIDAS[c].icono} ${COMIDAS[c].nombre}</button>`).join('')}</div>
+      <div class="tarjeta">
+        <h2>Usar esta receta</h2>
+        <p class="tenue">Se añadirán ${fmtDec(elegidas)} ración(es) de ${esc(r.nombre)}.</p>
+        <div class="botones">
+          <button class="btn sec" data-a="planRecetaAnadir" data-id="${esc(r.id)}" data-raciones="${elegidas}">🗓️ Añadir al planificador</button>
+          <button class="btn sec" data-a="recetaDuplicar" data-id="${esc(r.id)}">⧉ Duplicar como propia</button>
+          ${propia ? `<a class="btn sec" href="#nutricion/receta/${encodeURIComponent(r.id)}/editar">✏️ Editar</a>
+            <button class="btn sec" data-a="recetaEliminar" data-id="${esc(r.id)}">🗑 Eliminar</button>` : ''}
+        </div>
+        <h2>Añadir a mi diario</h2>
+        <div class="botones">${(r.comidas || []).map(c => `<button class="btn sec" data-a="recetaA" data-receta="${esc(r.id)}" data-comida="${c}" data-raciones="${elegidas}">＋ ${COMIDAS[c].icono} ${COMIDAS[c].nombre}</button>`).join('')
+          || '<button class="btn sec" data-a="recetaA" data-receta="' + esc(r.id) + '" data-comida="comida" data-raciones="' + elegidas + '">＋ 🍽️ Comida</button>'}</div>
       </div>
+      ${propia ? '' : '<p class="tenue centro">Las recetas compartidas nunca se modifican: duplícalas como propias para editar una copia solo para tu cuenta.</p>'}
+    `,
+  });
+}
+
+function nutricionRecetaForm(id = null) {
+  const original = id ? recetaPorId(id) : null;
+  if (id && !original) return null;
+  const base = original && recetaEsPropia(original.id) ? original : null;
+  const r = ui.recetaBorrador || base || {
+    nombre: '', descripcion: '', comidas: ['comida'], ingredientes: [], pasos: [],
+    raciones: 1, tiempoPrep: 10, tiempoCoccion: 20,
+  };
+  const ings = (r.ingredientes || []).slice(0, 12);
+  while (ings.length < 3) ings.push({ id: '', gramos: 100 });
+  return pagina({
+    titulo: base ? 'Editar receta' : 'Nueva receta', padre: 'nutricion/recetas',
+    sub: base ? 'Tus cambios no afectan a las recetas de otros usuarios' : 'Se guarda solo en tu cuenta',
+    cuerpo: `
+      ${subnav(SUBNAV_NUTRICION, 'nutricion/recetas')}
+      <div class="tarjeta"><form id="formReceta" data-id="${base ? esc(base.id) : ''}">
+        <label class="campo">Nombre<input name="nombre" value="${esc(r.nombre)}" required maxlength="90"></label>
+        <label class="campo">Descripción<textarea name="descripcion" rows="2">${esc(r.descripcion || '')}</textarea></label>
+        <fieldset><legend>Comidas</legend><div class="chips">${COMIDA_KEYS.map(c =>
+          `<label class="chip"><input type="checkbox" name="comida" value="${c}" ${(r.comidas || []).includes(c) ? 'checked' : ''}> ${COMIDAS[c].icono} ${COMIDAS[c].nombre}</label>`).join('')}</div></fieldset>
+        <div class="fila">
+          <label class="campo">Raciones<input name="raciones" type="number" min="1" max="20" value="${Number(r.raciones) || 1}"></label>
+          <label class="campo">Preparación (min)<input name="tiempoPrep" type="number" min="0" value="${Number(r.tiempoPrep) || 0}"></label>
+          <label class="campo">Cocción (min)<input name="tiempoCoccion" type="number" min="0" value="${Number(r.tiempoCoccion) || 0}"></label>
+        </div>
+        <h2>🧾 Ingredientes (gramos)</h2>
+        ${ings.map((ing, idx) => `<div class="form-ing">
+          <label class="campo">Alimento ${idx + 1}<select name="ing${idx}"><option value="">— ninguno —</option>${ALIMENTOS.map(a =>
+            `<option value="${a.id}" ${ing.id === a.id ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></label>
+          <label class="campo">Gramos<input name="g${idx}" type="number" min="0" max="5000" step="1" value="${Number(ing.gramos) || 0}"></label>
+        </div>`).join('')}
+        <h2>👩‍🍳 Preparación</h2>
+        <label class="campo">Un paso por línea<textarea name="pasos" rows="6">${esc((r.pasos || []).join('\n'))}</textarea></label>
+        <div class="botones"><a class="btn sec" href="#nutricion/recetas">Cancelar</a>
+          <button class="btn" type="submit">Guardar receta</button></div>
+      </form></div>
     `,
   });
 }
@@ -2737,20 +4731,79 @@ function nutricionAgua() {
   });
 }
 
+// Preguntas rápidas del coach nutricional. Se ocultan las ya formuladas en
+// esta conversación, igual que en el coach general.
+const PREGUNTAS_NUTRI_COACH = [
+  'Analiza mi día de hoy',
+  'Analiza mi última semana',
+  '¿Qué me falta para alcanzar mis proteínas?',
+  '¿Qué podría cenar para completar mis objetivos?',
+  '¿Estoy mejorando respecto al mes pasado?',
+];
+
 function nutricionIA() {
   const metas = metasNutricion();
   const consumo = macrosDia();
   const avisos = generarInsightsDantal(estado, metas || {}, consumo);
+  const ctx = coachContexto();
+  const detalle = ctx.nutricionDetalle;
+  const integral = ctx.integral;
+  const hoyReal = detalle.real.hoy;
+  const motor = motorCoach();
+  const chips = chipsCoachDisponibles([...PREGUNTAS_NUTRI_COACH, ...PREGUNTAS_INTEGRALES]).slice(0, 7);
+  const sub = motor.tipo === 'clave' ? `IA real conectada · ${esc(motor.nombre)}`
+    : motor.tipo === 'servidor' ? 'IA de DanTal incluida · servidor seguro'
+      : 'Respuestas con el motor local, también sin conexión';
+  const dato = (valor, etiqueta) => `<span><b>${valor}</b><br>${etiqueta}</span>`;
+  const datos = hoyReal.registrado
+    ? `${dato(`${fmtNum(hoyReal.kcal)}`, `de ${metas ? fmtNum(metas.kcal) : '—'} kcal`)}
+       ${dato(`${hoyReal.prot} g`, `de ${metas ? metas.protG : '—'} g proteína`)}
+       ${dato(`${hoyReal.carbs} g`, `de ${metas ? metas.carbsG : '—'} g hidratos`)}
+       ${dato(`${hoyReal.grasa} g`, `de ${metas ? metas.grasaG : '—'} g grasa`)}
+       ${dato(`${hoyReal.fibra} g`, `de ${metas ? metas.fibraG : '—'} g fibra`)}`
+    : `${dato('—', 'sin comidas registradas hoy')}${metas ? dato(`${fmtNum(metas.kcal)} kcal`, `meta estimada · ${metas.protG} g proteína`) : ''}`;
   return pagina({
-    titulo: 'Asistente DanTal', sub: 'Avisos a partir de tus datos',
+    titulo: '🤖 Coach IA nutricional', padre: 'nutricion', sub,
     cuerpo: `
       ${subnav(SUBNAV_NUTRICION, 'nutricion/ia')}
-      <div class="tarjeta"><h2>🤖 Tu resumen</h2>
-        <p class="tenue">DanTal separa siempre el <b>Dato real</b> (lo que has registrado) de la <b>Estimación</b> (cálculos metabólicos o de recuperación).</p></div>
-      ${avisos.map(a => `<div class="insight ${a.tipo === 'Estimación' ? 'estimacion' : ''}">
-        <span class="ins-ic">${a.icono}</span>
-        <div class="ins-t"><span class="ins-tipo">${a.tipo}</span><b>${esc(a.titulo)}</b><p>${esc(a.texto)}</p></div></div>`).join('')}
-      <p class="tenue">DanTal no es un servicio médico. Ante cualquier duda sobre alimentación o salud, consulta con un profesional.</p>
+      <div class="coach-nutri-cabecera">
+        <h2>Tu coach de nutrición</h2>
+        <p class="tenue">Te contesto con tus registros reales y tus metas estimadas. Un día sin anotaciones no es consumo cero.</p>
+        <div class="coach-nutri-datos">${datos}</div>
+      </div>
+      ${avisoCoachOffline(motor)}
+      ${periodoCoachHTML(integral)}
+      ${faltantesCoachHTML(integral)}
+      ${detalle.estimacion.sugerencias.length ? `<div class="tarjeta">
+        <h2>🔎 Lo que veo en tus datos</h2>
+        ${detalle.estimacion.sugerencias.map(s => `<div class="coach-sug">
+          <span class="cs-ic">${esc(s.icono || '•')}</span>
+          <div class="cs-t"><b>${esc(s.titulo)}</b><p>${esc(s.texto)}</p>
+            <details class="cs-por"><summary>¿Por qué?</summary><p>${esc(s.motivo || '')}</p></details>
+          </div>
+        </div>`).join('')}
+      </div>` : ''}
+      <div class="coach-chat coach-nutri-chat" id="coachChat" role="log" aria-live="polite" aria-label="Conversación con el coach nutricional">
+        ${ui.coachChat.length ? ui.coachChat.map(burbujaChat).join('') : `<div class="chat-b coach">
+          <p>¡Hola! Soy tu coach nutricional. Pregúntame por tu día, tu semana, qué te falta o qué podrías cenar.</p>
+          <p class="tenue">Solo uso lo que has anotado: ${hoyReal.registrado ? `hoy tienes ${hoyReal.comidas} ${hoyReal.comidas === 1 ? 'comida anotada' : 'comidas anotadas'}.` : 'hoy todavía no hay comidas registradas.'}</p>
+        </div>`}
+        ${ui.coachPensando ? '<div id="coachPensando" class="chat-b coach pensando" aria-label="El coach está pensando"><span></span><span></span><span></span></div>' : ''}
+      </div>
+      <form id="formCoach" class="coach-entrada">
+        <input type="text" name="q" value="${esc(ui.coachBorrador || '')}" placeholder="Pregúntame por tu alimentación…" autocomplete="off" enterkeyhint="send" aria-label="Escribe tu pregunta nutricional">
+        <button class="btn" type="submit" aria-label="Enviar">➤</button>
+      </form>
+      ${chips.length ? `<div class="chips coach-chips">${chips.map(q => `<button class="chip" data-a="coachPreg" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>` : ''}
+      <details class="coach-nutri-avisos">
+        <summary>Avisos e insights de tus datos</summary>
+        ${avisos.length ? avisos.map(a => `<div class="insight ${a.tipo === 'Estimación' ? 'estimacion' : ''}">
+          <span class="ins-ic">${a.icono}</span>
+          <div class="ins-t"><span class="ins-tipo">${esc(a.tipo)}</span><b>${esc(a.titulo)}</b><p>${esc(a.texto)}</p></div>
+        </div>`).join('') : '<p class="tenue">Todavía no hay avisos disponibles.</p>'}
+      </details>
+      ${ui.coachChat.length ? '<button class="enlace centro bloque" data-a="coachLimpiar">🗑 Empezar una conversación nueva</button>' : ''}
+      <p class="tenue">DanTal no es un servicio médico y no diagnostica ni receta. Ante cualquier duda sobre alimentación o salud, consulta con un profesional.</p>
     `,
   });
 }
@@ -2760,10 +4813,114 @@ function nutricionObjetivos() {
     titulo: 'Objetivos', sub: 'Gasto diario, macros, fibra, agua e IMC',
     cuerpo: `
       ${subnav(SUBNAV_NUTRICION, 'nutricion/objetivos')}
+      ${propuestaPendienteHTML()}
       ${formNutricionHTML()}
       <div id="nutriResultados"></div>
-      <div class="botones"><a class="btn sec" href="#seguimiento/medidas">⚖️ Registrar mi peso</a></div>
+      ${formObjetivosHTML()}
+      <div class="botones"><a class="btn sec" href="#seguimiento/medidas">⚖️ Registrar mi peso</a>
+        <a class="btn sec" href="#seguimiento/calculadora">🧮 Ver desglose y calculadoras</a>
+        <a class="btn sec" href="#nutricion/adaptacion">🧠 Ver adaptación inteligente</a></div>
       <p class="tenue">Es una estimación, no consejo médico. DanTal ajusta el objetivo hasta 200 kcal según tu peso y tus registros; también puedes fijar tu propio número.</p>
+    `,
+  });
+}
+
+// ---------------------------------------------------------------------
+// FASE 9 · PARTE 4 — vista de adaptación, decisiones e histórico.
+// ---------------------------------------------------------------------
+const CLASIFICACION_TXT = {
+  descendente: 'Descendente', ascendente: 'Ascendente', estable: 'Estable',
+  insuficiente: 'Insuficiente', contradictoria: 'Contradictoria',
+};
+const DECISION_TXT = { pendiente: 'Pendiente', aceptada: 'Aceptada', rechazada: 'Rechazada', pospuesta: 'Pospuesta' };
+const MOTIVO_RECORDATORIO_TXT = {
+  peso: 'Registra tu peso para ver la tendencia real.',
+  medidas: 'Actualiza tus medidas corporales para completar la evolución.',
+  objetivos: 'Revisa si tus objetivos siguen encajando con tu evolución.',
+  evolucion: 'Consulta tu evolución y las propuestas pendientes.',
+};
+
+function analisisAdaptacionHTML(a) {
+  if (!a) return '';
+  const d = a.datos || {};
+  return `<div class="tarjeta">
+    <h2>📊 Último análisis</h2>
+    <p><b>Situación:</b> ${esc(CLASIFICACION_TXT[a.clasificacion] || a.clasificacion)} · <b>Tendencia:</b> ${esc(a.direccion)}
+      ${a.ritmo != null ? `· ${Number(a.ritmo) > 0 ? '+' : ''}${fmtNum(a.ritmo)} kg/semana` : ''}</p>
+    <p class="tenue">Periodo: ${esc(a.periodo?.desde || '—')} a ${esc(a.periodo?.hasta || '—')}
+      ${a.periodo?.semanas ? ` · ${a.periodo.semanas} semanas con media` : ''}.
+      Datos: ${d.pesos || 0} pesos, ${d.mediasSemanales || 0} medias semanales, ${d.camposMedidos || 0} medidas corporales,
+      ${d.diasIngesta || 0} días de ingesta, ${d.diasActividad || 0} días de actividad,
+      ${d.sesionesReales || 0}/${d.sesionesProgramadas || 0} sesiones realizadas/programadas.</p>
+    ${a.suficiente ? '<p class="tenue">Hay datos suficientes para valorar una propuesta. Siempre puedes aceptarla, rechazarla o posponerla.</p>'
+      : '<p><b>No se genera ninguna propuesta.</b> Los datos disponibles no bastan o se contradicen; no se inventan valores.</p>'}
+    ${a.limitaciones?.length ? `<details><summary class="tenue">Limitaciones de este análisis</summary><ul>${a.limitaciones.map(x => `<li>${esc(x)}</li>`).join('')}</ul></details>` : ''}
+  </div>`;
+}
+
+function propuestaAdaptacionHTML(p, resumida = false) {
+  const estado = p.estado || p.decision || 'pendiente';
+  const decisiones = Array.isArray(p.decisiones) ? p.decisiones : [];
+  return `<article class="tarjeta adapt-tarjeta">
+    <div class="adapt-cab"><h2>🧠 Propuesta del ${esc(fmtCorta(p.fecha))}</h2>
+      <small class="chip-origen ${esc(estado)}">${esc(DECISION_TXT[estado] || estado)}</small></div>
+    <p><b>Situación:</b> ${esc(p.situacion)} · <b>Periodo:</b> ${esc(p.periodo)} · <b>Tendencia:</b> ${esc(p.tendencia)}</p>
+    <p class="tenue"><b>Datos analizados:</b> ${esc(p.datosAnalizados)}</p>
+    <div class="adapt-columnas">
+      <div><b>Objetivos actuales</b><p class="tenue">${esc(p.objetivosActuales || '—')}</p></div>
+      <div><b>Objetivos propuestos</b><p class="tenue">${esc(p.objetivosPropuestos || '—')}</p></div>
+    </div>
+    <p><b>Por qué:</b> ${esc(p.motivo)}</p>
+    ${p.deltaKcal ? `<p class="tenue">Cambio de calorías: <b>${Number(p.deltaKcal) > 0 ? '+' : ''}${fmtNum(p.deltaKcal)} kcal</b>. Ningún cambio se aplica sin tu decisión.</p>` : ''}
+    <details><summary class="tenue">Limitaciones</summary><p class="tenue">${esc(p.limitaciones || 'Sin limitaciones adicionales.')}</p></details>
+    ${resumida && decisiones.length ? `<p class="tenue"><b>Historial de decisiones:</b> ${decisiones.map(e =>
+      `${esc(DECISION_TXT[e.decision] || e.decision)} el ${esc(fmtCorta(e.fecha))}`).join(' · ')}</p>` : ''}
+    ${!resumida && estado === 'pendiente' ? `<div class="botones">
+      <button class="btn" data-a="adaptDecidir" data-id="${esc(p.id)}" data-decision="aceptada">Aceptar y aplicar</button>
+      <button class="btn sec" data-a="adaptDecidir" data-id="${esc(p.id)}" data-decision="rechazada">Rechazar</button>
+      <button class="btn sec" data-a="adaptDecidir" data-id="${esc(p.id)}" data-decision="pospuesta">Posponer</button>
+    </div>` : ''}
+    ${!resumida && estado === 'pospuesta' ? `<div class="botones">
+      <button class="btn" data-a="adaptDecidir" data-id="${esc(p.id)}" data-decision="aceptada">Aceptar ahora</button>
+      <button class="btn sec" data-a="adaptDecidir" data-id="${esc(p.id)}" data-decision="rechazada">Rechazar</button>
+    </div>` : ''}
+  </article>`;
+}
+
+function historialAdaptacionHTML() {
+  const ad = adaptacionEstado();
+  const h = ad.historial.slice().sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || '')));
+  if (!h.length) return '<p class="tenue">Todavía no hay propuestas ni decisiones registradas.</p>';
+  return `<div class="adapt-historial">${h.map(p => propuestaAdaptacionHTML(p, true)).join('')}</div>`;
+}
+
+function nutricionAdaptacion() {
+  const ad = adaptacionEstado();
+  const pendientes = ad.historial.filter(p => p?.estado === 'pendiente');
+  const pospuestas = ad.historial.filter(p => p?.estado === 'pospuesta');
+  const m = metasNutricion();
+  const manual = m?.objetivos?.origen && CAMPOS_META.some(c => m.objetivos.origen[c] === 'manual');
+  return pagina({
+    titulo: 'Adaptación inteligente', padre: 'nutricion/objetivos',
+    sub: 'Propuestas graduales con datos reales, nunca cambios automáticos',
+    cuerpo: `
+      ${subnav(SUBNAV_NUTRICION, 'nutricion/adaptacion')}
+      <div class="tarjeta">
+        <h2>🧠 Cómo funciona</h2>
+        <p class="tenue">Analiza peso medido, medias y tendencias semanales, medidas corporales, ingesta registrada, actividad y sesiones programadas frente a las realizadas. Respeta los objetivos manuales, no rellena días sin datos y no toca rutinas ni cargas.</p>
+        <div class="botones"><button class="btn" data-a="adaptAnalizar">Analizar mi evolución</button>
+          <a class="btn sec" href="#nutricion/objetivos">🎯 Ver objetivos</a></div>
+        ${manual ? '<p class="tenue"><b>Protección activa:</b> tienes valores manuales. La adaptación no propondrá cambios sobre ellos hasta que los edites tú.</p>' : ''}
+      </div>
+      ${analisisAdaptacionHTML(ad.ultimoAnalisis)}
+      ${pendientes.length ? `<h3>Propuestas pendientes de tu decisión</h3>${pendientes.map(p => propuestaAdaptacionHTML(p)).join('')}`
+        : '<p class="tenue">No hay propuestas pendientes. Pulsa «Analizar mi evolución» cuando quieras revisarlas.</p>'}
+      ${pospuestas.length ? `<h3>Propuestas pospuestas: puedes decidirlas ahora</h3>${pospuestas.map(p => propuestaAdaptacionHTML(p)).join('')}` : ''}
+      <details class="tarjeta"><summary><b>Histórico de adaptaciones y decisiones</b></summary>
+        <p class="tenue">Se conservan fecha, objetivos anteriores y propuestos, motivo y cada decisión.</p>
+        ${historialAdaptacionHTML()}
+      </details>
+      <p class="tenue">Los cambios se aplican solo cuando pulsas «Aceptar y aplicar». El objetivo aceptado sigue recalculándose con el motor existente si cambia tu perfil.</p>
     `,
   });
 }
@@ -2783,6 +4940,15 @@ function anadirEntrada(comida, entrada, fecha = diaNutri()) {
 function quitarEntrada(comida, idx, fecha = diaNutri()) {
   const dia = estado.comidas[fecha];
   if (dia?.[comida]) { dia[comida].splice(idx, 1); guardarComidas(); }
+}
+function moverEntrada(desde, idx, hasta, fecha = diaNutri()) {
+  if (!COMIDAS[desde] || !COMIDAS[hasta] || desde === hasta) return;
+  const dia = estado.comidas[fecha];
+  const entrada = dia?.[desde]?.[idx];
+  if (!entrada) return;
+  dia[desde].splice(idx, 1);
+  (dia[hasta] = dia[hasta] || []).push(entrada);
+  guardarComidas();
 }
 
 function datosEjercicio(id) {
@@ -2843,21 +5009,229 @@ function segHistorial() {
   });
 }
 
-function segCalculadora() {
-  return pagina({
-    titulo: 'Calculadora de 1RM', padre: 'seguimiento', sub: 'Tu máximo estimado a una repetición',
-    cuerpo: `
-      <div class="tarjeta">
-        <div class="entradas">
-          <div class="stepper"><small>kg levantados</small><div><input type="number" id="rmKg" inputmode="decimal" data-a="calc" placeholder="0"></div></div>
-          <div class="stepper"><small>repeticiones</small><div><input type="number" id="rmReps" inputmode="numeric" data-a="calc" placeholder="0"></div></div>
-        </div>
-        <div class="rm-res"><small>1RM estimado</small><b id="rmRes">–</b></div>
-        <table class="tabla-pct" id="rmTabla"></table>
+// FASE 9 · PARTE 1 — Calculadoras accesibles desde Seguimiento y Nutrición.
+// Reutilizan el perfil guardado (metasNutricion), los estilos y el motor puro
+// de js/calculadoras.js. No crean objetivos ni sistemas de datos paralelos.
+const SUBNAV_CALC = [
+  ['seguimiento/calculadora', 'Energía'], ['seguimiento/calculadora/nutricion', 'Nutrición'],
+  ['seguimiento/calculadora/fuerza', 'Fuerza'],
+];
+
+function filaVolumenHTML() {
+  return `<div class="nutri-grid" data-fila-vol>
+    <label class="campo">Series<input type="number" data-a="calcFVol" data-c="series" inputmode="numeric" min="1" max="50" placeholder="—"></label>
+    <label class="campo">Repeticiones<input type="number" data-a="calcFVol" data-c="reps" inputmode="numeric" min="1" max="100" placeholder="—"></label>
+    <label class="campo">Carga (kg)<input type="number" data-a="calcFVol" data-c="kg" inputmode="decimal" min="0" max="1000" step="0.5" placeholder="—"></label>
+  </div>`;
+}
+
+function calcEnergiaHTML() {
+  return `<div id="calcEnergia">
+    ${formNutricionHTML()}
+    <div class="tarjeta">
+      <h2>🏃 Datos de ejercicio (opcionales)</h2>
+      <div class="nutri-grid">
+        <label class="campo">Minutos de ejercicio / semana<input id="calcEjMin" type="number" data-a="calcE" inputmode="numeric" min="0" max="1440" step="10" placeholder="Desconocido"></label>
+        <label class="campo">MET de la sesión<input id="calcEjMET" type="number" data-a="calcE" inputmode="decimal" min="1" max="12" step="0.5" value="6"></label>
       </div>
-      <p class="tenue">Fórmula de Epley. Con más de 10 repeticiones la estimación pierde precisión. Usa la tabla para elegir la carga según el porcentaje que pida tu programa.</p>
-    `,
+      <p class="tenue">MET 6 ≈ fuerza moderada. Sin minutos de ejercicio, la NEAT y el entrenamiento se muestran juntos: no se inventa una separación.</p>
+    </div>
+    <div id="calcEnergiaRes"></div>
+    <div class="botones"><a class="btn sec" href="#nutricion/objetivos">🎯 Ver objetivos guardados</a></div>
+  </div>`;
+}
+
+function calcNutricionHTML() {
+  const m = metasNutricion();
+  return `<div id="calcNutricion">
+    <div class="tarjeta">
+      <h2>🍽️ Reparto de macronutrientes</h2>
+      <p class="tenue">Los valores salen de tus objetivos guardados. Cambia cualquier campo y se recalcula todo lo demás.</p>
+      <div class="nutri-grid">
+        <label class="campo">Calorías objetivo<input id="calcNkcal" type="number" data-a="calcN" inputmode="numeric" min="800" max="6000" step="50" value="${m ? m.kcal : ''}" placeholder="—"></label>
+        <label class="campo">Proteína (g)<input id="calcNprot" type="number" data-a="calcN" inputmode="numeric" min="0" max="500" value="${m ? m.protG : ''}" placeholder="—"></label>
+        <label class="campo">Grasa (% de kcal)<input id="calcNgrasa" type="number" data-a="calcN" inputmode="decimal" min="5" max="70" step="1" value="25"></label>
+      </div>
+      ${m ? `<button class="btn sec" data-a="calcNReset">↺ Usar mi objetivo (${fmtNum(m.kcal)} kcal · ${m.protG} g proteína)</button>`
+      : '<p class="tenue">Completa tu perfil en la pestaña «Energía» para cargar tus objetivos.</p>'}
+    </div>
+    <div id="calcNutricionRes"></div>
+  </div>`;
+}
+
+function calcFuerzaHTML() {
+  return `<div id="calcFuerza">
+    <div class="tarjeta">
+      <h2>🏋️ Estimación de 1RM</h2>
+      <div class="nutri-grid">
+        <label class="campo">Carga levantada (kg)<input id="calcFkg" type="number" data-a="calcF" inputmode="decimal" min="1" max="1000" step="0.5" placeholder="—"></label>
+        <label class="campo">Repeticiones<input id="calcFreps" type="number" data-a="calcF" inputmode="numeric" min="1" max="40" placeholder="—"></label>
+        <label class="campo">Fórmula<select id="calcFformula" data-a="calcF"><option value="epley">Epley</option><option value="brzycki">Brzycki</option></select></label>
+        <label class="campo">1RM medido (opcional)<input id="calcFreal" type="number" data-a="calcF" inputmode="decimal" min="1" max="1000" step="0.5" placeholder="—"></label>
+      </div>
+      <p class="tenue">Si indicas un 1RM medido, manda la medición real y las fórmulas quedan como comparación. Con más de 10 repeticiones la estimación pierde fiabilidad; por encima de 15 no se muestra.</p>
+    </div>
+    <div id="calcFuerzaRes"></div>
+    <div class="tarjeta">
+      <h2>🔁 Repeticiones según la carga</h2>
+      <div class="nutri-grid"><label class="campo">Carga disponible (kg)<input id="calcFcarga" type="number" data-a="calcF" inputmode="decimal" min="1" max="1000" step="0.5" placeholder="—"></label></div>
+      <div id="calcInvRes"></div>
+    </div>
+    <div class="tarjeta">
+      <h2>📦 Volumen de entrenamiento</h2>
+      <div id="calcVolFilas">${filaVolumenHTML()}</div>
+      <div class="botones"><button class="btn sec" data-a="calcFAdd">+ Añadir serie</button></div>
+      <div id="calcVolRes"></div>
+    </div>
+  </div>`;
+}
+
+function segCalculadora(seccion = 'energia') {
+  const actual = ['energia', 'nutricion', 'fuerza'].includes(seccion) ? seccion : 'energia';
+  const cuerpo = actual === 'energia' ? calcEnergiaHTML() : actual === 'nutricion' ? calcNutricionHTML() : calcFuerzaHTML();
+  return pagina({
+    titulo: 'Calculadoras', padre: 'seguimiento', sub: 'Energía, nutrición y fuerza · fórmulas a la vista',
+    cuerpo: `${subnav(SUBNAV_CALC, 'seguimiento/calculadora' + (actual === 'energia' ? '' : '/' + actual))}
+      ${cuerpo}
+      <p class="tenue">Resultados orientativos, no consejo médico. Una estimación nunca sustituye una medición real.</p>`,
   });
+}
+
+function actualizarCalculadora() {
+  actualizarCalcEnergia();
+  actualizarCalcNutricion();
+  actualizarCalcFuerza();
+}
+
+function formulaHTML(formulas, nombres) {
+  return `<div class="tarjeta"><h2>📖 Fórmulas aplicadas</h2>
+    ${Object.entries(formulas).map(([k, v]) => `<div class="nutri-linea"><span>${nombres[k] || k}</span><span>${esc(v)}</span></div>`).join('')}
+  </div>`;
+}
+
+function avisosHTML(avisos = []) {
+  return avisos.map(a => `<p class="tenue">⚠️ ${esc(a)}</p>`).join('');
+}
+
+function actualizarCalcEnergia() {
+  const cont = $('#calcEnergiaRes');
+  if (!cont) return;
+  const n = leerNutricion() || estado.nutricion || {};
+  const m = metasNutricion(n);
+  if (!m) {
+    cont.innerHTML = '<div class="tarjeta"><p class="tenue">Faltan peso, altura o edad en el perfil. Complétalos arriba para ver el desglose energético.</p></div>';
+    return;
+  }
+  const r = desgloseEnergia({
+    sexo: n.sexo, edad: m.edad, alturaCm: m.cm, pesoKg: m.peso,
+    factorActividad: m.act.factor, objetivoFactor: m.obj.factor, kcalObjetivo: m.kcal,
+    ejercicioMinSemana: $('#calcEjMin')?.value, ejercicioMET: $('#calcEjMET')?.value || 6,
+  });
+  if (!r.ok) { cont.innerHTML = `<div class="tarjeta">${avisosHTML(r.avisos)}</div>`; return; }
+  const signo = r.ajuste > 0 ? '+' : r.ajuste < 0 ? '−' : '';
+  const tipoAjuste = r.ajuste < 0 ? 'Déficit' : r.ajuste > 0 ? 'Superávit' : 'Sin ajuste';
+  cont.innerHTML = `
+    <div class="tiles cuatro">
+      ${tile('🔥', fmtNum(r.tmb), 'TMB · kcal/día', 'violeta')}
+      ${tile('⚡', fmtNum(r.tdee), 'TDEE · kcal/día', 'naranja')}
+      ${tile('🍽️', fmtNum(r.kcal), 'objetivo · kcal/día', 'verde')}
+      ${tile('📉', `${signo}${fmtNum(Math.abs(r.ajuste))}`, 'vs. gasto · kcal', 'azul')}
+    </div>
+    <div class="tarjeta">
+      <h2>🧮 Desglose del gasto diario</h2>
+      <div class="nutri-linea"><span>TMB · en reposo</span><b>${fmtNum(r.tmb)} kcal</b></div>
+      <div class="nutri-linea"><span>Actividad física (NEAT + ejercicio)</span><b>${fmtNum(r.actividad)} kcal</b></div>
+      ${r.ejercicioCalculado ? `<div class="nutri-linea"><span>　↳ ejercicio declarado</span><b>${fmtNum(r.ejercicio)} kcal</b></div>
+      <div class="nutri-linea"><span>　↳ NEAT</span><b>${fmtNum(r.neat)} kcal</b></div>` : ''}
+      <div class="nutri-linea"><span>TEF · efecto térmico de los alimentos</span><b>${fmtNum(r.tef)} kcal</b></div>
+      <div class="nutri-linea destacada"><span>TDEE · gasto total</span><b>${fmtNum(r.tdee)} kcal</b></div>
+      <div class="nutri-linea"><span>Mantenimiento (= TDEE)</span><b>${fmtNum(r.mantenimiento)} kcal</b></div>
+      <div class="nutri-linea"><span>Objetivo que usa DanTal (${esc(m.modo)})</span><b>${fmtNum(r.kcal)} kcal</b></div>
+      <div class="nutri-linea"><span>${tipoAjuste} sobre el gasto</span><b>${signo}${fmtNum(Math.abs(r.ajuste))} kcal · ${Math.round(Math.abs(r.ajuste) / r.tdee * 100)} %</b></div>
+      ${avisosHTML(r.avisos)}
+    </div>
+    ${formulaHTML(r.formulas, { tmb: 'TMB', tdee: 'TDEE', tef: 'TEF', neat: 'NEAT', ejercicio: 'Ejercicio' })}`;
+}
+
+function actualizarCalcNutricion() {
+  const cont = $('#calcNutricionRes');
+  if (!cont) return;
+  const m = metasNutricion();
+  const r = repartoMacros({
+    kcal: $('#calcNkcal')?.value, protG: $('#calcNprot')?.value,
+    grasaPct: $('#calcNgrasa')?.value, pesoKg: m?.peso,
+  });
+  if (!r.ok) { cont.innerHTML = `<div class="tarjeta">${avisosHTML(r.avisos)}</div>`; return; }
+  cont.innerHTML = `
+    <div class="tiles cuatro">
+      ${tile('🔥', fmtNum(r.kcal), 'kcal objetivo', 'naranja')}
+      ${tile('🥩', `${r.protG} g`, `${r.pct.prot} % proteína`, 'verde')}
+      ${tile('🥑', `${r.grasaG} g`, `${r.pct.grasa} % grasa`, 'amarillo')}
+      ${tile('🍚', `${r.carbsG} g`, `${r.pct.carbs} % hidratos`, 'azul')}
+    </div>
+    <div class="tarjeta">
+      <h2>✅ Coherencia del reparto</h2>
+      <div class="nutri-linea"><span>Proteína + grasa + hidratos</span><b>${fmtNum(r.totalKcal)} kcal</b></div>
+      <div class="nutri-linea"><span>Objetivo</span><b>${fmtNum(r.kcal)} kcal</b></div>
+      <div class="nutri-linea"><span>Fibra orientativa</span><b>${r.fibraG} g</b></div>
+      <div class="nutri-linea"><span>Hidratación orientativa</span><b>${r.aguaMl != null ? `${(r.aguaMl / 1000).toFixed(2)} L` : '—'}</b></div>
+      <div class="nutri-linea"><span>Proteína por kg</span><b>${r.protPorKg != null ? `${r.protPorKg} g/kg` : '—'}</b></div>
+      <p class="tenue">${r.coherente
+      ? 'Las calorías de los macronutrientes cuadran con el objetivo; los gramos se muestran redondeados.'
+      : 'El reparto no cuadra: baja la proteína o el porcentaje de grasa.'}</p>
+      ${avisosHTML(r.avisos)}
+    </div>
+    ${formulaHTML(r.formulas, { grasa: 'Grasa', carbs: 'Hidratos', fibra: 'Fibra', agua: 'Agua' })}`;
+}
+
+function actualizarCalcFuerza() {
+  const cont = $('#calcFuerzaRes');
+  if (!cont) return;
+  const formula = $('#calcFformula')?.value || 'epley';
+  const r = estimar1RM({
+    kg: $('#calcFkg')?.value, reps: $('#calcFreps')?.value,
+    formula, rmReal: $('#calcFreal')?.value,
+  });
+  if (!r.ok) {
+    cont.innerHTML = `<div class="tarjeta"><p class="tenue">Introduce carga y repeticiones para estimar el 1RM.</p>${avisosHTML(r.avisos)}</div>`;
+    $('#calcInvRes').innerHTML = '';
+    $('#rmTabla')?.remove();
+    return;
+  }
+  const cargas = cargasPorPorcentaje(r.principal);
+  const etiqueta = r.esEstimacion ? `1RM estimado · ${formula === 'brzycki' ? 'Brzycki' : 'Epley'}` : '1RM medido · referencia real';
+  cont.innerHTML = `
+    <div class="tiles cuatro">
+      ${tile('🏋️', `${fmtDec(r.principal)} kg`, etiqueta, 'naranja')}
+      ${tile('🧮', `${fmtDec(r.epley)} kg`, 'Epley', 'azul')}
+      ${tile('📐', `${fmtDec(r.brzycki)} kg`, 'Brzycki', 'violeta')}
+      ${tile('🎯', r.fiabilidad, 'fiabilidad de la serie', 'verde')}
+    </div>
+    <div class="tarjeta">
+      <h2>📊 Cargas por porcentaje del 1RM</h2>
+      <table class="tabla-pct"><tr><th>%</th><th>Carga</th><th>Reps aprox.</th></tr>${cargas.filas.map(f => {
+    const inv = repsEstimadas(r.principal, f.kg, formula);
+    return `<tr><td>${f.pct} %</td><td><b>${fmtDec(f.kg)} kg</b></td><td>${inv.ok ? inv.reps : '—'}</td></tr>`;
+  }).join('')}</table>
+      ${avisosHTML([...cargas.avisos, ...r.avisos])}
+    </div>
+    ${formulaHTML(r.formulas, { epley: 'Epley', brzycki: 'Brzycki' })}`;
+
+  const inv = repsEstimadas(r.principal, $('#calcFcarga')?.value, formula);
+  $('#calcInvRes').innerHTML = inv.ok
+    ? `<div class="nutri-linea"><span>Repeticiones estimadas con la carga indicada</span><b>${inv.reps} reps · ${inv.formula}</b></div>${avisosHTML(inv.avisos)}`
+    : `<p class="tenue">${inv.avisos.map(esc).join(' ')}</p>`;
+
+  const filas = [...document.querySelectorAll('[data-fila-vol]')].map(n => ({
+    series: n.querySelector('[data-c="series"]')?.value,
+    reps: n.querySelector('[data-c="reps"]')?.value,
+    kg: n.querySelector('[data-c="kg"]')?.value,
+  }));
+  const vol = volumenEntrenamiento(filas);
+  $('#calcVolRes').innerHTML = vol.ok
+    ? `<div class="nutri-linea"><span>Volumen total (series × reps × kg)</span><b>${fmtNum(vol.volumen)} kg</b></div>
+       <div class="nutri-linea"><span>Series contabilizadas</span><b>${vol.series}</b></div>${avisosHTML(vol.avisos)}`
+    : `<p class="tenue">${vol.avisos.map(esc).join(' ')}</p>`;
 }
 
 function historialDetalle(i) {
@@ -3127,6 +5501,7 @@ async function borrarEjPropio(id) {
 // =====================================================================
 function ajustes() {
   const p = estado.perfil;
+  if (!p) return bienvenida();
   const o = OBJETIVOS[p.objetivo];
   return pagina({
     titulo: 'Ajustes',
@@ -3171,6 +5546,9 @@ function ajustes() {
 
 function ajRecordatorios() {
   const a = estado.ajustes;
+  const rc = normalizarRecordatoriosCorporales(a.recordatoriosCorporales);
+  const permiso = ('Notification' in window) ? Notification.permission : 'no disponible';
+  const permisoTxt = permiso === 'granted' ? 'concedido' : permiso === 'denied' ? 'denegado' : 'sin conceder';
   return pagina({
     titulo: 'Recordatorios', padre: 'ajustes',
     cuerpo: `
@@ -3180,6 +5558,24 @@ function ajRecordatorios() {
         <label class="fila campo-fila"><b>Hora habitual</b><input type="time" value="${a.hora}" data-a="hora" class="hora"></label>
       </div>
       <p class="tenue">El aviso llega si la app está abierta o instalada en segundo plano a esa hora. No se usa ningún servidor externo.</p>
+      <div class="tarjeta">
+        <h2>Recordatorios corporales</h2>
+        <p class="tenue">Puedes activar cada tipo y elegir su frecuencia. No exigen registros diarios: se emite como máximo uno por periodo configurado y nunca se repite el mismo aviso. Estado del permiso: <b>${esc(permisoTxt)}</b>.</p>
+        ${TIPOS_RECORDATORIO.map(tipo => {
+          const c = rc[tipo];
+          return `<div class="fila campo-fila">
+            <label class="interruptor"><span><b>${esc(ETIQUETAS_RECORDATORIO[tipo])}</b><br><small class="tenue">${esc(MOTIVO_RECORDATORIO_TXT[tipo])}</small></span>
+              <input type="checkbox" role="switch" data-a="recordCorp" data-tipo="${tipo}" ${c.activo ? 'checked' : ''}></label>
+            <label class="campo"><small>Frecuencia</small>
+              <select data-a="recordFreq" data-tipo="${tipo}">
+                ${Object.keys(FRECUENCIAS_RECORDATORIO).map(f =>
+                  `<option value="${f}" ${c.frecuencia === f ? 'selected' : ''}>${esc(f)}</option>`).join('')}
+              </select></label>
+          </div>`;
+        }).join('')}
+        <div class="botones"><button class="btn sec" data-a="recordCorpProbar">Comprobar avisos ahora</button></div>
+        <p class="tenue">Si el navegador deniega el permiso, DanTal no insiste ni simula que avisa: puedes activar los avisos desde los ajustes del navegador. Funcionan sin conexión cuando la app está abierta o instalada.</p>
+      </div>
     `,
   });
 }
@@ -3982,13 +6378,15 @@ async function clasificarConIA(item) {
   } catch { return null; }
 }
 
-// Vacía la copia guardada (service worker y cachés) para forzar la última versión.
+// Vacía SOLO la copia guardada de DanTal para forzar la última versión.
+// Nunca desregistra service workers de otros ámbitos ni borra cachés ajenas.
 async function limpiarCopiaGuardada() {
   try {
+    const alcance = new URL('./', location.href).pathname;
     const regs = await (navigator.serviceWorker?.getRegistrations?.() || Promise.resolve([]));
-    await Promise.all(regs.map(r => r.unregister()));
+    await Promise.all(regs.filter(r => new URL(r.scope).pathname.startsWith(alcance)).map(r => r.unregister()));
     const claves = await caches.keys();
-    await Promise.all(claves.map(k => caches.delete(k)));
+    await Promise.all(claves.filter(k => k.startsWith('dantal-')).map(k => caches.delete(k)));
   } catch { /* si el navegador no lo permite, se sigue igual */ }
 }
 
@@ -4169,6 +6567,7 @@ async function crearSeguridad(datos) {
 // --- Acceso con cuentas reales (Supabase) ---------------------------
 // Traduce los errores más habituales del servidor a un mensaje claro.
 function traducirErrorNube(msg) {
+  if (navigator.onLine === false) return 'Sin conexión. Tus datos locales siguen guardados en este dispositivo; vuelve a intentarlo cuando haya red.';
   const m = String(msg || '').toLowerCase();
   if (m.includes('invalid login')) return 'Correo o contraseña incorrectos.';
   if (m.includes('email not confirmed')) return 'Todavía no has confirmado tu correo. Revisa tu bandeja de entrada.';
@@ -4214,6 +6613,7 @@ function adoptarPerfilNube(uid, perfil, authUser) {
   usuarioLogin = uid;
   guardarUsuarios();
   estado = cargar(uid);
+  restaurarChatCoach();
   // La lista de cuentas del servidor se vuelve a pedir para la nueva sesión.
   perfilesNube = null;
   perfilesNubeEstado = 'inicial';
@@ -4297,6 +6697,7 @@ async function entrarConNube(sesion) {
   desbloqueado = true;
   recuperacionProc.ok = false; recuperacionProc.codigo = null; recuperacionProc.usuario = null; ui.recMetodo = null;
   await sincronizarDatosNube();
+  restaurarChatCoach();
   cargarContenidos();
   cargarCatalogos();
   ir(estado.plan ? 'hoy' : 'bienvenida');
@@ -4312,7 +6713,27 @@ async function restaurarSesionNube() {
     catch {
       try { await refrescarNube(); perfil = await miPerfilNube(); } catch { perfil = null; }
     }
-    if (perfil) { adoptarPerfilNube(uid, perfil, usuarioNube()); desbloqueado = true; await sincronizarDatosNube(); }
+    if (perfil) {
+      adoptarPerfilNube(uid, perfil, usuarioNube());
+      desbloqueado = true;
+      await sincronizarDatosNube();
+      restaurarChatCoach();
+    } else if (navigator.onLine === false && uid) {
+      // Sin red no se puede validar la sesión, pero los datos de este
+      // dispositivo son los del último acceso: se abre la app en local y se
+      // vuelve a comprobar la nube al recuperar conexión (visibilitychange).
+      // Se conservan tal cual el perfil local, sus permisos y su beta.
+      if (usuarios.lista.some(u => u.id === uid)) {
+        usuarios.activo = uid;
+        usuarioLogin = uid;
+        guardarUsuarios();
+        estado = cargar(uid);
+        restaurarChatCoach();
+      } else {
+        adoptarPerfilNube(uid, null, usuarioNube());
+      }
+      desbloqueado = true;
+    }
   }
   arrancandoNube = false;
   render();
@@ -5071,6 +7492,95 @@ function toast(texto, { accion, alPulsar, ms = 4000 } = {}) {
   toast.id = setTimeout(() => { t.hidden = true; }, ms);
   const b = t.querySelector('button');
   if (b) b.onclick = () => { t.hidden = true; alPulsar?.(); };
+}
+
+// ---------- Estado de conexión y actualizaciones seguras ----------
+// El indicador es informativo: la app sigue usable sin red porque todos los
+// datos que se muestran son los guardados en este dispositivo.
+const CONEXION = { enLinea: navigator.onLine !== false, actualizando: false, timer: null };
+let regSW = null;
+
+function textoIndicadorConexion() {
+  if (CONEXION.actualizando) return '↻ Actualizando…';
+  return navigator.onLine === false ? '⚠ Sin conexión · datos locales' : '● En línea';
+}
+
+function actualizarIndicadorConexion() {
+  const el = document.getElementById('estadoConexion');
+  if (!el) return;
+  el.textContent = textoIndicadorConexion();
+  el.className = `estado-conexion ${CONEXION.actualizando ? 'actualizando' : (navigator.onLine === false ? 'offline' : 'online')}`;
+}
+
+function avisarActualizacion(version) {
+  const b = document.getElementById('avisoActualizacion');
+  if (!b) return;
+  const texto = b.querySelector('span');
+  if (texto) texto.textContent = `🆕 Hay una nueva versión de DanTal lista${version ? ` (${version})` : ''}.`;
+  b.hidden = false;
+  actualizarIndicadorConexion();
+}
+
+// La nueva versión ya está preparada en su propia caché; solo se activa aquí.
+async function aplicarActualizacion() {
+  const b = document.getElementById('avisoActualizacion');
+  if (b) b.hidden = true;
+  CONEXION.actualizando = true;
+  actualizarIndicadorConexion();
+  clearTimeout(CONEXION.timer);
+  if (regSW?.waiting) {
+    regSW.waiting.postMessage({ type: 'dantal:actualizar' });
+    CONEXION.timer = setTimeout(() => { if (CONEXION.actualizando) location.reload(); }, 5000);
+  } else {
+    // Sin worker en espera: recarga limpia, borrando solo las cachés de DanTal.
+    await limpiarCopiaGuardada();
+    location.reload();
+  }
+}
+
+function iniciarConexion() {
+  actualizarIndicadorConexion();
+  window.addEventListener('online', () => {
+    actualizarIndicadorConexion();
+    if (/coach|nutricion\/ia/.test(render.ultima || '')) render();
+    toast('Conexión recuperada. Lo anotado offline se ha conservado.');
+  });
+  window.addEventListener('offline', () => {
+    actualizarIndicadorConexion();
+    if (/coach|nutricion\/ia/.test(render.ultima || '')) render();
+    toast('Sin conexión. Puedes seguir usando la app; todo se guarda en este dispositivo.', { ms: 6000 });
+  });
+  // Volcar antes de cerrar o cambiar de pestaña para no perder lo anotado.
+  window.addEventListener('pagehide', () => guardar());
+  document.addEventListener('visibilitychange', () => { if (document.hidden) guardar(); });
+  // Canal de pruebas/incidencias: mismo aviso que envía el service worker.
+  window.addEventListener('dantal:update-disponible', e => avisarActualizacion(e.detail?.version));
+
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.addEventListener('message', e => {
+    const d = e.data || {};
+    if (d.type === 'dantal:update-disponible') avisarActualizacion(d.version);
+    if (d.type === 'dantal:actualizado') {
+      const b = document.getElementById('avisoActualizacion');
+      if (b) b.hidden = true;
+      CONEXION.actualizando = false;
+      actualizarIndicadorConexion();
+    }
+  });
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    regSW = reg;
+    if (reg.waiting) avisarActualizacion('nueva versión');
+    reg.addEventListener('updatefound', () => {
+      const w = reg.installing;
+      if (!w) return;
+      w.addEventListener('statechange', () => {
+        if (w.state === 'installed' && navigator.serviceWorker.controller) avisarActualizacion('nueva versión');
+      });
+    });
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (CONEXION.actualizando) { clearTimeout(CONEXION.timer); location.reload(); }
+    });
+  }).catch(() => { /* sin service worker la app sigue funcionando con red */ });
 }
 
 // Guarda una foto del estado para poder deshacer la última acción.
@@ -6175,12 +8685,20 @@ function menuEditar(dia, comida) {
 
 function nutricionEscaner() {
   const r = ui.escanerResultado;
+  const ident = ui.escanerIdentidad;
+  const candidatos = ui.escanerCandidatos || [];
+  const sup = ui.escanerSuplemento;
   const historial = historialEscaner();
   const borrador = ui.escanerManual || {};
   const v = (k, d = '') => esc(String(borrador[k] ?? d));
   const mv = k => esc(String(borrador.micros100?.[k] ?? borrador[`m_${k}`] ?? ''));
-  const mostrarManual = ui.escanerNuevo || (!!ui.escanerCodigo && !r);
+  const mostrarManual = Boolean(ui.escanerNuevo);
   const alergenos = [r?.alergenos, r?.trazas].filter(Boolean).join(' · ');
+  const avisoCodigo = ident?.codigo && ident.validacion && !ident.validacion.valido
+    ? `⚠️ <b>Código no estándar:</b> ${esc(ident.validacion.motivo)}. Se busca tal cual en el catálogo; DanTal no corrige ni inventa identificadores.`
+    : '';
+  const desconocido = Boolean(ui.escanerCodigo) && !r && !sup && !candidatos.length
+    && ident?.estado === 'no_encontrado';
 
   return pagina({
     titulo: 'Escáner de alimentos', padre: 'nutricion',
@@ -6205,8 +8723,55 @@ function nutricionEscaner() {
           <button class="btn" type="submit">Buscar código</button>
         </form>
       </div>
+      ${avisoCodigo ? `<div class="aviso">${avisoCodigo}</div>` : ''}
+      ${candidatos.length > 1 ? `<div class="tarjeta escaneado">
+        <p class="eyebrow">⚠️ Código con varias coincidencias · ${esc(ident?.codigo || '')}</p>
+        <h2>Este código aparece en ${candidatos.length} fichas</h2>
+        <p class="tenue">DanTal no elige una ficha al azar ni fusiona productos. Selecciona la correcta antes de registrar.</p>
+        ${candidatos.map((c, i) => `<div class="fila">
+          <div><b>${c.tipo === 'suplemento' ? '💊' : '🥗'} ${esc(c.nombre)}</b><br>
+            <small class="tenue">${esc(c.marca || '')} · ${esc(c.coincidencia === 'declaracion-base' ? 'declarada en la base' : c.coincidencia)} · ${esc(c.fuente || '')}</small></div>
+          <button class="btn sec" data-a="elegirCandidatoEscaneo" data-i="${i}">Elegir</button>
+        </div>`).join('')}
+        <div class="botones"><button class="btn sec" data-a="limpiarEscaneo">Cancelar</button></div>
+      </div>` : ''}
+      ${sup ? `<div class="tarjeta escaneado">
+        <p class="eyebrow">💊 Suplemento identificado · ${esc(ident?.fuente || sup.origen || 'catálogo')} · ${esc(ident?.codigo || sup.ean || sup.gtin || '')}</p>
+        <div class="fila"><div>
+          <h2>${esc(sup.nombreComercial || sup.nombre)}</h2>
+          <p class="tenue">${esc(sup.marca || '')}${sup.cantidadProducto ? ` · ${esc(sup.cantidadProducto)}` : ''}</p>
+          <p>${esVarianteProducto(sup)
+    ? `<span class="chip">Variante</span> <span class="tenue">Producto base: ${esc(sup.nombreBase || '')}</span>`
+    : '<span class="chip">Producto base</span>'}</p>
+        </div></div>
+        <p class="tenue">Composición disponible: ${Object.keys(sup.macros100 || {}).length} macros · ${Object.keys(sup.micros100 || {}).length} micronutrientes · ${Object.keys(sup.componentes || {}).length} componentes declarados${sup.dosisDeclarada?.texto ? ` · dosis ${esc(sup.dosisDeclarada.texto)}` : ''}.</p>
+        <p class="tenue">${identificadoresProducto(sup).map(i => `<span class="chip">${esc(i.clase)} ${esc(i.valor)}${i.valido === true ? ' ✓' : i.valido === false ? ' ⚠' : ''}</span>`).join(' ') || 'Sin códigos declarados'}</p>
+        <p><button class="enlace" data-a="verFichaSuplementoEscaneo">Ver ficha completa del producto y su variante</button></p>
+        <form id="formTomaEscaneo" data-id="${esc(sup.id)}">
+          <div class="fila">
+            <label class="campo">Cantidad<input type="number" name="cantidad" data-a="cantidadEscaneo" step="any" min="0" value="${esc(sup.tamanoRacion?.gramos || 1)}" required></label>
+            <label class="campo">Unidad<select name="unidad" data-a="cantidadEscaneo">${UNIDADES_CONVERSION.map(u => `<option value="${esc(u)}" ${u === (sup.tamanoRacion ? 'g' : 'cápsula') ? 'selected' : ''}>${esc(u)}</option>`).join('')}</select></label>
+          </div>
+          <p class="tenue">Se registrará como suplemento en ${esc(COMIDAS[ui.escanerComida]?.nombre || 'tu diario')}.</p>
+          <div id="vistaTomaEscaneo" class="tarjeta"></div>
+          <div class="botones">
+            <button class="btn" type="submit">＋ Confirmar y añadir al diario</button>
+            <button class="btn sec" type="button" data-a="limpiarEscaneo">Cancelar</button>
+          </div>
+        </form>
+      </div>` : ''}
+      ${desconocido ? `<div class="tarjeta">
+        <h2>Producto no registrado</h2>
+        <p class="tenue">El código <b>${esc(ui.escanerCodigo)}</b> no coincide con ningún suplemento ni alimento del catálogo. No se ha guardado nada automáticamente.</p>
+        <p class="tenue">Puedes dar de alta solo lo que conozcas: se registrarán únicamente los campos que rellenes.</p>
+        <div class="botones">
+          <button class="btn" data-a="suplementoManualDesdeEscaneo">💊 Registrar suplemento</button>
+          <button class="btn sec" data-a="productoManualNuevo">🥗 Registrar alimento</button>
+          <button class="btn sec" data-a="limpiarEscaneo">Cancelar</button>
+        </div>
+      </div>` : ''}
       ${r ? `<div class="tarjeta escaneado">
-        <p class="eyebrow">${esc(r.fuente || 'Open Food Facts')} · ${esc(r.codigo)}</p>
+        <p class="eyebrow">🥗 Alimento · ${esc(r.fuente || 'Open Food Facts')} · ${esc(r.codigo)}</p>
         <div class="fila"><div><h2>${r.imagen ? `<img class="mini-producto" src="${esc(r.imagen)}" alt=""> ` : ''}${esc(r.nombre || 'Producto sin nombre')}</h2>
           <p class="tenue">${esc(r.marca || '')}${r.cantidad ? ` · envase ${esc(r.cantidad)}` : ''} · ración ${fmtNum(r.porcion || 100)} g</p></div></div>
         <div class="tiles">
@@ -6323,6 +8888,172 @@ document.addEventListener('click', async ev => {
   const i = Number(d.i), k = Number(d.k);
   switch (d.a) {
     case 'ir': cerrarModal(); ir(d.v); break;
+    case 'calcNReset': {
+      const m = metasNutricion();
+      if (m) {
+        const k = document.getElementById('calcNkcal'), p = document.getElementById('calcNprot'), g = document.getElementById('calcNgrasa');
+        if (k) k.value = m.kcal;
+        if (p) p.value = m.protG;
+        if (g) g.value = 25;
+        actualizarCalcNutricion();
+      }
+      break;
+    }
+    case 'objetivosGuardar': guardarObjetivos(); break;
+    case 'objetivosCancelar': render(); toast('Cambios cancelados'); break;
+    case 'objetivosAuto': {
+      estado.nutricion = estado.nutricion || { ...NUTRICION_DEF };
+      estado.nutricion.objetivos = null;
+      estado.nutricion.kcalManual = null;
+      ui.propuestaPendiente = null;
+      guardar(); render();
+      toast('Objetivos automáticos restaurados');
+      break;
+    }
+    case 'propuestaAceptar': aceptarPropuestaInicial(); break;
+    case 'propuestaDescartar': {
+      ui.propuestaPendiente = null;
+      cerrarModal(); render();
+      toast('Propuesta descartada. Puedes editar tus objetivos abajo.');
+      break;
+    }
+    case 'propuestaRecalcular': {
+      ui.propuestaPendiente = propuestaDesdeEstado();
+      render();
+      toast(ui.propuestaPendiente.ok ? 'Propuesta recalculada' : 'Todavía faltan datos para calcularla');
+      break;
+    }
+    case 'adaptAnalizar': {
+      const r = generarPropuestaAdaptacion();
+      render();
+      toast(r.ok ? 'Propuesta lista para revisar' : (r.motivo || 'No se puede proponer una adaptación con estos datos.'), { ms: 6000 });
+      break;
+    }
+    case 'adaptDecidir': decidirAdaptacion(d.id, d.decision); break;
+    case 'recordCorpProbar': comprobarRecordatoriosCorporales(); toast('Revisión de avisos completada'); break;
+    case 'calcFAdd': {
+      const cont = document.getElementById('calcVolFilas');
+      if (cont && cont.children.length < 10) { cont.insertAdjacentHTML('beforeend', filaVolumenHTML()); actualizarCalcFuerza(); }
+      break;
+    }
+    case 'planSemana': {
+      const base = ui.planSemana || lunes(ui.planFecha || diaNutri());
+      ui.planSemana = sumarDias(base, Number(d.d) || 0);
+      ui.planFecha = ui.planSemana;
+      render(); break;
+    }
+    case 'planHoy': ui.planSemana = lunes(hoy()); ui.planFecha = hoy(); render(); break;
+    case 'planDia': ui.planFecha = d.f; render(); break;
+    case 'planAddAlimento': planAddAlimento(d.f, d.c); break;
+    case 'planAddReceta': planAddReceta(d.f, d.c); break;
+    case 'planPonerAlimento': {
+      const e = crearEntradaAlimento(d.id, alimentoPorId(d.id)?.porcion || 100);
+      if (e) {
+        estado.planComidas = anadirEntradaPlan(estado.planComidas, d.f, d.c, e);
+        guardar(); cerrarModal(); render(); toast('Añadido al plan. Toca ⚖️ para ajustar los gramos.');
+      }
+      break;
+    }
+    case 'planPonerReceta': {
+      const r = recetaPorId(d.id);
+      const e = r ? crearEntradaReceta(r) : null;
+      if (e) {
+        estado.planComidas = anadirEntradaPlan(estado.planComidas, d.f, d.c, e);
+        guardar(); cerrarModal(); render(); toast('Receta añadida al plan');
+      }
+      break;
+    }
+    case 'planEditar': planEditar(d.f, d.c, d.e); break;
+    case 'planEscalar': {
+      const factor = Number(d.factor) || 1;
+      // En recetas se escalan las raciones; los gramos son los de la receta.
+      const inputs = document.querySelectorAll('#formPlanEditar input[name="racion"]');
+      const objetivo = inputs.length ? inputs : document.querySelectorAll('#formPlanEditar input[type=number]');
+      objetivo.forEach(inp => {
+        const min = Number(inp.min) || 0.25;
+        const valor = (Number(inp.value) || min) * factor;
+        inp.value = String(inp.step === '1' ? Math.max(1, Math.round(valor)) : Math.max(min, Math.round(valor * 4) / 4));
+      });
+      break;
+    }
+    case 'planQuitar':
+      estado.planComidas = quitarEntradaPlan(estado.planComidas, d.f, d.c, d.e);
+      guardar(); render(); toast('Entrada quitada del plan');
+      break;
+    case 'planCopiarComida': planCopiarModal(d.f, d.c, 'comida'); break;
+    case 'planCopiarDia': planCopiarModal(d.f, null, 'dia'); break;
+    case 'planPasarDiario': planConfirmarDiario(d.f, d.c); break;
+    case 'planPasarConfirm': {
+      const res = pasarComidaAlDiario(estado.planComidas, estado.comidas, d.f, d.c);
+      estado.planComidas = res.plan; estado.comidas = res.comidas;
+      guardar(); cerrarModal(); render();
+      toast(res.n ? `${res.n} entradas añadidas al diario ✅` : 'No había nada pendiente');
+      break;
+    }
+    case 'planCoach': planPedirCoach(); break;
+    case 'planRecetaAnadir': {
+      if (d.raciones) ui.recetaRaciones = { ...(ui.recetaRaciones || {}), [d.id]: Math.max(0.25, Number(d.raciones) || 1) };
+      planElegirDestino(d.id, 'receta'); break;
+    }
+    case 'recetaRacion': {
+      const r = recetaPorId(d.id);
+      if (!r) break;
+      const actual = racionesElegidas(r);
+      const nuevo = Math.min(24, Math.max(0.25, Math.round((actual + Number(d.d)) * 4) / 4));
+      ui.recetaRaciones = { ...(ui.recetaRaciones || {}), [r.id]: nuevo };
+      render(); break;
+    }
+    case 'recetaLimpiarFiltros':
+      Object.assign(ui, {
+        recetaBusca: '', recetaCategoria: '', recetaTipo: '', recetaIng: '',
+        recetaKcalMax: '', recetaProtMin: '', recetaTiempoMax: '', recetaFiltro: '',
+        recetaSoloFavoritas: false, recetaSoloPropias: false, recetaDietas: [],
+      });
+      render(); break;
+    case 'recetaDieta': {
+      const clave = String(d.v || '');
+      if (!FILTROS_DIETA.some(f => f.clave === clave)) break;
+      const activas = new Set(Array.isArray(ui.recetaDietas) ? ui.recetaDietas : []);
+      if (activas.has(clave)) activas.delete(clave); else activas.add(clave);
+      ui.recetaDietas = [...activas];
+      render(); break;
+    }
+    case 'recetaFiltro': ui.recetaFiltro = d.v || ''; render(); break;
+    case 'recetaFavFiltro': ui.recetaSoloFavoritas = !ui.recetaSoloFavoritas; render(); break;
+    case 'recetaPropiasFiltro': ui.recetaSoloPropias = !ui.recetaSoloPropias; render(); break;
+    case 'recetaFav': {
+      estado.recetasFavoritas = estado.recetasFavoritas || [];
+      const idx = estado.recetasFavoritas.indexOf(d.id);
+      if (idx >= 0) estado.recetasFavoritas.splice(idx, 1);
+      else estado.recetasFavoritas.push(d.id);
+      guardar(); render();
+      break;
+    }
+    case 'recetaDuplicar': {
+      const r = recetaPorId(d.id);
+      if (!r) break;
+      const copia = {
+        ...JSON.parse(JSON.stringify(r)),
+        id: `propia-${nuevoId()}`,
+        nombre: `${r.nombre} (copia)`,
+        propio: true, creado: new Date().toISOString(),
+        fuente: { nombre: `Copia de ${r.fuente?.nombre || 'receta compartida'}` },
+      };
+      estado.recetasPropias = estado.recetasPropias || [];
+      estado.recetasPropias.push(copia);
+      guardar(); render(); toast('Copia guardada en tus recetas');
+      break;
+    }
+    case 'recetaEliminar': {
+      const r = recetaPorId(d.id);
+      if (!r || !recetaEsPropia(r.id)) break;
+      conDeshacer('Receta eliminada', () => {
+        estado.recetasPropias = (estado.recetasPropias || []).filter(x => x.id !== r.id);
+        estado.recetasFavoritas = (estado.recetasFavoritas || []).filter(x => x !== r.id);
+      });
+      break;
+    }
+
     case 'cerrar': cerrarModal(); break;
     case 'detalle': detalle(d.id); break;
     case 'semana': ui.semanaVista = sumarDias(ui.semanaVista || (estado.plan.base > lunes(hoy()) ? estado.plan.base : lunes(hoy())), Number(d.d)); render(); break;
@@ -6506,8 +9237,21 @@ document.addEventListener('click', async ev => {
     case 'descargarInforme':
       descargarTexto(`dantal-informe-${hoy()}.txt`, textoInforme(informeSemanal(estado, { fecha: fechaInforme() })));
       break;
-    case 'informeNutriSemana':
-      ui.informeNutriOffset = Math.max(-52, Math.min(52, (ui.informeNutriOffset || 0) + Number(d.d)));
+    case 'informeNutriMover':
+    case 'informeNutriSemana': {
+      if (d.m === undefined) {
+        const lim = ui.informeNutriPeriodo === 'mensual' ? 24 : 365;
+        ui.informeNutriOffset = Math.max(-lim, Math.min(lim, (ui.informeNutriOffset || 0) + Number(d.d)));
+      }
+      render();
+      break;
+    }
+    case 'informeNutriPeriodo':
+      ui.informeNutriPeriodo = PERIODOS_INFORME_NUTRI.some(([k]) => k === d.m) ? d.m : 'semanal';
+      ui.informeNutriOffset = 0;
+      if (ui.informeNutriPeriodo === 'personalizado' && !ui.informeNutriDesde) {
+        ui.informeNutriDesde = hoy(); ui.informeNutriHasta = hoy();
+      }
       render();
       break;
     case 'copiarInformeNutri': copiarTexto(textoInformeNutricional(informeNutriActual(), metasNutricion() || {})); break;
@@ -6601,30 +9345,55 @@ document.addEventListener('click', async ev => {
     case 'descargarCompra':
       descargarTexto(`dantal-compra-${hoy()}.txt`, textoListaCompra(listaCompra(menuActual())));
       break;
+    case 'copiarCompraPlan': copiarTexto(ui.compraTexto || ''); break;
+    case 'descargarCompraPlan':
+      descargarTexto(`dantal-compra-plan-${hoy()}.txt`, ui.compraTexto || '');
+      break;
+    case 'compraReiniciar':
+      estado.compraMarcados = {};
+      guardar(); render(); toast('Marcas de la compra quitadas');
+      break;
     case 'escanear': {
       toast('Abriendo la cámara…');
       const codigo = await escanearCodigo();
       if (!codigo) { toast('No he leído ningún código. Escríbelo a mano.', { ms: 6000 }); break; }
-      ui.escanerCodigo = codigo;
-      ui.escanerNuevo = false;
-      ui.escanerManual = null;
       toast('Código leído. Buscando el producto…');
-      ui.escanerResultado = await buscarAlimento(codigo);
-      if (!ui.escanerResultado) toast('No he encontrado ese producto. Añádelo a mano.', { ms: 6000 });
+      avisarEscaneo(await buscarCodigoEscaneado(codigo));
       render();
       break;
     }
     case 'usarHistorial': {
       const codigo = String(d.codigo || '').trim();
       if (!codigo) break;
-      ui.escanerCodigo = codigo;
-      ui.escanerNuevo = false;
-      ui.escanerManual = null;
-      ui.escanerResultado = await buscarAlimento(codigo, { soloCache: true }) || await buscarAlimento(codigo);
-      if (!ui.escanerResultado) toast('Ya no tengo esa ficha. Busca el código de nuevo.', { ms: 6000 });
+      avisarEscaneo(await buscarCodigoEscaneado(codigo, { soloCache: true }));
       render();
       break;
     }
+    case 'elegirCandidatoEscaneo': {
+      const candidato = ui.escanerCandidatos[Number(d.i)];
+      if (!candidato) break;
+      seleccionarCandidatoEscaneo(candidato);
+      render();
+      toast(candidato.tipo === 'suplemento' ? 'Suplemento seleccionado. Confirma la toma.'
+        : 'Alimento seleccionado. Confirma la cantidad.');
+      break;
+    }
+    case 'verFichaSuplementoEscaneo':
+      if (ui.escanerSuplemento) abrirFichaSuplemento(ui.escanerSuplemento.id);
+      break;
+    case 'suplementoManualDesdeEscaneo':
+      abrirFormSuplemento(null, 'normal', { ean: ui.escanerCodigo || null });
+      break;
+    case 'limpiarEscaneo':
+      ui.escanerCodigo = null;
+      ui.escanerIdentidad = null;
+      ui.escanerCandidatos = [];
+      ui.escanerSuplemento = null;
+      ui.escanerResultado = null;
+      ui.escanerNuevo = false;
+      ui.escanerManual = null;
+      render();
+      break;
     case 'limpiarHistorialEscaner':
       limpiarHistorialEscaner();
       render();
@@ -6632,12 +9401,16 @@ document.addEventListener('click', async ev => {
       break;
     case 'productoManualNuevo':
       ui.escanerNuevo = true;
-      ui.escanerManual = ui.escanerResultado ? { ...ui.escanerResultado } : { porcion: 100 };
+      ui.escanerManual = ui.escanerResultado
+        ? { ...ui.escanerResultado, codigo: ui.escanerResultado.codigo || ui.escanerResultado.ean || ui.escanerCodigo || '' }
+        : { porcion: 100, codigo: ui.escanerCodigo || '' };
       render();
       break;
     case 'editarEscaneado':
       ui.escanerNuevo = true;
-      ui.escanerManual = { ...(ui.escanerResultado || {}), porcion: ui.escanerResultado?.porcion || 100 };
+      ui.escanerManual = { ...(ui.escanerResultado || {}),
+        codigo: ui.escanerResultado?.codigo || ui.escanerResultado?.ean || ui.escanerCodigo || '',
+        porcion: ui.escanerResultado?.porcion || 100 };
       render();
       break;
     case 'cancelarProductoManual':
@@ -6647,16 +9420,24 @@ document.addEventListener('click', async ev => {
       break;
     case 'aniadirEscaneado': {
       const r = ui.escanerResultado;
-      if (!r) break;
+      // Un código de suplemento nunca debe llegar aquí: se registra con su
+      // propia entrada y snapshot desde #formTomaEscaneo.
+      if (!r || ui.escanerSuplemento || ui.escanerCandidatos?.length) break;
       const gramos = Math.max(1, Math.round(Number($('#scanGramos')?.value) || r.porcion || 100));
       anadirEntrada(ui.escanerComida || 'comida', {
+        tipoEntrada: 'alimento',
         id: `scan-${r.codigo}`, nombre: r.nombre, gramos,
-        macros100: { kcal: r.kcal, prot: r.prot, carbs: r.carbs, grasa: r.grasa, fibra: r.fibra || 0 },
+        ean: r.codigo || '', marca: r.marca || '', origen: r.fuente || '',
+        macros100: macros100De(r),
         micros100: { ...(r.micros100 || {}) },
       });
       ui.escanerResultado = null;
+      ui.escanerSuplemento = null;
+      ui.escanerCandidatos = [];
+      ui.escanerIdentidad = null;
+      ui.escanerCodigo = null;
       ir('nutricion');
-      toast('Producto añadido a tu diario. Revisa las cantidades.');
+      toast('Alimento añadido a tu diario. Revisa las cantidades.');
       break;
     }
     case 'consentir': {
@@ -6749,38 +9530,60 @@ document.addEventListener('click', async ev => {
     case 'nutriDia': ui.diaNutri = sumarDias(diaNutri(), Number(d.d)); render(); break;
     case 'addAlimento': elegirAlimento(d.comida); break;
     case 'addReceta': elegirReceta(d.comida); break;
-    case 'ponerAlimento': {
-      const a = alimentoPorId(d.id);
-      if (!a) break;
-      cerrarModal();
-      anadirEntrada(ui.comidaSel, {
-        id: a.id, nombre: a.nombre, gramos: a.porcion,
-        marca: a.marca || '', ean: a.ean || '', origen: a.origen || '',
-        macros100: { kcal: a.kcal, prot: a.prot, carbs: a.carbs, grasa: a.grasa, fibra: a.fibra || 0 },
-        micros100: { ...(a.micros100 || {}) },
-      });
-      toast(`${a.nombre} añadido`);
-      break;
-    }
+    case 'fotoComidaAbrir': abrirFotoComida({ comida: d.comida || '', fecha: diaNutri() }); break;
+    case 'ponerAlimento': cantidadAlimento(d.id); break;
     case 'ponerReceta': {
-      const r = RECETAS.find(x => x.id === d.id);
+      const r = recetaPorId(d.id);
       if (!r) break;
       cerrarModal();
-      anadirEntrada(ui.comidaSel, { tipo: 'receta', id: r.id, racion: 1 });
+      const entrada = crearEntradaReceta(r, { racion: Math.max(0.25, Number(d.raciones) || racionesElegidas(r)) });
+      if (!entrada) break;
+      anadirEntrada(ui.comidaSel, entrada);
       toast(`${r.nombre} añadida`);
       break;
     }
     case 'recetaA': {
-      const r = RECETAS.find(x => x.id === d.receta);
+      const r = recetaPorId(d.receta);
       if (!r) break;
-      anadirEntrada(d.comida, { tipo: 'receta', id: r.id, racion: 1 });
+      const entrada = crearEntradaReceta(r, { racion: Math.max(0.25, Number(d.raciones) || racionesElegidas(r)) });
+      if (!entrada) break;
+      anadirEntrada(d.comida, entrada);
       toast(`${r.nombre} añadida a ${COMIDAS[d.comida].nombre}`);
       break;
     }
     case 'quitarComida': quitarEntrada(d.comida, Number(d.i)); break;
+    case 'moverComida': {
+      const entrada = (estado.comidas[diaNutri()]?.[d.comida] || [])[Number(d.i)];
+      if (!entrada) break;
+      modal(`<h2>Mover a otra comida</h2>
+        <form id="formMoverComida" data-comida="${d.comida}" data-i="${d.i}">
+          <label class="campo">Comida
+            <select name="comida" aria-label="Nueva comida">
+              ${Object.entries(COMIDAS).map(([k, c]) => `<option value="${k}" ${k === d.comida ? 'selected' : ''}>${c.icono} ${c.nombre}</option>`).join('')}
+            </select>
+          </label>
+          <div class="botones">
+            <button class="btn sec" type="button" data-a="cerrar">Cancelar</button>
+            <button class="btn" type="submit">Mover alimento</button>
+          </div>
+        </form>`);
+      setTimeout(() => $('#formMoverComida select')?.focus(), 50);
+      break;
+    }
     case 'editCantidad': {
       const entrada = (estado.comidas[diaNutri()]?.[d.comida] || [])[Number(d.i)];
       if (!entrada) break;
+      if (esSuplemento(entrada)) {
+        modal(`<h2>Cambiar toma de suplemento</h2><p class="tenue">${esc(entrada.nombre || entrada.suplementoId)} · snapshot de la toma guardada</p>
+          <form id="formCantidadSuplemento" data-comida="${d.comida}" data-i="${d.i}">
+            <label class="campo">Cantidad consumida<input type="number" name="cantidad" step="any" min="0" value="${entrada.cantidadConsumida ?? ''}" required></label>
+            <label class="campo">Unidad<select name="unidad">
+              ${['g', 'mg', 'µg', 'kg', 'ml', 'cápsula', 'comprimido', 'cucharada', 'ración'].map(u => `<option value="${u}" ${u === entrada.unidad ? 'selected' : ''}>${u}</option>`).join('')}
+            </select></label>
+            <button class="btn" type="submit">Guardar</button>
+          </form>`);
+        break;
+      }
       const esReceta = entrada.tipo === 'receta';
       const rec = esReceta ? RECETAS.find(r => r.id === entrada.id) : null;
       const al = esReceta ? null : alimentoPorId(entrada.id);
@@ -6882,10 +9685,13 @@ document.addEventListener('click', async ev => {
     case 'syncNube': {
       toast('Sincronizando…');
       sincronizarDatosNube().then(r => {
+        restaurarChatCoach();
         if (r === 'bajado') { render(); toast('Datos actualizados desde la nube ☁️'); }
         else if (r === 'subido') toast('Copia subida a la nube ☁️');
         else if (r === 'igual') toast('Todo al día ✅');
-        else toast('No he podido sincronizar. Revisa tu conexión.');
+        else toast(navigator.onLine === false
+          ? 'Sin conexión. Los datos siguen guardados en este dispositivo.'
+          : 'No he podido sincronizar. Revisa tu conexión.');
       });
       break;
     }
@@ -6927,6 +9733,7 @@ document.addEventListener('click', async ev => {
     case 'incAprobar': aprobarIncidencia(d.id); break;
     case 'incRechazar': rechazarIncidencia(d.id); break;
     case 'incRecargar': recargarApp(); break;
+    case 'actualizarApp': aplicarActualizacion(); break;
     case 'avisosLeidos': marcarAvisosLeidos(); render(); break;
     case 'avisosBorrar':
       confirmar('Se borrarán todos los avisos de tu bandeja.', { titulo: '¿Borrar los avisos?', ok: 'Borrar', peligro: true })
@@ -6950,7 +9757,8 @@ document.addEventListener('click', async ev => {
     case 'coachIgnorar': coachIgnorar(d.sug); break;
     case 'coachPreg': coachEnviar(d.q); break;
     case 'coachLimpiar':
-      ui.coachChat = []; estado.coachChat = []; guardar(); ui.coachIgnorados = []; render();
+      ui.coachChat = []; estado.coachChat = []; guardar(); ui.coachIgnorados = [];
+      guardarBorradorCoach(''); render();
       break;
     case 'coachIAProbar': {
       ui.coachIAOk = null; render();
@@ -7028,13 +9836,14 @@ async function importar(file) {
       usuarios = datos.usuarios;
       for (const u of usuarios.lista) localStorage.setItem(claveDe(u.id), JSON.stringify(datos.datos[u.id] || vacio()));
       if (!usuarios.lista.some(u => u.id === usuarios.activo)) usuarios.activo = usuarios.lista[0].id;
-      guardarUsuarios(); estado = cargar();
+      guardarUsuarios(); estado = cargar(); restaurarChatCoach();
       ir('usuarios'); toast('Usuarios importados');
       return;
     }
     if (!datos || !Array.isArray(datos.historial)) throw new Error('formato');
     if (!await confirmar(`El archivo tiene ${datos.historial.length} sesiones. Sustituirá los datos de ${usuarioActual().nombre}.`, { titulo: '¿Importar la copia?', ok: 'Importar' })) return;
     estado = { ...vacio(), ...datos };
+    restaurarChatCoach();
     guardar(); ir('inicio'); toast('Copia importada');
   } catch {
     toast('Ese archivo no es una copia válida de MiEntrenamiento.');
@@ -7043,16 +9852,15 @@ async function importar(file) {
 
 document.addEventListener('input', ev => {
   const t = ev.target, d = t.dataset;
-  if (d.a === 'dato') {
+  if (t.name === 'q' && t.closest?.('#formCoach')) {
+    guardarBorradorCoach(t.value);
+  } else if (d.a === 'dato') {
     estado.enCurso.ejercicios[Number(d.i)].series[Number(d.k)][d.c] = t.value === '' ? null : Number(t.value);
     guardar();
-  } else if (d.a === 'calc') {
-    const kg = Number($('#rmKg').value), reps = Number($('#rmReps').value);
-    const rm = kg && reps ? unoRM(kg, reps) : 0;
-    $('#rmRes').textContent = rm ? `${rm} kg` : '–';
-    const tabla = $('#rmTabla');
-    if (tabla) tabla.innerHTML = rm ? `<tr><th>%</th><th>Carga</th><th>Reps aprox.</th></tr>${[100, 95, 90, 85, 80, 75, 70, 65, 60].map(p =>
-      `<tr><td>${p} %</td><td><b>${Math.round(rm * p / 100 * 2) / 2} kg</b></td><td>${p === 100 ? 1 : Math.max(1, Math.round(30 * (100 / p - 1)))}</td></tr>`).join('')}` : '';
+  } else if (['calcE', 'calcN', 'calcF', 'calcFVol'].includes(d.a)) {
+    actualizarCalculadora();
+  } else if (d.a === 'objetivo') {
+    actualizarObjetivos(); // vista previa; NO guarda hasta pulsar «Guardar»
   } else if (d.a === 'buscar') {
     ui.q = t.value;
     const pos = t.selectionStart;
@@ -7061,9 +9869,21 @@ document.addEventListener('input', ev => {
   } else if (d.a === 'nutricion') {
     guardarNutricion();
     actualizarNutricion();
+    actualizarCalculadora();
   } else if (d.a === 'nutriBuscar') {
     ui.nutriQ = t.value;
     refrescarListaAlimentos();
+  } else if (d.a === 'cantidadAlimento') {
+    const id = $('#formAlimento')?.dataset.id;
+    const a = alimentoPorId(id);
+    const vista = $('#vistaCantidadAlimento');
+    if (a && vista) {
+      const gramos = Math.max(0, Number(t.value) || 0);
+      const m = macrosDe(a, gramos);
+      vista.innerHTML = `<div class="ai-t"><b>${fmtNum(m.kcal)} kcal</b><small>para ${gramos} g</small>${miniMacros(m)}</div>`;
+    }
+  } else if (d.a === 'cantidadEscaneo') {
+    actualizarVistaTomaEscaneo();
   } else if (d.a === 'rest') {
     const s = estado.plan?.sesiones[Number(d.i)];
     const item = s?.ejercicios[Number(d.j)];
@@ -7095,10 +9915,27 @@ document.addEventListener('change', async ev => {
   }
   if (t.dataset.a === 'selEj') { ui.ejSel = t.value; dibujarGrafica(); }
   if (t.dataset.a === 'selFuerza') { ui.fuerzaSel = t.value; dibujarGraficaFuerza(); }
-  if (t.dataset.a === 'metrica') { ui.metricaMedida = MEDIDAS_CAMPOS[t.value] ? t.value : 'peso'; dibujarGraficaMedidas(); }
-  if (t.dataset.a === 'periodoMedida') { ui.periodoMedida = ['semanal', 'mensual'].includes(t.value) ? t.value : 'todo'; dibujarGraficaMedidas(); }
+  if (t.dataset.a === 'metrica') {
+    ui.metricaMedida = MEDIDAS_CAMPOS[t.value] ? t.value : 'peso';
+    if ($('#graficaEvolucion')) render(); else dibujarGraficaMedidas();
+  }
+  if (t.dataset.a === 'periodoMedida') {
+    ui.periodoMedida = ['semanal', 'mensual'].includes(t.value) ? t.value : 'todo';
+    if ($('#graficaEvolucion')) render(); else dibujarGraficaMedidas();
+  }
   if (t.dataset.a === 'escanerComida') { ui.escanerComida = t.value; }
-  if (t.dataset.a === 'nutricion') { guardarNutricion(); actualizarNutricion(); }
+  if (t.dataset.a === 'nutriFecha' && /^\d{4}-\d{2}-\d{2}$/.test(t.value)) {
+    ui.diaNutri = t.value; ui.ultimaEntrada = null; render(); return;
+  }
+  if (t.dataset.a === 'informeNutriDesde' && /^\d{4}-\d{2}-\d{2}$/.test(t.value)) {
+    ui.informeNutriDesde = t.value; render(); return;
+  }
+  if (t.dataset.a === 'informeNutriHasta' && /^\d{4}-\d{2}-\d{2}$/.test(t.value)) {
+    ui.informeNutriHasta = t.value; render(); return;
+  }
+  if (t.dataset.a === 'nutricion') { guardarNutricion(); actualizarNutricion(); actualizarCalculadora(); }
+  if (t.dataset.a === 'objetivo') actualizarObjetivos();
+  if (['calcE', 'calcN', 'calcF', 'calcFVol'].includes(t.dataset.a)) actualizarCalculadora();
   if ((t.dataset.a === 'importar' || t.dataset.a === 'importarTodos') && t.files[0]) { importar(t.files[0]); t.value = ''; }
   if (t.dataset.a === 'importarSalud' && t.files[0]) { importarSalud(t.files[0]); t.value = ''; }
   if (t.dataset.a === 'foto' && t.files[0]) guardarFoto(t.dataset.id, t.files[0]).catch(() => toast('No he podido leer esa imagen.'));
@@ -7153,11 +9990,156 @@ document.addEventListener('change', async ev => {
     estado.ajustes.recordatorio = t.checked; guardar();
     toast(t.checked ? `Te avisaré a las ${estado.ajustes.hora} los días de entreno` : 'Recordatorios desactivados');
   }
+  if (t.dataset.a === 'recordCorp') {
+    const tipo = t.dataset.tipo;
+    if (!TIPOS_RECORDATORIO.includes(tipo)) return;
+    if (t.checked && 'Notification' in window && Notification.permission !== 'granted') {
+      const p = await Notification.requestPermission();
+      if (p !== 'granted') {
+        t.checked = false;
+        toast('El navegador no ha dado permiso: el recordatorio queda desactivado.', { ms: 6000 });
+        return;
+      }
+    }
+    estado.ajustes.recordatoriosCorporales = normalizarRecordatoriosCorporales(estado.ajustes.recordatoriosCorporales);
+    estado.ajustes.recordatoriosCorporales[tipo].activo = t.checked;
+    guardar();
+    toast(`${ETIQUETAS_RECORDATORIO[tipo]}: ${t.checked ? 'activado' : 'desactivado'}`);
+  }
+  if (t.dataset.a === 'recordFreq') {
+    const tipo = t.dataset.tipo;
+    if (!TIPOS_RECORDATORIO.includes(tipo) || !FRECUENCIAS_RECORDATORIO[t.value]) return;
+    estado.ajustes.recordatoriosCorporales = normalizarRecordatoriosCorporales(estado.ajustes.recordatoriosCorporales);
+    estado.ajustes.recordatoriosCorporales[tipo].frecuencia = t.value;
+    delete estado.ajustes.avisadoAdaptacion?.[tipo];
+    guardar();
+    toast(`Frecuencia de ${ETIQUETAS_RECORDATORIO[tipo]} cambiada a ${t.value}`);
+  }
+});
+
+// Marcar la compra se guarda al cambiar el checkbox (el clic superficial no basta).
+document.addEventListener('change', ev => {
+  const cb = ev.target.closest?.('[data-a="compraMarcar"]');
+  if (!cb) return;
+  estado.compraMarcados = estado.compraMarcados || {};
+  if (cb.checked) estado.compraMarcados[cb.dataset.id] = true;
+  else delete estado.compraMarcados[cb.dataset.id];
+  guardar();
+  cb.closest('li')?.classList.toggle('comprado', cb.checked);
+  const casillas = [...document.querySelectorAll('[data-a="compraMarcar"]')];
+  const contador = document.querySelector('#compraContador');
+  if (contador) contador.textContent = `${casillas.filter(x => x.checked).length} de ${casillas.length} marcados`;
 });
 
 document.addEventListener('submit', async ev => {
   ev.preventDefault();
   const f = new FormData(ev.target);
+
+  // ---- Planificador y recetas ----
+  if (ev.target.id === 'formPlanBuscar') {
+    ui.planBusca = String(f.get('q') || '');
+    const { f: fecha, c: comida } = ev.target.dataset;
+    if (ev.target.closest('#modal')?.textContent.includes('Añadir receta')) planAddReceta(fecha, comida);
+    else planAddAlimento(fecha, comida);
+    return;
+  }
+  if (ev.target.id === 'formPlanEditar') {
+    const { f: fecha, c: comida, e: entradaId, tipo } = ev.target.dataset;
+    const cambios = {};
+    if (tipo === 'alimento') {
+      cambios.gramos = Math.max(1, Math.round(Number(f.get('gramos')) || 0));
+    } else {
+      cambios.racion = Math.max(0.25, Number(f.get('racion')) || 1);
+      const entrada = diaDelPlan(estado.planComidas, fecha).comidas[comida]
+        .find(x => x.entradaId === entradaId);
+      cambios.ingredientes = (entrada?.ingredientes || []).map((ing, idx) => ({
+        ...ing, gramos: Math.max(1, Math.round(Number(f.get(`g${idx}`)) || ing.gramos || 1)),
+      }));
+    }
+    estado.planComidas = actualizarEntradaPlan(estado.planComidas, fecha, comida, entradaId, cambios);
+    guardar(); cerrarModal(); render(); toast('Cantidades actualizadas');
+    return;
+  }
+  if (ev.target.id === 'formPlanDestino') {
+    const r = recetaPorId(ev.target.dataset.id);
+    const raciones = Math.min(24, Math.max(0.25, Number(f.get('raciones')) || 1));
+    const e = r ? crearEntradaReceta(r, { racion: raciones }) : null;
+    const fecha = String(f.get('fecha') || '');
+    const comida = String(f.get('comida') || '');
+    if (e && /^\d{4}-\d{2}-\d{2}$/.test(fecha) && COMIDAS[comida]) {
+      estado.planComidas = anadirEntradaPlan(estado.planComidas, fecha, comida, e);
+      ui.planFecha = fecha;
+      guardar(); cerrarModal(); render(); toast('Receta añadida al plan');
+    }
+    return;
+  }
+  if (ev.target.id === 'formPlanCopiar') {
+    const fecha = String(f.get('fecha') || '');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) { toast('Elige una fecha válida.'); return; }
+    if (ev.target.dataset.tipo === 'dia') {
+      estado.planComidas = copiarDiaPlan(estado.planComidas, ev.target.dataset.f, fecha);
+    } else {
+      const comida = String(f.get('comida') || ev.target.dataset.c);
+      estado.planComidas = copiarComidaPlan(estado.planComidas, ev.target.dataset.f, ev.target.dataset.c, fecha, comida);
+    }
+    ui.planFecha = fecha; ui.planSemana = lunes(fecha);
+    guardar(); cerrarModal(); render(); toast('Copiado al plan');
+    return;
+  }
+  if (ev.target.id === 'formRecetaBuscar') {
+    ui.recetaBusca = String(f.get('q') || '');
+    ui.recetaCategoria = String(f.get('cat') || '');
+    ui.recetaTipo = String(f.get('tipo') || '');
+    ui.recetaIng = String(f.get('ing') || '');
+    ui.recetaKcalMax = String(f.get('kcal') || '');
+    ui.recetaProtMin = String(f.get('prot') || '');
+    ui.recetaTiempoMax = String(f.get('tiempo') || '');
+    render(); return;
+  }
+  if (ev.target.id === 'formRecetaRaciones') {
+    const id = ev.target.dataset.id;
+    const r = recetaPorId(id);
+    if (!r) return;
+    const n = Math.min(24, Math.max(0.25, Number(f.get('raciones')) || racionesFicha(r)));
+    ui.recetaRaciones = { ...(ui.recetaRaciones || {}), [id]: n };
+    render(); return;
+  }
+  if (ev.target.id === 'formReceta') {
+    const nombre = String(f.get('nombre') || '').trim();
+    if (!nombre) { toast('Escribe el nombre de la receta.'); return; }
+    const ings = [];
+    for (let i = 0; i < 12; i++) {
+      const id = String(f.get(`ing${i}`) || '').trim();
+      const g = Math.round(Number(f.get(`g${i}`)) || 0);
+      if (id && g > 0) ings.push({ id, nombre: alimentoPorId(id)?.nombre || id, gramos: g });
+    }
+    if (!ings.length) { toast('Añade al menos un alimento con sus gramos.'); return; }
+    const comidas = f.getAll('comida').filter(c => COMIDAS[c]);
+    const pasos = String(f.get('pasos') || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    // El id de la receta que se edita viaja en data-id del formulario (no como
+    // campo visible): sin él se generaría una receta nueva en lugar de editar.
+    const idOriginal = String(f.get('id') || ev.target.dataset.id || '').trim();
+    const propia = (estado.recetasPropias || []).find(r => r.id === idOriginal);
+    const receta = {
+      id: propia ? propia.id : `propia-${nuevoId()}`,
+      nombre, descripcion: String(f.get('descripcion') || '').trim(),
+      comidas: comidas.length ? comidas : ['comida'],
+      icono: propia?.icono || '🍽️',
+      ingredientes: ings, pasos,
+      raciones: Math.max(1, Number(f.get('raciones')) || 1),
+      tiempoPrep: Math.max(0, Number(f.get('tiempoPrep')) || 0),
+      tiempoCoccion: Math.max(0, Number(f.get('tiempoCoccion')) || 0),
+      categorias: propia?.categorias || ['propias'],
+      alergenos: propia?.alergenos || [], alergenosEstado: propia?.alergenosEstado || 'desconocido',
+      estado: 'calculado', fuente: { nombre: 'Creada por ti' }, propio: true,
+      creado: propia?.creado || new Date().toISOString(), actualizado: new Date().toISOString(),
+    };
+    estado.recetasPropias = (estado.recetasPropias || []).filter(r => r.id !== receta.id);
+    estado.recetasPropias.push(receta);
+    ui.recetaBorrador = null;
+    guardar(); render(); toast('Receta guardada ✅');
+    return;
+  }
 
   // ---- Novedades ----
   if (ev.target.getAttribute('id') === 'formContenido') {
@@ -7276,13 +10258,32 @@ document.addEventListener('submit', async ev => {
   if (ev.target.id === 'formCodigo') {
     const codigo = String(f.get('codigo') || '').trim();
     if (!codigo) return;
-    ui.escanerCodigo = codigo;
+    toast('Buscando el producto…');
+    avisarEscaneo(await buscarCodigoEscaneado(codigo));
+    render();
+    return;
+  }
+  if (ev.target.id === 'formTomaEscaneo') {
+    const s = ui.escanerSuplemento;
+    if (!s) return;
+    const comida = COMIDAS[ui.escanerComida] ? ui.escanerComida : 'comida';
+    const cantidad = f.get('cantidad');
+    const unidad = String(f.get('unidad') || 'g');
+    const calculo = calcularToma(s, cantidad, unidad);
+    const registrada = entradaSuplemento(s, {
+      cantidad, unidad, comida, fecha: hoy(),
+      hora: new Date().toTimeString().slice(0, 5), calculo,
+    });
+    anadirSuplementoAlDiario(registrada.comida, registrada.entrada);
+    ui.escanerSuplemento = null;
+    ui.escanerResultado = null;
+    ui.escanerCandidatos = [];
+    ui.escanerIdentidad = null;
+    ui.escanerCodigo = null;
     ui.escanerNuevo = false;
     ui.escanerManual = null;
-    toast('Buscando el producto…');
-    ui.escanerResultado = await buscarAlimento(codigo);
-    if (!ui.escanerResultado) toast('No he encontrado ese producto. Añádelo a mano.', { ms: 6000 });
-    render();
+    ir('nutricion');
+    toast('Suplemento añadido al diario con su variante y composición declarada.');
     return;
   }
   if (ev.target.id === 'formProductoManual') {
@@ -7571,6 +10572,36 @@ document.addEventListener('submit', async ev => {
     toast(idEdit ? 'Ejercicio actualizado' : 'Ejercicio creado 🧩');
     return;
   }
+  // ---- Añadir alimento con la cantidad elegida en el buscador ----
+  if (ev.target.id === 'formAlimento') {
+    const a = alimentoPorId(ev.target.dataset.id);
+    if (!a) { cerrarModal(); return; }
+    const gramos = Math.max(1, Math.round(Number(f.get('gramos')) || 0));
+    const comida = COMIDAS[String(f.get('comida'))] ? String(f.get('comida')) : ui.comidaSel;
+    cerrarModal();
+    anadirEntrada(comida, {
+      id: a.id, nombre: a.nombre, gramos,
+      marca: a.marca || '', ean: a.ean || '', origen: a.origen || '',
+      macros100: macros100De(a),
+      micros100: { ...(a.micros100 || {}) },
+    });
+    toast(`${a.nombre} añadido a ${COMIDAS[comida].nombre}`);
+    return;
+  }
+  // ---- Cantidad de una toma de suplemento (recalcula con el motor común) ----
+  if (ev.target.id === 'formCantidadSuplemento') {
+    const entrada = (estado.comidas[diaNutri()]?.[ev.target.dataset.comida] || [])[Number(ev.target.dataset.i)];
+    if (entrada) {
+      // El snapshot de la toma es la única fuente: ni se consulta la ficha
+      // actual ni se inventan equivalencias que la ficha no declaró.
+      const actualizada = recalcularToma(entrada, f.get('cantidad'), String(f.get('unidad') || ''));
+      if (actualizada) Object.assign(entrada, actualizada);
+      guardar();
+    }
+    cerrarModal(); render();
+    toast('Cantidad actualizada');
+    return;
+  }
   // ---- Cantidad de una entrada del diario ----
   if (ev.target.id === 'formCantidad') {
     const comida = ev.target.dataset.comida;
@@ -7582,6 +10613,17 @@ document.addEventListener('submit', async ev => {
     }
     cerrarModal(); render();
     toast('Cantidad actualizada');
+    return;
+  }
+  // ---- Cambiar una entrada de comida dentro del mismo día ----
+  if (ev.target.id === 'formMoverComida') {
+    const origen = ev.target.dataset.comida;
+    const idx = Number(ev.target.dataset.i);
+    const destino = String(f.get('comida'));
+    if (!COMIDAS[destino]) { cerrarModal(); return; }
+    moverEntrada(origen, idx, destino);
+    cerrarModal();
+    toast(destino === origen ? 'La entrada ya estaba en esa comida' : `Movido a ${COMIDAS[destino].nombre}`);
     return;
   }
   if (ev.target.id === 'formUsuario') {
@@ -7666,6 +10708,10 @@ document.addEventListener('submit', async ev => {
     guardarMedida(f);
     return;
   }
+  if (ev.target.id === 'formPeso') {
+    guardarMedida(f, { soloPeso: true });
+    return;
+  }
   if (ev.target.id === 'formPasos') {
     guardarPasos(f);
     return;
@@ -7678,7 +10724,8 @@ document.addEventListener('submit', async ev => {
   }
   if (ev.target.id === 'formCoach') {
     const q = String(f.get('q') || '');
-    ev.target.reset();
+    // No se hace reset() aquí: coachEnviar() conserva el texto si la IA falla
+    // y solo lo borra cuando hay una respuesta real (o del motor local).
     await coachEnviar(q);
     return;
   }
@@ -7752,8 +10799,11 @@ document.addEventListener('submit', async ev => {
         objetivo: NUTRI_DE_OBJETIVO[perfil.objetivo] || 'mantener',
         actividad: actividadPorDias(diasSemana.length),
       };
-      guardar();
     }
+    guardar();
+    // El cuestionario ya no impone objetivos: calcula una propuesta con el
+    // motor de la Parte 1 y deja que la persona la revise y acepte.
+    mostrarPropuestaInicial();
     ui.semanaVista = null;
     ir('inicio');
     toast(nuevo ? '¡Tu programa está listo! Aquí verás cada día qué te toca.' : 'Programa actualizado', { ms: 5000 });
@@ -7858,6 +10908,38 @@ function comprobarRecordatorio() {
 }
 setInterval(comprobarRecordatorio, 60000);
 
+// Recordatorios corporales: funcionan con la PWA abierta o instalada, sin
+// servidor. Se marcan como avisados solo los que se han emitido de verdad.
+function comprobarRecordatoriosCorporales() {
+  const cfg = normalizarRecordatoriosCorporales(estado.ajustes?.recordatoriosCorporales);
+  if (!TIPOS_RECORDATORIO.some(tipo => cfg[tipo].activo)) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const ad = adaptacionEstado();
+  const medidas = medidasDe();
+  const decisiones = ad.historial.filter(p => p?.decididaEn).map(p => p.decididaEn).sort();
+  const contexto = {
+    hoy: hoy(),
+    ultimoPeso: ultimoPeso()?.fecha || null,
+    ultimaMedida: medidas.length ? medidas[medidas.length - 1].fecha : null,
+    aceptadoEn: estado.nutricion?.objetivos?.aceptadoEn || null,
+    ultimaDecision: decisiones.pop() || null,
+    ultimaRevision: ad.ultimoAnalisis?.generado || null,
+    avisado: estado.ajustes.avisadoAdaptacion || {},
+  };
+  const debidos = proximosRecordatorios(cfg, contexto);
+  if (!debidos.length) return;
+  estado.ajustes.avisadoAdaptacion = estado.ajustes.avisadoAdaptacion || {};
+  debidos.forEach(r => {
+    estado.ajustes.avisadoAdaptacion[r.tipo] = r.clave;
+    const opciones = { body: r.motivo, icon: 'icons/icono-192.png', tag: `recordatorio-${r.tipo}` };
+    navigator.serviceWorker?.ready
+      .then(reg => reg.showNotification('MiEntrenamiento', opciones))
+      .catch(() => new Notification('MiEntrenamiento', opciones));
+  });
+  guardar();
+}
+setInterval(comprobarRecordatoriosCorporales, 60000);
+
 // Mensaje de error junto a un campo del formulario.
 function avisoCampo(sel, texto) {
   const el = $(sel);
@@ -7892,7 +10974,7 @@ document.addEventListener('visibilitychange', () => {
   } else if (document.visibilityState === 'visible') {
     // Al volver, se comprueba si hay cambios más nuevos en la nube.
     if (modoNube() && desbloqueado && usuarioActual()?.nube && !estado.enCurso) {
-      sincronizarDatosNube().then(r => { if (r === 'bajado') { render(); toast('Datos actualizados desde la nube ☁️'); } });
+      sincronizarDatosNube().then(r => { restaurarChatCoach(); if (r === 'bajado') { render(); toast('Datos actualizados desde la nube ☁️'); } });
     }
     // Si la beta ha caducado mientras la app estaba abierta, se bloquea al volver.
     if (betaCaducada() && !soyDueno() && ruta() !== 'beta/fin') render();
@@ -7907,10 +10989,29 @@ function consejoAyudas(tab) {
   setTimeout(() => toast(`Consejo: ${tactil ? 'mantén pulsado' : 'pasa el ratón por'} un botón para ver qué hace, y toca ⓘ para saber cómo funciona cada parte.`, { ms: 8000 }), 1200);
 }
 
+// La sección de suplementos usa el mismo modal, toast y confirmación que el
+// resto de la app. Los listeners se registran una sola vez dentro del módulo.
+configurarBuscadorSuplementos(buscarSuplementos);
+// Análisis fotográfico: mismo modal/toast/render y mismo motor nutricional.
+// No se pasa `analizarImagen`: el contrato actual de coach-ia es solo texto y
+// no hay backend de visión autorizado, así que no se envía ni se simula nada.
+configurarFotoComidaUI({
+  esc, fmtDec, fmtNum, hoy, modal, cerrarModal, toast, render,
+  COMIDAS, entradasDelDia, anadirEntrada, buscarAlimentos, alimentoPorId,
+});
+configurarSuplementosUI({
+  esc, fmtDec, fmtNum, hoy, modal, cerrarModal, toast, render,
+  COMIDAS, entradasDelDia, anadirSuplementoAlDiario,
+  confirmar: async (texto, cb) => {
+    const ok = await confirmar(texto, { titulo: '¿Borrar la ficha?', ok: 'Borrar', peligro: true });
+    await cb(ok);
+  },
+});
+
 // =====================================================================
 // Arranque
 // =====================================================================
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
+iniciarConexion();
 arrancandoNube = modoNube() && haySesionNube();
 render();
 comprobarRecordatorio();

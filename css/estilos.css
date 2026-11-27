@@ -77,6 +77,18 @@ a { color: inherit; }
 .barra .icono { text-decoration: none; display: grid; place-items: center; }
 .racha { text-decoration: none; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 99px; padding: 6px 14px; font-weight: 800; }
 
+/* Estado de conexión: cerca del título, sin tapar la navegación. */
+.estado-conexion { flex: none; font-size: .62rem; font-weight: 800; letter-spacing: .02em; padding: 4px 9px; border-radius: 99px;
+  white-space: nowrap; background: var(--tarjeta); border: 1px solid var(--borde); color: var(--tenue); }
+.estado-conexion.online { color: var(--acento); border-color: color-mix(in srgb, var(--acento) 45%, var(--borde)); }
+.estado-conexion.offline { color: var(--amarillo); border-color: color-mix(in srgb, var(--amarillo) 55%, var(--borde)); }
+.estado-conexion.actualizando { color: var(--acento2); border-color: color-mix(in srgb, var(--acento2) 55%, var(--borde)); }
+.aviso-actualizacion { position: fixed; left: 50%; bottom: calc(132px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 41;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; max-width: min(440px, calc(100vw - 24px));
+  padding: 10px 12px; border-radius: 14px; background: var(--tarjeta); border: 1px solid var(--acento);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, .35); font-size: .86rem; }
+.aviso-actualizacion .btn { flex: none; min-width: auto; margin: 0; padding: 6px 10px; }
+
 /* ---------- Tarjetas ---------- */
 .tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: var(--radio); padding: 16px; margin: 0 0 12px; display: block; width: 100%; color: inherit; font: inherit; text-align: left; }
 .enlace-tarjeta { text-decoration: none; transition: transform .12s, border-color .12s; }
@@ -643,10 +655,55 @@ input[type=url] { width: 100%; padding: 12px; border-radius: 12px; border: 1px s
 .macro-barra.p-grasa .macro-pista i { background: var(--amarillo); }
 .macro-barra.p-fibra .macro-pista i { background: var(--violeta); }
 
+/* Mis objetivos: valores que el usuario fija y objetivos que DanTal usa. */
+.objetivos-manuales { margin: 14px 0 4px; padding-top: 14px; border-top: 1px solid var(--borde); }
+.objetivos-manuales h3 { margin: 0 0 4px; font-size: 1rem; }
+.objetivos-efectivos .objetivos-lista { display: grid; gap: 6px; margin-top: 10px; }
+.objetivo-item { display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: var(--radio-s); background: var(--tarjeta2); }
+.objetivo-item .obj-ic { font-size: 1.1rem; text-align: center; }
+.objetivo-item .obj-t { display: flex; flex-direction: column; min-width: 0; }
+.objetivo-item .obj-t small { color: var(--tenue); font-size: .74rem; }
+.objetivo-item .obj-v { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.estado-inicial { border-style: dashed; }
+
+/* Diario: consumido / objetivo / restante / porcentaje en cada barra. */
+.resumen-progreso { display: grid; gap: 12px; margin: 12px 0 4px; }
+.macro-barra.con-detalle { grid-template-columns: 84px 1fr; align-items: start; }
+.macro-barra.con-detalle .barra-etq { padding-top: 1px; font-weight: 700; }
+.barra-cuerpo { min-width: 0; }
+.barra-detalle { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px;
+  margin-top: 4px; color: var(--tenue); font-size: .76rem; font-variant-numeric: tabular-nums; }
+.barra-detalle .barra-resto { color: var(--acento); }
+.barra-detalle .barra-resto.excedido { color: var(--peligro); }
+.barra-detalle .barra-pct { font-weight: 800; color: var(--texto); }
+.macro-pista.p-agua i { background: var(--acento2); }
+@media (max-width: 520px) {
+  .macro-barra.con-detalle { grid-template-columns: 1fr; gap: 4px; }
+  .macro-barra.con-detalle .barra-etq { font-size: .8rem; }
+  .objetivo-item { grid-template-columns: 24px 1fr auto; gap: 8px; padding: 7px 8px; }
+  .objetivo-item .obj-t small { font-size: .7rem; }
+  .objetivo-item .obj-v { font-size: .88rem; }
+}
+
 /* ---------- 2.08: graficos visuales, fibra y micronutrientes ---------- */
 .tiles.cinco { grid-template-columns: repeat(5, 1fr); }
 @media (max-width: 620px) { .tiles.cinco { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 400px) { .tiles.cinco { grid-template-columns: repeat(2, 1fr); } }
+
+/* Diario organizado: resumen siempre a la vista y selector de fecha cómodo. */
+.resumen-diario { position: sticky; top: 8px; z-index: 4; }
+.fecha-diario-fila { margin: 0 0 10px; }
+.fecha-diario { flex: 1; margin: 0; }
+.fecha-diario input { margin-top: 4px; padding: 10px; }
+.macro-barra.p-kcal .macro-pista i { background: var(--naranja); }
+.resumen-agua { margin: 10px 0 0; }
+@media (max-width: 480px) {
+  .resumen-diario { position: static; }
+  .resumen-diario .tiles.cinco { gap: 6px; }
+  .resumen-diario .tile { padding: 9px; }
+  .resumen-diario .tile b { font-size: 1.05rem; }
+}
 
 .grafico-dia h3 { margin: 16px 0 6px; font-size: .92rem; }
 .g-dia-arriba { display: grid; grid-template-columns: minmax(140px, 1fr) minmax(220px, 1.5fr); gap: 14px; align-items: center; margin: 8px 0 4px; }
@@ -768,6 +825,31 @@ input[type=url] { width: 100%; padding: 12px; border-radius: 12px; border: 1px s
 .g-rec-leyenda i.media { background: var(--amarillo); }
 .g-rec-leyenda i.baja { background: var(--peligro); }
 .g-fuerza .stats { margin-bottom: 0; }
+
+/* ---------- FASE 9 · PARTE 3: evolución corporal ---------- */
+.g-evo svg { display: block; overflow: visible; }
+.g-evo-eje { stroke: var(--borde); }
+.g-evo-etq { fill: var(--tenue); font-size: 9px; font-weight: 700; }
+.g-evo-tendencia { fill: none; stroke: var(--acento); stroke-width: 2; stroke-dasharray: 5 4; opacity: .8; }
+.g-evo-punto { fill: var(--acento); stroke: var(--tarjeta); stroke-width: 1.5; }
+.g-evo-punto.actual { fill: var(--amarillo); }
+.g-evo-punto.estimado { fill: var(--tarjeta); stroke: var(--violeta); stroke-width: 2; }
+.g-evo-sin { fill: var(--tenue); font-size: 8px; opacity: .85; }
+.g-evo-leyenda { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; color: var(--tenue); font-size: .72rem; margin-top: 6px; }
+.g-evo-leyenda i { display: inline-block; margin-right: 4px; vertical-align: middle; }
+.g-evo-leyenda i.dato { width: 9px; height: 9px; border-radius: 50%; background: var(--acento); }
+.g-evo-leyenda i.tend { width: 12px; height: 0; border-top: 2px dashed var(--acento); }
+.g-evo-leyenda i.est { width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--violeta); background: var(--tarjeta); }
+.origen-select { width: 100%; margin-top: 4px; padding: 6px 8px; border-radius: 10px; font-size: .78rem; }
+.peso-rapido { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 0 10px; }
+.peso-rapido .btn { align-self: end; }
+.medida-chip { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 8px; font-size: .68rem; font-weight: 700; background: var(--tarjeta2); color: var(--tenue); }
+.medida-chip.alerta { background: color-mix(in srgb, var(--peligro) 16%, transparent); color: var(--peligro); }
+.medida-chip.estimado { background: color-mix(in srgb, var(--violeta) 16%, transparent); color: var(--violeta); }
+.evo-tabla { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.evo-tabla th { text-align: left; color: var(--tenue); font-size: .74rem; padding: 6px; }
+.evo-tabla td { padding: 7px 6px; border-top: 1px solid var(--borde); }
+.evo-tabla td:last-child, .evo-tabla th:last-child { text-align: right; }
 
 .agua-vasos { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
 .vaso-btn { width: 44px; height: 56px; border-radius: 8px 8px 14px 14px; border: 2px solid var(--borde); background: var(--tarjeta2);
@@ -924,6 +1006,43 @@ input[type=url] { width: 100%; padding: 12px; border-radius: 12px; border: 1px s
 .coach-entrada .btn { flex: none; width: 52px; padding: 0; font-size: 1.1rem; }
 .coach-chips { margin-bottom: 16px; }
 .coach-h { margin: 18px 0 10px; }
+/* FASE 7: contexto integral, límites del análisis y aviso offline */
+.coach-datos-periodo { margin-bottom: 10px; padding: 9px 11px; border-radius: var(--radio-s);
+  background: color-mix(in srgb, var(--acento) 6%, var(--tarjeta)); border: 1px solid var(--borde);
+  font-size: .78rem; line-height: 1.45; }
+.coach-datos-periodo b { color: var(--acento); }
+.coach-datos-periodo .tenue { display: block; margin-top: 2px; }
+.coach-faltantes { margin: 0 0 10px; padding: 9px 11px; border-radius: var(--radio-s);
+  background: color-mix(in srgb, var(--amarillo) 10%, var(--tarjeta));
+  border: 1px solid color-mix(in srgb, var(--amarillo) 40%, var(--borde));
+  color: var(--texto); font-size: .78rem; line-height: 1.45; }
+.aviso-coach-offline { margin: 0 0 10px; padding: 10px 12px; border-radius: var(--radio-s);
+  background: color-mix(in srgb, var(--amarillo) 14%, var(--tarjeta));
+  border: 1px solid color-mix(in srgb, var(--amarillo) 50%, var(--borde));
+  font-size: .82rem; line-height: 1.45; font-weight: 600; }
+
+/* Coach IA dentro de Nutrición */
+.coach-nutri-cabecera { margin-bottom: 12px; }
+.coach-nutri-cabecera h2 { margin: 0; }
+.coach-nutri-datos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.coach-nutri-datos span { flex: 1 1 auto; min-width: 0; padding: 7px 9px; border-radius: var(--radio-s);
+  background: color-mix(in srgb, var(--acento) 8%, var(--tarjeta)); border: 1px solid var(--borde);
+  font-size: .78rem; font-weight: 700; text-align: center; }
+.coach-nutri-chat { max-height: 52vh; min-height: 180px; }
+.coach-nutri-chat .chat-b { max-width: 94%; }
+.coach-nutri-chat .chat-b.coach { background: color-mix(in srgb, var(--acento) 5%, var(--tarjeta)); }
+.coach-nutri-avisos { margin: 14px 0 10px; border: 1px solid var(--borde); border-radius: var(--radio-s);
+  background: var(--tarjeta); padding: 10px 12px; }
+.coach-nutri-avisos summary { cursor: pointer; font-weight: 800; font-size: .88rem; color: var(--acento); list-style: none; }
+.coach-nutri-avisos summary::-webkit-details-marker { display: none; }
+.coach-nutri-avisos summary::before { content: '▸ '; }
+.coach-nutri-avisos[open] summary::before { content: '▾ '; }
+.coach-nutri-avisos .insight { margin-top: 10px; }
+@media (max-width: 520px) {
+  .coach-nutri-chat { max-height: 46vh; }
+  .coach-nutri-datos span { flex: 1 1 100%; }
+  .coach-nutri-chat .chat-b { max-width: 100%; }
+}
 
 /* Sugerencias del coach */
 .coach-sug { display: flex; gap: 10px; align-items: flex-start; padding: 12px 13px; border-radius: var(--radio-s); margin-bottom: 10px;
@@ -1005,3 +1124,295 @@ input[type=url] { width: 100%; padding: 12px; border-radius: 12px; border: 1px s
 .aviso-global b { color: var(--acento); }
 @media (max-width: 420px) { .lista-compra { columns: 1; } }
 
+/* ---------- Evolución nutricional y corporal ---------- */
+.evo-cab { align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.evo-cab .chips { margin: 0; }
+.evo-graf { width: 100%; }
+.evo-graf svg { display: block; width: 100%; height: auto; overflow: visible; }
+.evo-rejilla { stroke: var(--borde); stroke-width: 1; stroke-dasharray: 3 4; opacity: .8; }
+.evo-etq { fill: var(--tenue); font-size: 9px; font-variant-numeric: tabular-nums; }
+.evo-meta { stroke: var(--amarillo); stroke-width: 1.4; stroke-dasharray: 5 4; }
+.evo-meta-txt { fill: var(--amarillo); font-size: 9px; font-weight: 700; }
+.evo-trazo { fill: none; stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; }
+.evo-punto { stroke: var(--tarjeta); stroke-width: 1.4; }
+.evo-vacio { fill: none; stroke: var(--borde); stroke-width: 1.2; }
+.evo-leyenda { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 8px; color: var(--tenue); font-size: .72rem; }
+.evo-leyenda span { display: inline-flex; align-items: center; gap: 5px; }
+.evo-leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.evo-leyenda i.vacio { background: transparent; border: 1px dashed var(--borde); border-radius: 50%; }
+.evo-leyenda i.meta { background: transparent; border-top: 2px dashed var(--amarillo); height: 0; border-radius: 0; }
+
+.evo-metas { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.evo-meta-chip { border: 1px solid var(--borde); background: var(--tarjeta2); border-radius: 99px; padding: 5px 10px; font-size: .74rem; color: var(--tenue); }
+.evo-meta-chip b { color: var(--texto); font-variant-numeric: tabular-nums; }
+.evo-peso { margin: 10px 0 0; }
+
+.evo-tabla-scroll { width: 100%; overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; max-height: 420px; overflow-y: auto; }
+.evo-tabla { width: 100%; min-width: 620px; border-collapse: collapse; font-size: .82rem; font-variant-numeric: tabular-nums; }
+.evo-tabla th { position: sticky; top: 0; z-index: 1; text-align: left; color: var(--tenue); background: var(--tarjeta); font-size: .7rem; font-weight: 700; padding: 8px 7px; border-bottom: 1px solid var(--borde); white-space: nowrap; }
+.evo-tabla td { padding: 8px 7px; border-bottom: 1px solid var(--borde); white-space: nowrap; }
+.evo-tabla td b { display: block; font-size: .8rem; }
+.evo-tabla td small { display: block; color: var(--tenue); font-size: .66rem; margin-top: 2px; }
+.evo-tabla tr.off td { color: var(--tenue); opacity: .75; }
+.evo-tabla tr.cero td small { color: var(--naranja); }
+.evo-tabla tr.agua td small { color: var(--acento2); }
+
+@media (max-width: 620px) {
+  .evo-cab .chips { width: 100%; }
+  .evo-graf svg { min-height: 140px; }
+  .evo-tabla-scroll { max-height: 360px; }
+  .evo-tabla { font-size: .76rem; min-width: 580px; }
+  .evo-leyenda { font-size: .68rem; }
+}
+
+/* ---------- Planificador de alimentación ---------- */
+.plan-semana { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(82px, 1fr); gap: 6px; overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: 6px; }
+.plan-dia { text-align: left; border: 1px solid var(--borde); border-radius: var(--radio-s); background: var(--tarjeta2); padding: 8px; min-height: 78px; color: var(--texto); cursor: pointer; font: inherit; }
+.plan-dia b { display: block; font-size: .78rem; text-transform: capitalize; }
+.plan-dia small { display: block; color: var(--tenue); font-size: .66rem; margin-top: 3px; font-variant-numeric: tabular-nums; }
+.plan-dia .plan-mini { height: 4px; border-radius: 99px; background: var(--borde); margin-top: 6px; overflow: hidden; }
+.plan-dia .plan-mini i { display: block; height: 100%; background: var(--acento2); }
+.plan-dia.on { border-color: var(--acento); box-shadow: inset 0 0 0 1px var(--acento); background: color-mix(in srgb, var(--acento) 10%, var(--tarjeta)); }
+.plan-dia.hoy b::after { content: ' •'; color: var(--naranja); }
+.plan-dia.vacio small { opacity: .7; }
+.plan-cab { align-items: center; gap: 10px; flex-wrap: wrap; }
+.plan-cab h2 { margin: 0; text-transform: capitalize; font-size: 1.05rem; }
+.plan-totales { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+.plan-totales span { border: 1px solid var(--borde); background: var(--tarjeta2); border-radius: 99px; padding: 5px 9px; font-size: .74rem; color: var(--tenue); font-variant-numeric: tabular-nums; }
+.plan-totales b { color: var(--texto); }
+.plan-totales span.over b { color: var(--naranja); }
+.plan-comida { border: 1px solid var(--borde); border-radius: var(--radio-s); padding: 10px; margin-bottom: 10px; background: var(--tarjeta); }
+.plan-comida > .fila { gap: 8px; flex-wrap: wrap; }
+.plan-comida h3 { margin: 0; font-size: .94rem; }
+.plan-comida .plan-kcal { color: var(--tenue); font-size: .78rem; font-variant-numeric: tabular-nums; }
+.plan-entrada { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 0; border-top: 1px solid var(--borde); }
+.plan-entrada:first-of-type { border-top: 0; }
+.plan-entrada .pe-t { min-width: 0; flex: 1; }
+.plan-entrada .pe-t b { display: block; font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan-entrada .pe-t small { color: var(--tenue); font-size: .7rem; font-variant-numeric: tabular-nums; }
+.plan-entrada .pe-m { text-align: right; font-size: .74rem; color: var(--tenue); font-variant-numeric: tabular-nums; flex: none; }
+.plan-entrada .acciones { display: flex; gap: 3px; flex: none; }
+.plan-vacio { color: var(--tenue); font-size: .8rem; padding: 8px 0; }
+.plan-aviso { border-left: 3px solid var(--amarillo); padding-left: 10px; margin: 10px 0; color: var(--tenue); font-size: .8rem; }
+.plan-select { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+.plan-select label { flex: 1; min-width: 130px; }
+
+/* ---------- Biblioteca de recetas ---------- */
+.receta-buscar { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; align-items: end; }
+.receta-buscar .campo { margin: 0; min-width: 0; }
+.receta-buscar .btn { min-height: 38px; }
+.receta-filtros { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.receta-filtros.dieta { margin-bottom: 6px; }
+.receta-filtros-activos { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 0 12px; font-size: .8rem; }
+.receta-filtros-activos span { color: var(--tenue); font-variant-numeric: tabular-nums; }
+.receta-dietas { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 6px; }
+.receta-dietas.ficha { margin: 10px 0 6px; }
+.dieta-badge { display: inline-block; border: 1px solid var(--borde); border-radius: 99px; padding: 2px 8px; font-size: .64rem; font-weight: 700; white-space: nowrap; }
+.dieta-badge.verificada { border-color: color-mix(in srgb, var(--verde) 45%, var(--borde)); background: color-mix(in srgb, var(--verde) 14%, var(--tarjeta)); color: var(--verde); }
+.dieta-badge.no_apta { border-color: color-mix(in srgb, var(--peligro) 45%, var(--borde)); background: color-mix(in srgb, var(--peligro) 12%, var(--tarjeta)); color: var(--peligro); }
+.dieta-badge.desconocida { opacity: .78; color: var(--tenue); }
+.receta-aviso { border-left: 3px solid var(--verde); background: color-mix(in srgb, var(--verde) 8%, transparent); border-radius: var(--radio-s); padding: 8px 10px; font-size: .8rem; margin: 10px 0; }
+.receta-aviso.estimado { border-left-color: var(--amarillo); background: color-mix(in srgb, var(--amarillo) 12%, transparent); }
+.receta-aviso.incompleto { border-left-color: var(--naranja); background: color-mix(in srgb, var(--naranja) 12%, transparent); }
+.receta-raciones { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin: 12px 0; padding: 8px 10px; border: 1px solid var(--borde); border-radius: var(--radio-s); }
+.receta-raciones b { font-size: .9rem; }
+.contador-raciones { display: inline-flex; align-items: center; gap: 6px; }
+.contador-raciones input { width: 62px; text-align: center; font-variant-numeric: tabular-nums; }
+.contador-raciones .icono { width: 32px; height: 32px; font-size: 1rem; }
+.lista-compra-plan { list-style: none; margin: 8px 0 0; padding: 0; }
+.lista-compra-plan li { border-bottom: 1px solid var(--borde); }
+.lista-compra-plan li:last-child { border-bottom: 0; }
+.lista-compra-plan label { display: flex; align-items: center; gap: 10px; padding: 8px 2px; cursor: pointer; }
+.lista-compra-plan input[type=checkbox] { width: 18px; height: 18px; flex: none; accent-color: var(--verde); }
+.lista-compra-plan .comprado span { text-decoration: line-through; color: var(--tenue); }
+.lista-compra-plan b { font-variant-numeric: tabular-nums; }
+.receta-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+.receta-foto { width: 100%; height: 108px; object-fit: cover; border-radius: var(--radio-s); background: var(--tarjeta2); display: block; }
+.receta-titulo { display: block; color: inherit; text-decoration: none; }
+.receta-titulo:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+.receta-card h2 { font-size: .94rem; }
+.receta-estado { display: inline-block; border-radius: 99px; padding: 2px 7px; font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+.receta-estado.calculado { background: color-mix(in srgb, var(--verde) 18%, transparent); color: var(--verde); }
+.receta-estado.estimado { background: color-mix(in srgb, var(--amarillo) 20%, transparent); color: var(--amarillo); }
+.receta-estado.incompleto { background: color-mix(in srgb, var(--naranja) 18%, transparent); color: var(--naranja); }
+.receta-fuente { font-size: .68rem; color: var(--tenue); margin-top: 4px; }
+.receta-ing { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: .86rem; }
+.receta-ing small { color: var(--tenue); font-variant-numeric: tabular-nums; }
+.form-ing { display: grid; grid-template-columns: 1fr 96px; gap: 8px; align-items: end; padding: 8px 0; border-bottom: 1px solid var(--borde); }
+.form-ing .campo { margin: 0; }
+.form-ing button { align-self: end; margin-bottom: 2px; }
+
+@media (max-width: 620px) {
+  .plan-comida { padding: 8px; }
+  .plan-entrada { flex-wrap: wrap; }
+  .plan-entrada .pe-m { text-align: left; }
+  .receta-grid { grid-template-columns: 1fr; }
+  .receta-buscar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .receta-filtros.dieta .chip { flex: 1 1 120px; justify-content: center; min-width: 120px; }
+  .receta-filtros-activos { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .receta-raciones { align-items: flex-start; }
+  .form-ing { grid-template-columns: 1fr 76px; }
+}
+
+
+/* ---- Ficha de producto comercial (catálogo Open Food Facts) ---- */
+.ficha-comercial { margin-top: 12px; display: grid; gap: 10px; }
+.ficha-datos { font-size: .78rem; color: var(--tenue); line-height: 1.55; margin: 0; }
+.ficha-bloque { background: var(--tarjeta2); border: 1px solid var(--borde); border-radius: var(--radio-s); padding: 10px 12px; }
+.ficha-bloque h3 { font-size: .86rem; margin: 0 0 8px; }
+.tabla-nutri { width: 100%; border-collapse: collapse; font-size: .82rem; font-variant-numeric: tabular-nums; }
+.tabla-nutri th, .tabla-nutri td { padding: 4px 6px; border-bottom: 1px solid var(--borde); text-align: right; }
+.tabla-nutri thead th { font-size: .66rem; text-transform: uppercase; letter-spacing: .03em; color: var(--tenue); font-weight: 700; }
+.tabla-nutri thead th:first-child, .tabla-nutri tbody th { text-align: left; }
+.tabla-nutri tbody th { font-weight: 600; }
+.tabla-nutri tbody tr.sub th { font-weight: 400; color: var(--tenue); padding-left: 16px; }
+.alergenos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.alergeno { display: flex; flex-direction: column; gap: 1px; padding: 6px 8px; border-radius: 10px; font-size: .76rem; border: 1px solid var(--borde); background: var(--tarjeta); }
+.alergeno small { color: var(--tenue); font-size: .66rem; }
+.alergeno.presente { border-color: color-mix(in srgb, var(--peligro) 45%, var(--borde)); background: color-mix(in srgb, var(--peligro) 12%, var(--tarjeta)); }
+.alergeno.trazas { border-color: color-mix(in srgb, var(--amarillo) 45%, var(--borde)); background: color-mix(in srgb, var(--amarillo) 12%, var(--tarjeta)); }
+.alergeno.ausencia { border-color: color-mix(in srgb, var(--acento) 45%, var(--borde)); background: color-mix(in srgb, var(--acento) 10%, var(--tarjeta)); }
+.alergeno.desconocido { opacity: .7; }
+.ficha-ingredientes { font-size: .82rem; line-height: 1.55; margin: 0; }
+.ficha-aditivos { font-size: .78rem; margin: 8px 0 0; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.aditivo { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 7px; padding: 1px 6px; font-variant-numeric: tabular-nums; }
+.ficha-fuente { font-size: .68rem; line-height: 1.5; }
+.ficha-fuente a { color: var(--acento); }
+.ficha-revision { border-left: 3px solid var(--amarillo); background: color-mix(in srgb, var(--amarillo) 12%, var(--tarjeta)); border-radius: var(--radio-s); padding: 8px 10px; font-size: .74rem; line-height: 1.5; }
+.ficha-revision span { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 7px; padding: 1px 6px; margin-right: 4px; }
+
+@media (max-width: 620px) {
+  .alergenos-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tabla-nutri th, .tabla-nutri td { padding: 4px 4px; font-size: .78rem; }
+}
+
+/* =====================================================================
+   Suplementos: catálogo propio, ficha, alta y tomas del diario
+   ===================================================================== */
+.aviso { border: 1px solid color-mix(in srgb, var(--amarillo) 55%, var(--borde));
+  background: color-mix(in srgb, var(--amarillo) 11%, var(--tarjeta));
+  color: var(--texto); border-radius: var(--radio-s); padding: 10px 12px;
+  font-size: .84rem; line-height: 1.5; margin: 0 0 12px; }
+.sup-filtros { padding: 14px; }
+.sup-filtros .buscador { margin-bottom: 8px; }
+.sup-filtros-estado { margin: 6px 0 2px; align-items: flex-start; }
+.sup-filtros-estado .chips { flex: 1; }
+.sup-lista { display: grid; gap: 10px; }
+.sup-tarjeta { margin: 0; padding: 14px; }
+.sup-tarjeta h3 { margin: 0; font-size: 1.02rem; text-transform: none; letter-spacing: 0; color: var(--texto); }
+.sup-tarjeta .botones .btn { min-width: 96px; }
+.sup-tarjeta .botones .icono { min-width: 40px; flex: none; }
+.sup-dato { font-size: .86rem; font-weight: 600; margin: 6px 0; }
+.sup-estado.confirmado { background: color-mix(in srgb, var(--acento) 18%, var(--tarjeta)); color: var(--acento); }
+.sup-estado.estimado { background: color-mix(in srgb, var(--amarillo) 18%, var(--tarjeta)); color: var(--amarillo); }
+.sup-estado.desconocido { background: color-mix(in srgb, var(--tenue) 16%, var(--tarjeta)); color: var(--tenue); }
+.sup-estado.sup-ok { background: color-mix(in srgb, var(--acento2) 20%, var(--tarjeta)); color: var(--acento); }
+.sup-ficha h3 { margin: 18px 0 8px 0; }
+.sup-ficha .sup-fila { padding: 5px 0; border-bottom: 1px solid var(--borde); font-size: .88rem; gap: 12px; }
+.sup-ficha .sup-fila b { text-align: right; max-width: 62%; overflow-wrap: anywhere; }
+.sup-ficha details { margin: 10px 0; }
+.sup-ficha summary { cursor: pointer; font-weight: 700; color: var(--acento); padding: 6px 0; }
+.tabla-sup { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.tabla-sup th { text-align: left; color: var(--tenue); font-size: .72rem; padding: 6px; }
+.tabla-sup td { padding: 7px 6px; border-top: 1px solid var(--borde); overflow-wrap: anywhere; }
+.sup-alergenos { display: flex; flex-wrap: wrap; gap: 6px; }
+.sup-alergenos .chip { font-size: .74rem; padding: 5px 10px; }
+.sup-alergenos .chip.presente { border-color: var(--peligro); }
+.sup-alergenos .chip.trazas { border-color: var(--amarillo); }
+.sup-campos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+.sup-campos .campo { margin-bottom: 10px; font-size: .78rem; }
+.sup-campos .campo input, .sup-campos .campo select { padding: 9px 10px; }
+.sup-comp { gap: 6px; margin-bottom: 8px; }
+.sup-comp input, .sup-comp select { min-width: 0; width: auto; flex: 1; padding: 8px; }
+.sup-datos-toma { background: var(--tarjeta2); border-radius: var(--radio-s); padding: 8px 12px; margin-bottom: 10px; }
+.sup-toma-cantidad { align-items: flex-end; }
+.sup-toma-cantidad .campo { flex: 1; }
+#vistaTomaSuplemento { margin-top: 12px; font-size: .88rem; }
+#vistaTomaSuplemento p { margin: 4px 0; }
+.item-suplemento { border-left: 3px solid var(--acento2); padding-left: 10px; }
+.item-suplemento .badge { margin-left: 4px; }
+.sup-informe .tiles { grid-template-columns: repeat(4, 1fr); }
+.sup-filtros-hsn { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 12px 0; }
+.sup-filtros-hsn .campo { margin: 0; min-width: 0; }
+.sup-filtros-hsn select { width: 100%; max-width: 100%; }
+.sup-tarjeta-hsn { border-left: 3px solid var(--acento2); }
+.sup-pendiente { color: #b25e00; font-size: .82rem; margin: 6px 0; }
+.sup-variantes { display: grid; gap: 10px; max-height: 340px; overflow: auto; padding-right: 4px; }
+.sup-variante { border: 1px solid rgba(127, 127, 127, .25); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.sup-variante p { margin: 5px 0; overflow-wrap: anywhere; }
+.sup-variante .botones { flex-wrap: wrap; }
+@media (max-width: 560px) {
+  .sup-informe .tiles { grid-template-columns: repeat(2, 1fr); }
+  .sup-campos { grid-template-columns: 1fr; }
+  .sup-tarjeta .botones .btn { min-width: 42%; }
+  .sup-filtros-hsn { grid-template-columns: 1fr; }
+  .sup-variantes { max-height: 300px; }
+  .sup-variante .botones .btn { flex: 1 1 120px; }
+}
+
+/* =====================================================================
+   FASE 8 · Análisis nutricional de comidas por fotografía
+   ===================================================================== */
+.fc-entrada { align-items: center; flex-wrap: wrap; margin: 10px 0 14px; }
+.fc-acciones { flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.fc-oculto { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.fc-video, .fc-preview { display: block; width: 100%; max-height: 52vh; object-fit: contain;
+  border: 1px solid var(--borde); border-radius: var(--radio-s); background: #000; margin: 10px 0; }
+.fc-preview { background: var(--tarjeta); }
+.fc-consent { display: flex; align-items: flex-start; gap: 8px; font-size: .84rem; line-height: 1.45;
+  border: 1px solid var(--borde); border-radius: var(--radio-s); padding: 10px 12px; margin: 10px 0; }
+.fc-consent input { margin-top: 2px; flex: none; }
+.fc-form { display: grid; gap: 12px; }
+.fc-form label { display: grid; gap: 5px; font-size: .84rem; }
+.fc-form input, .fc-form select { width: 100%; }
+.fc-ing { border: 1px solid var(--borde); border-radius: var(--radio-s); padding: 12px;
+  display: grid; gap: 10px; background: color-mix(in srgb, var(--tarjeta) 92%, var(--acento) 8%); }
+.fc-ing .fila { justify-content: space-between; }
+.fc-porciones { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.fc-porciones .chip { cursor: pointer; }
+.fc-totales { display: flex; flex-wrap: wrap; gap: 8px; }
+.fc-macro { flex: 1 1 96px; display: grid; gap: 2px; border: 1px solid var(--borde);
+  border-radius: var(--radio-s); padding: 7px 9px; text-align: center; }
+.fc-macro small { color: var(--tenue); font-size: .7rem; }
+.fc-macro b { font-size: .95rem; font-variant-numeric: tabular-nums; }
+.fc-micros .fc-macro { flex: 1 1 78px; }
+#fcTotales h3 { margin: 4px 0; }
+@media (max-width: 560px) {
+  .fc-acciones .btn { flex: 1 1 46%; }
+  .fc-macro { flex: 1 1 44%; }
+}
+
+/* =====================================================================
+   FASE 9 · Parte 2 — origen de los objetivos (automático / manual / aceptado)
+   ===================================================================== */
+.chip-origen { display: inline-block; vertical-align: middle; margin-left: 4px; padding: 2px 7px;
+  border-radius: 999px; font-size: .66rem; font-weight: 700; line-height: 1.4;
+  border: 1px solid var(--borde); background: color-mix(in srgb, var(--tenue) 14%, var(--tarjeta)); color: var(--tenue); }
+.chip-origen.manual { border-color: var(--amarillo); color: var(--amarillo);
+  background: color-mix(in srgb, var(--amarillo) 14%, var(--tarjeta)); }
+.chip-origen.aceptado { border-color: var(--acento2); color: var(--acento);
+  background: color-mix(in srgb, var(--acento2) 16%, var(--tarjeta)); }
+#formObjetivos .campo small.tenue { font-weight: 400; }
+#propuestaInicial .tiles { margin: 12px 0; }
+
+/* =====================================================================
+   FASE 9 · Parte 4 — adaptación inteligente y recordatorios corporales
+   ===================================================================== */
+.adapt-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.adapt-cab h2 { margin: 0; }
+.adapt-tarjeta p { margin: 7px 0; line-height: 1.5; }
+.adapt-tarjeta details { margin: 8px 0; }
+.adapt-tarjeta summary { cursor: pointer; font-weight: 700; color: var(--acento); padding: 5px 0; }
+.adapt-columnas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 10px 0; }
+.adapt-columnas > div { border: 1px solid var(--borde); border-radius: var(--radio-s); padding: 9px 11px; }
+.adapt-columnas p { font-size: .82rem; }
+.adapt-historial { display: grid; gap: 8px; }
+.chip-origen.pendiente { border-color: var(--amarillo); color: var(--amarillo);
+  background: color-mix(in srgb, var(--amarillo) 14%, var(--tarjeta)); }
+.chip-origen.rechazada { border-color: var(--peligro); color: var(--peligro);
+  background: color-mix(in srgb, var(--peligro) 12%, var(--tarjeta)); }
+.chip-origen.pospuesta { border-color: var(--tenue); color: var(--tenue); }
+.ajustes .campo-fila select { min-width: 120px; }
+@media (max-width: 620px) {
+  .adapt-columnas { grid-template-columns: 1fr; }
+}

@@ -5,7 +5,7 @@ import {
   macrosDe, sumarMacros, resumenReceta,
 } from './alimentos.js';
 
-const ORDEN_COMIDAS = ['desayuno', 'comida', 'cena', 'snack'];
+const ORDEN_COMIDAS = ['desayuno', 'comida', 'snack', 'cena'];
 const PORCENTAJES = { desayuno: 0.25, comida: 0.35, cena: 0.30, snack: 0.10 };
 
 // Reparto diario de macronutrientes en kcal (4 kcal/g proteína e hidratos, 9 kcal/g grasa).

@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="DanTal">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="stylesheet" href="css/estilos.css?v=6.0">
+  <link rel="stylesheet" href="css/estilos.css?v=10.2">
 </head>
 <body>
   <main id="vista"></main>
@@ -32,6 +32,13 @@
 
   <!-- Avisos breves -->
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <!-- Actualización segura: la nueva versión no se activa sin permiso -->
+  <div id="avisoActualizacion" class="aviso-actualizacion" role="status" aria-live="polite" hidden>
+    <span>🆕 Hay una nueva versión de DanTal lista.</span>
+    <button class="btn sec" data-a="actualizarApp">Actualizar ahora</button>
+  </div>
+
   <dialog id="confirmar" class="confirmar"></dialog>
 
   <!-- Tabata -->
@@ -49,6 +56,6 @@
 
   <dialog id="modal"></dialog>
 
-  <script type="module" src="js/app.js?v=6.0"></script>
+  <script type="module" src="js/app.js?v=10.2"></script>
 </body>
 </html>
